@@ -4,3 +4,4 @@ export { SignupForm } from './SignupForm';
 export { ProtectedRoute, withProtectedRoute } from './ProtectedRoute';
 export { AuthDemo } from './AuthDemo';
 export { ConfigurationStatus } from './ConfigurationStatus';
+export { LandingPage } from './LandingPage';
