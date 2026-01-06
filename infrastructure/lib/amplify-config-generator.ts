@@ -44,35 +44,43 @@ export class AmplifyConfigGenerator {
                 // We'll use environment variables to pass the resolved values
                 'cat > dist/amplify_outputs.json << EOF',
                 JSON.stringify({
-                  version: "1",
-                  auth: {
-                    aws_region: region,
-                    user_pool_id: "REPLACE_USER_POOL_ID",
-                    user_pool_client_id: "REPLACE_USER_POOL_CLIENT_ID", 
-                    identity_pool_id: "REPLACE_IDENTITY_POOL_ID",
-                    password_policy: {
-                      min_length: 8,
-                      require_lowercase: true,
-                      require_uppercase: true,
-                      require_numbers: true,
-                      require_symbols: false
-                    },
-                    oauth: {
-                      identity_providers: ["COGNITO"],
-                      domain: "REPLACE_DOMAIN.auth." + region + ".amazoncognito.com",
-                      scopes: ["email", "openid", "profile"],
-                      redirect_sign_in_uri: [
-                        "http://localhost:3001/",
-                        "https://REPLACE_CLOUDFRONT_DOMAIN/"
-                      ],
-                      redirect_sign_out_uri: [
-                        "http://localhost:3001/",
-                        "https://REPLACE_CLOUDFRONT_DOMAIN/"
-                      ],
-                      response_type: "code"
-                    },
-                    username_attributes: ["email"],
-                    user_verification_types: ["email"]
+                  Auth: {
+                    Cognito: {
+                      userPoolId: "REPLACE_USER_POOL_ID",
+                      userPoolClientId: "REPLACE_USER_POOL_CLIENT_ID",
+                      identityPoolId: "REPLACE_IDENTITY_POOL_ID",
+                      loginWith: {
+                        oauth: {
+                          domain: "REPLACE_DOMAIN.auth." + region + ".amazoncognito.com",
+                          scopes: ['openid', 'email', 'profile'],
+                          redirectSignIn: [
+                            'http://localhost:3001/',
+                            'https://REPLACE_CLOUDFRONT_DOMAIN/'
+                          ],
+                          redirectSignOut: [
+                            'http://localhost:3001/',
+                            'https://REPLACE_CLOUDFRONT_DOMAIN/'
+                          ],
+                          responseType: 'code'
+                        },
+                        email: true,
+                        username: false
+                      },
+                      signUpVerificationMethod: 'code',
+                      userAttributes: {
+                        email: {
+                          required: true
+                        }
+                      },
+                      allowGuestAccess: false,
+                      passwordFormat: {
+                        minLength: 8,
+                        requireLowercase: true,
+                        requireUppercase: true,
+                        requireNumbers: true,
+                        requireSpecialCharacters: false
+                      }
+                    }
                   }
                 }, null, 2),
                 'EOF',
