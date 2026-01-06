@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If in development mode without AWS config, skip auth check
       if (isDevelopmentMode()) {
         setUser(null);
-        setError('AWS Cognito not configured. Please set up your .env file with AWS credentials.');
+        setError('AWS Cognito not configured. Please update amplify_outputs.json with your AWS credentials.');
         return;
       }
 
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // User is not authenticated or AWS not configured
       setUser(null);
       if (isDevelopmentMode()) {
-        setError('AWS Cognito not configured. Please create a .env file with your AWS Cognito settings.');
+        setError('AWS Cognito not configured. Please update amplify_outputs.json with your AWS Cognito settings.');
       }
     } finally {
       setIsLoading(false);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Check if AWS is configured
       if (isDevelopmentMode()) {
-        throw new Error('AWS Cognito not configured. Please set up your .env file with AWS credentials.');
+        throw new Error('AWS Cognito not configured. Please update amplify_outputs.json with your AWS credentials.');
       }
       
       const cognitoUser = await Auth.signIn(credentials.email, credentials.password);
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Check if AWS is configured
       if (isDevelopmentMode()) {
-        throw new Error('AWS Cognito not configured. Please set up your .env file with AWS credentials.');
+        throw new Error('AWS Cognito not configured. Please update amplify_outputs.json with your AWS credentials.');
       }
       
       await Auth.signUp({

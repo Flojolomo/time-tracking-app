@@ -1,88 +1,33 @@
-// AWS Amplify configuration using runtime config
-import type { AppConfig } from './types/config';
+// AWS Amplify configuration using amplify_outputs.json
+import amplifyOutputs from '../amplify_outputs.json';
 
-// Function to get runtime configuration
-function getRuntimeConfig(): AppConfig {
-  if (typeof window !== 'undefined' && window.APP_CONFIG) {
-    return window.APP_CONFIG;
-  }
-  
-  // Fallback configuration for SSR or when config is not loaded
-  return {
-    aws: {
-      region: 'us-east-1',
-      cognito: {
-        userPoolId: '',
-        userPoolWebClientId: '',
-        domain: ''
-      },
-      api: {
-        endpoint: ''
-      }
-    },
-    app: {
-      name: 'Time Tracking App',
-      version: '1.0.0',
-      environment: 'development'
-    },
-    features: {
-      enableOAuth: false,
-      enableMFA: false,
-      enableAnalytics: false
-    },
-    isDevelopmentMode: () => true,
-    validate: () => ({ isValid: false, missing: ['runtime config not loaded'] })
-  };
-}
-
-// Generate AWS Amplify configuration from runtime config
-export function getAwsConfig() {
-  const config = getRuntimeConfig();
-  
-  return {
-    Auth: {
-      region: config.aws.region,
-      userPoolId: config.aws.cognito.userPoolId,
-      userPoolWebClientId: config.aws.cognito.userPoolWebClientId,
-      mandatorySignIn: true,
-      authenticationFlowType: 'USER_SRP_AUTH',
-      ...(config.features.enableOAuth && config.aws.cognito.domain && {
-        oauth: {
-          domain: config.aws.cognito.domain,
-          scope: ['email', 'profile', 'openid'],
-          redirectSignIn: `${window.location.origin}/`,
-          redirectSignOut: `${window.location.origin}/`,
-          responseType: 'code'
-        }
-      })
-    },
-    ...(config.aws.api.endpoint && {
-      API: {
-        endpoints: [
-          {
-            name: 'timetracking',
-            endpoint: config.aws.api.endpoint,
-            region: config.aws.region
-          }
-        ]
-      }
-    })
-  };
+// Check if we're in development mode without proper AWS config
+export function isDevelopmentMode(): boolean {
+  return !amplifyOutputs.auth.user_pool_id || !amplifyOutputs.auth.user_pool_client_id;
 }
 
 // Validation function to ensure required config is present
 export function validateAwsConfig(): { isValid: boolean; missing: string[] } {
-  const config = getRuntimeConfig();
-  return config.validate();
+  const missing: string[] = [];
+  
+  if (!amplifyOutputs.auth.user_pool_id) {
+    missing.push('auth.user_pool_id');
+  }
+  
+  if (!amplifyOutputs.auth.user_pool_client_id) {
+    missing.push('auth.user_pool_client_id');
+  }
+  
+  return {
+    isValid: missing.length === 0,
+    missing
+  };
 }
 
-// Check if we're in development mode without proper AWS config
-export function isDevelopmentMode(): boolean {
-  const config = getRuntimeConfig();
-  return config.isDevelopmentMode();
+// Get the Amplify configuration
+export function getAmplifyConfig() {
+  return amplifyOutputs;
 }
 
-// Get the runtime configuration
-export function getConfig(): AppConfig {
-  return getRuntimeConfig();
-}
+// Export the configuration for direct use
+export { amplifyOutputs };

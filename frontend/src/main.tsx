@@ -5,19 +5,19 @@ import { Amplify } from 'aws-amplify'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import { AuthProvider } from './hooks/useAuth'
-import { awsConfig, validateAwsConfig, isDevelopmentMode } from './aws-config'
+import { getAmplifyConfig, validateAwsConfig, isDevelopmentMode } from './aws-config'
 import './index.css'
 
-// Configure AWS Amplify only if we have proper configuration
-if (!isDevelopmentMode()) {
-  Amplify.configure(awsConfig)
-}
+// Configure AWS Amplify with amplify_outputs.json
+const amplifyConfig = getAmplifyConfig();
+Amplify.configure(amplifyConfig);
 
 // Validate configuration in development
 if (import.meta.env.DEV) {
-  if (!validateAwsConfig()) {
-    console.warn('AWS configuration is incomplete. Authentication features will be limited.')
-    console.warn('To enable full authentication, create a .env file with your AWS Cognito configuration.')
+  const validation = validateAwsConfig();
+  if (!validation.isValid) {
+    console.warn('AWS configuration is incomplete:', validation.missing);
+    console.warn('Please update amplify_outputs.json with your AWS Cognito configuration.');
   }
 }
 
