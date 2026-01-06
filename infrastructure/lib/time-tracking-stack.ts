@@ -323,12 +323,13 @@ export class TimeTrackingStack extends cdk.Stack {
       region: this.region,
     });
 
-    // Deploy website with generated configuration using bundling
-    const deployment = configGenerator.createDeploymentWithConfig(
-      this,
-      websiteBucket,
-      distribution
-    );
+    // Simple deployment without config generation
+    const deployment = new s3deploy.BucketDeployment(this, 'DeployWebsite', {
+      sources: [s3deploy.Source.asset(path.join(__dirname, '../../frontend/dist'))],
+      destinationBucket: websiteBucket,
+      distribution: distribution,
+      distributionPaths: ['/*']
+    });
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {
@@ -369,6 +370,43 @@ export class TimeTrackingStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'S3BucketName', {
       value: websiteBucket.bucketName,
       description: 'S3 Bucket Name for website hosting',
+    });
+
+    // Complete Amplify Outputs JSON
+    new cdk.CfnOutput(this, 'AmplifyOutputsJson', {
+      value: JSON.stringify({
+        version: "1",
+        auth: {
+          aws_region: this.region,
+          user_pool_id: userPool.userPoolId,
+          user_pool_client_id: userPoolClient.userPoolClientId,
+          identity_pool_id: identityPool.ref,
+          password_policy: {
+            min_length: 8,
+            require_lowercase: true,
+            require_uppercase: true,
+            require_numbers: true,
+            require_symbols: false
+          },
+          oauth: {
+            identity_providers: ["COGNITO"],
+            domain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
+            scopes: ["email", "openid", "profile"],
+            redirect_sign_in_uri: [
+              "http://localhost:3001/",
+              `https://${distribution.distributionDomainName}/`
+            ],
+            redirect_sign_out_uri: [
+              "http://localhost:3001/",
+              `https://${distribution.distributionDomainName}/`
+            ],
+            response_type: "code"
+          },
+          username_attributes: ["email"],
+          user_verification_types: ["email"]
+        }
+      }, null, 2),
+      description: 'Complete amplify_outputs.json configuration - copy this to frontend/public/amplify_outputs.json',
     });
   }
 }
