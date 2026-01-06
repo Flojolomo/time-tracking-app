@@ -5,6 +5,7 @@ import { ViewSelector } from './ViewSelector';
 import { TimeRecordFilters, TimeRecord } from '../types';
 import { useViewState } from '../contexts/ViewStateContext';
 import { useViewRouting } from '../hooks/useViewRouting';
+import { TimeRecordService } from '../utils/timeRecordService';
 
 interface TimeRecordViewsProps {
   filters?: TimeRecordFilters;
@@ -39,6 +40,23 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
     // The TimeRecordList will automatically refresh due to React Query
   };
 
+  const handleFormSubmit = async (data: any) => {
+    try {
+      if (editingRecord) {
+        // Update existing record
+        await TimeRecordService.updateTimeRecord(editingRecord.id, data);
+      } else {
+        // Create new record
+        await TimeRecordService.createTimeRecord(data);
+      }
+      handleFormSuccess();
+    } catch (error) {
+      console.error('Error saving record:', error);
+      // You might want to show a notification here
+      throw error; // Re-throw to let the form handle the error
+    }
+  };
+
   const handleEditRecord = (record: TimeRecord) => {
     setEditingRecord(record);
     setShowForm(true);
@@ -71,7 +89,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
           </h2>
           <TimeRecordForm
             initialData={editingRecord}
-            onSuccess={handleFormSuccess}
+            onSubmit={handleFormSubmit}
             onCancel={() => {
               setShowForm(false);
               setEditingRecord(undefined);
