@@ -188,12 +188,26 @@ export class TimeTrackingStack extends cdk.Stack {
     const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/timeRecords', {
+      code: lambda.Code.fromAsset('lambda/timeRecords/src', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          local: {
+            tryBundle(outputDir: string) {
+              try {
+                const { execSync } = require('child_process');
+                execSync('npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=' + outputDir + '/index.js', {
+                  cwd: 'lambda/timeRecords/src',
+                  stdio: 'inherit'
+                });
+                return true;
+              } catch {
+                return false;
+              }
+            }
+          },
           command: [
             'bash', '-c',
-            'npm ci && npm run build && cp -r dist/* /asset-output/'
+            'npm ci && npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=/asset-output/index.js'
           ],
         },
       }),
@@ -219,12 +233,26 @@ export class TimeTrackingStack extends cdk.Stack {
     const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/projects', {
+      code: lambda.Code.fromAsset('lambda/projects/src', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          local: {
+            tryBundle(outputDir: string) {
+              try {
+                const { execSync } = require('child_process');
+                execSync('npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=' + outputDir + '/index.js', {
+                  cwd: 'lambda/projects/src',
+                  stdio: 'inherit'
+                });
+                return true;
+              } catch {
+                return false;
+              }
+            }
+          },
           command: [
             'bash', '-c',
-            'npm ci && npm run build && cp -r dist/* /asset-output/'
+            'npm ci && npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=/asset-output/index.js'
           ],
         },
       }),
