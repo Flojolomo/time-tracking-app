@@ -28,25 +28,39 @@ npm run build
 This creates a `dist/` directory with the static files.
 
 ### 2. Configure AWS Values
-After building, inject the AWS configuration:
+After building, update the AWS configuration in `amplify_outputs.json`:
 
 ```bash
-npm run configure-deployment '{"userPoolId":"us-east-1_abc123","userPoolWebClientId":"abc123","region":"us-east-1"}'
+# Update amplify_outputs.json with your deployed AWS resources
+# This can be done manually or through your CDK deployment process
 ```
 
-Or use the Node.js API:
-```javascript
-const { configureDeployment } = require('./scripts/configure-deployment.js');
-
-configureDeployment({
-  region: 'us-east-1',
-  userPoolId: 'us-east-1_abc123',
-  userPoolWebClientId: 'abc123def456',
-  cognitoDomain: 'your-app.auth.us-east-1.amazoncognito.com',
-  apiEndpoint: 'https://api.your-domain.com',
-  redirectSignIn: 'https://your-domain.com/',
-  redirectSignOut: 'https://your-domain.com/'
-});
+Example configuration:
+```json
+{
+  "version": "1",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "us-east-1_abc123",
+    "user_pool_client_id": "abc123def456",
+    "identity_pool_id": "us-east-1:12345678-1234-1234-1234-123456789012",
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_uppercase": true,
+      "require_numbers": true,
+      "require_symbols": true
+    },
+    "oauth": {
+      "identity_providers": ["COGNITO"],
+      "domain": "your-app.auth.us-east-1.amazoncognito.com",
+      "scopes": ["email", "openid", "profile"],
+      "redirect_sign_in_uri": ["https://your-domain.com/"],
+      "redirect_sign_out_uri": ["https://your-domain.com/"],
+      "response_type": "code"
+    }
+  }
+}
 ```
 
 ### 3. Deploy to S3
@@ -62,32 +76,47 @@ For AWS CDK deployments, use this pattern in your CDK stack:
 
 ```typescript
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
-import { execSync } from 'child_process';
+import { writeFileSync } from 'fs';
 import * as path from 'path';
 
 // After creating your Cognito User Pool and other resources
+// Update amplify_outputs.json with deployed resource values
+const amplifyConfig = {
+  version: "1",
+  auth: {
+    aws_region: this.region,
+    user_pool_id: userPool.userPoolId,
+    user_pool_client_id: userPoolClient.userPoolClientId,
+    identity_pool_id: identityPool.identityPoolId,
+    password_policy: {
+      min_length: 8,
+      require_lowercase: true,
+      require_uppercase: true,
+      require_numbers: true,
+      require_symbols: true
+    },
+    oauth: {
+      identity_providers: ["COGNITO"],
+      domain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
+      scopes: ["email", "openid", "profile"],
+      redirect_sign_in_uri: [`https://${distribution.distributionDomainName}/`],
+      redirect_sign_out_uri: [`https://${distribution.distributionDomainName}/`],
+      response_type: "code"
+    }
+  },
+  data: {
+    aws_region: this.region,
+    url: api.url,
+    default_authorization_type: "AMAZON_COGNITO_USER_POOLS"
+  }
+};
+
+// Write the configuration to amplify_outputs.json before deployment
+const configPath = path.join(__dirname, '../frontend/amplify_outputs.json');
+writeFileSync(configPath, JSON.stringify(amplifyConfig, null, 2));
+
 const deployment = new BucketDeployment(this, 'DeployWebsite', {
-  sources: [
-    Source.asset(path.join(__dirname, '../frontend/dist'), {
-      bundling: {
-        image: DockerImage.fromRegistry('node:18'),
-        command: [
-          'bash', '-c', [
-            'cp -r /asset-input/* /asset-output/',
-            `node /asset-input/scripts/configure-deployment.js '${JSON.stringify({
-              region: this.region,
-              userPoolId: userPool.userPoolId,
-              userPoolWebClientId: userPoolClient.userPoolClientId,
-              cognitoDomain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
-              apiEndpoint: api.url,
-              redirectSignIn: `https://${distribution.distributionDomainName}/`,
-              redirectSignOut: `https://${distribution.distributionDomainName}/`
-            })}'`
-          ].join(' && ')
-        ]
-      }
-    })
-  ],
+  sources: [Source.asset(path.join(__dirname, '../frontend/dist'))],
   destinationBucket: websiteBucket,
   distribution: cloudFrontDistribution,
   distributionPaths: ['/*']
