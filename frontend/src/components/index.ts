@@ -1,2 +1,5 @@
-// Component exports will be added as components are created
-export {};
+// Component exports
+export { LoginForm } from './LoginForm';
+export { SignupForm } from './SignupForm';
+export { ProtectedRoute, withProtectedRoute } from './ProtectedRoute';
+export { AuthDemo } from './AuthDemo';
