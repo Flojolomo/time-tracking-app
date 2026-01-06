@@ -156,7 +156,7 @@ export class TimeTrackingStack extends cdk.Stack {
     const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/timeRecords'),
+      code: lambda.Code.fromAsset('lambda/timeRecords/dist'),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
       environment: {
@@ -172,7 +172,7 @@ export class TimeTrackingStack extends cdk.Stack {
     const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/projects'),
+      code: lambda.Code.fromAsset('lambda/projects/dist'),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
       environment: {

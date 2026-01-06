@@ -2,9 +2,10 @@
   "name": "projects-lambda",
   "version": "1.0.0",
   "description": "Lambda function for projects API",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "clean": "rm -rf dist",
     "test": "jest"
   },
   "dependencies": {

@@ -5,7 +5,11 @@
     "lib": [
       "es2020"
     ],
+    "outDir": "./dist",
+    "rootDir": "./src",
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -15,16 +19,23 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": false,
-    "inlineSourceMap": true,
-    "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
-    "cdk.out"
+    "cdk.out",
+    "dist",
+    "lambda",
+    "**/*.test.ts"
   ]
 }

@@ -6,13 +6,19 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:lambdas": "npm run build:lambda:timeRecords && npm run build:lambda:projects",
+    "build:lambda:timeRecords": "cd lambda/timeRecords && npm run build",
+    "build:lambda:projects": "cd lambda/projects && npm run build",
+    "clean:lambdas": "npm run clean:lambda:timeRecords && npm run clean:lambda:projects",
+    "clean:lambda:timeRecords": "cd lambda/timeRecords && npm run clean",
+    "clean:lambda:projects": "cd lambda/projects && npm run clean",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "deploy": "cdk deploy",
+    "deploy": "npm run build:lambdas && cdk deploy",
     "destroy": "cdk destroy",
-    "synth": "cdk synth",
-    "diff": "cdk diff"
+    "synth": "npm run build:lambdas && cdk synth",
+    "diff": "npm run build:lambdas && cdk diff"
   },
   "devDependencies": {
     "@types/jest": "^29.4.0",

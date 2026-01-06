@@ -9,6 +9,11 @@ infrastructure/lib/*.js
 infrastructure/lib/*.d.ts
 infrastructure/bin/*.js
 infrastructure/bin/*.d.ts
+infrastructure/lambda/*/dist/
+infrastructure/lambda/*/*.js
+infrastructure/lambda/*/*.d.ts
+infrastructure/lambda/*/*.js.map
+infrastructure/lambda/*/*.d.ts.map
 
 # Environment variables
 .env
