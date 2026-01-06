@@ -31,10 +31,10 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 sm:space-y-6 ${className}`}>
       {/* View Controls */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Time Records</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Time Records</h1>
         <ViewSelector
           currentView={state.currentView}
           onViewChange={navigateToView}

@@ -148,12 +148,12 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 max-w-2xl mx-auto">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
         {initialData ? 'Edit Time Record' : 'New Time Record'}
       </h2>
 
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 sm:space-y-6">
         {/* Project Name Field */}
         <div>
           <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -198,7 +198,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
                 {...field}
                 type="date"
                 id="date"
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
                   errors.date ? 'border-red-500' : 'border-gray-300'
                 }`}
                 disabled={isLoading || isSubmitting}
@@ -211,7 +211,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
         </div>
 
         {/* Time Fields Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Start Time Field */}
           <div>
             <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
@@ -226,7 +226,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
                   {...field}
                   type="time"
                   id="startTime"
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
                     errors.startTime ? 'border-red-500' : 'border-gray-300'
                   }`}
                   disabled={isLoading || isSubmitting}
@@ -262,7 +262,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
                   {...field}
                   type="time"
                   id="endTime"
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
                     errors.endTime ? 'border-red-500' : 'border-gray-300'
                   }`}
                   disabled={isLoading || isSubmitting}
@@ -297,7 +297,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
                 {...field}
                 id="description"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base resize-none"
                 placeholder="Add a comment about this time record (optional)"
                 disabled={isLoading || isSubmitting}
               />
@@ -318,7 +318,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
                 {...field}
                 type="text"
                 id="tags"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
                 placeholder="Enter tags separated by commas (optional)"
                 disabled={isLoading || isSubmitting}
               />
@@ -337,12 +337,12 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
         )}
 
         {/* Form Actions */}
-        <div className="flex justify-end space-x-3 pt-4">
+        <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
               disabled={isLoading || isSubmitting}
             >
               Cancel
@@ -350,7 +350,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
           )}
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
             disabled={isLoading || isSubmitting}
           >
             {isSubmitting ? 'Saving...' : initialData ? 'Update Record' : 'Create Record'}

@@ -175,7 +175,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
     }
   }, [selectedIndex]);
 
-  const baseInputClasses = `w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+  const baseInputClasses = `w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base touch-target ${
     error ? 'border-red-500' : 'border-gray-300'
   } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`;
 
@@ -214,7 +214,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
           {suggestions.map((suggestion, index) => (
             <div
               key={suggestion}
-              className={`px-3 py-2 cursor-pointer text-sm ${
+              className={`px-3 py-3 cursor-pointer text-sm touch-target ${
                 index === selectedIndex
                   ? 'bg-blue-100 text-blue-900'
                   : 'text-gray-900 hover:bg-gray-100'

@@ -90,23 +90,23 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
   ];
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 ${className}`}>
       {metrics.map((metric, index) => (
-        <div key={index} className={`${metric.bgColor} rounded-lg p-6 border border-gray-200`}>
+        <div key={index} className={`${metric.bgColor} rounded-lg p-4 sm:p-6 border border-gray-200`}>
           <div className="flex items-center">
-            <div className={`flex-shrink-0 ${metric.color} rounded-md p-3 text-white`}>
+            <div className={`flex-shrink-0 ${metric.color} rounded-md p-2 sm:p-3 text-white`}>
               {metric.icon}
             </div>
-            <div className="ml-4 flex-1">
+            <div className="ml-3 sm:ml-4 flex-1 min-w-0">
               <div className="flex items-baseline">
-                <p className={`text-2xl font-semibold ${metric.textColor}`}>
+                <p className={`text-lg sm:text-2xl font-semibold ${metric.textColor} truncate`}>
                   {metric.value}
                 </p>
               </div>
-              <p className="text-sm font-medium text-gray-900 mt-1">
+              <p className="text-sm font-medium text-gray-900 mt-1 truncate">
                 {metric.title}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500 truncate">
                 {metric.subtitle}
               </p>
             </div>

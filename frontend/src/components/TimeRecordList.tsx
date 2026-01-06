@@ -253,24 +253,26 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   return (
     <div className="space-y-6">
       {/* Navigation Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div className="flex items-center justify-center sm:justify-start space-x-2 sm:space-x-4">
           <button
             onClick={navigatePrevious}
-            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            aria-label="Previous period"
           >
             <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           
-          <h2 className="text-xl font-semibold text-gray-900 min-w-0">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left min-w-0 flex-1 sm:flex-none">
             {getDisplayTitle()}
           </h2>
           
           <button
             onClick={navigateNext}
-            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            aria-label="Next period"
           >
             <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -278,10 +280,10 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
           </button>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center sm:justify-end space-x-3">
           <button
             onClick={navigateToday}
-            className="px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
           >
             Today
           </button>
@@ -337,9 +339,9 @@ const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       {showDate && (
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900">
               {displayDate.toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 month: 'long', 
@@ -384,10 +386,10 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
   };
 
   return (
-    <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
-      <div className="flex items-start justify-between">
+    <div className="px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
             <h4 className="text-sm font-medium text-gray-900 truncate">
               {record.projectName}
             </h4>
@@ -407,12 +409,12 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
           </div>
           
           {record.description && (
-            <p className="mt-1 text-sm text-gray-600 truncate">
+            <p className="mt-1 text-sm text-gray-600 line-clamp-2 sm:truncate">
               {record.description}
             </p>
           )}
           
-          <div className="mt-2 flex items-center text-xs text-gray-500 space-x-4">
+          <div className="mt-2 flex flex-col sm:flex-row sm:items-center text-xs text-gray-500 space-y-1 sm:space-y-0 sm:space-x-4">
             <span>
               {formatTime(startTime)}
               {endTime && ` - ${formatTime(endTime)}`}
@@ -426,9 +428,9 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
           </div>
         </div>
         
-        <div className="flex items-center space-x-2 ml-4">
+        <div className="flex items-center justify-end space-x-2 ml-0 sm:ml-4">
           <button
-            className="p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+            className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded transition-colors"
             title="Edit record"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -437,7 +439,7 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
           </button>
           
           <button
-            className="p-1 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+            className="p-2 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded transition-colors"
             title="Delete record"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

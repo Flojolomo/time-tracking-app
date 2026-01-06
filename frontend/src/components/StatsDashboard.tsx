@@ -138,29 +138,29 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 sm:space-y-6 ${className}`}>
       {/* Header with date range selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
           <p className="mt-1 text-sm text-gray-500">
             Insights into your time tracking patterns and productivity
           </p>
         </div>
         
-        <div className="mt-4 sm:mt-0">
+        <div className="flex justify-center sm:justify-end">
           <div className="flex rounded-md shadow-sm">
             {(['week', 'month', 'quarter'] as const).map((range) => (
               <button
                 key={range}
                 onClick={() => handleDateRangeChange(range)}
-                className={`px-4 py-2 text-sm font-medium border ${
+                className={`px-3 sm:px-4 py-2 text-sm font-medium border ${
                   dateRange === range
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 } ${
                   range === 'week' ? 'rounded-l-md' : range === 'quarter' ? 'rounded-r-md' : ''
-                } ${range !== 'week' ? '-ml-px' : ''}`}
+                } ${range !== 'week' ? '-ml-px' : ''} transition-colors`}
               >
                 {range.charAt(0).toUpperCase() + range.slice(1)}
               </button>
@@ -192,11 +192,11 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
           )}
 
           {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
             {/* Project Distribution Chart */}
             {projectStats.length > 0 && (
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Time by Project</h3>
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Time by Project</h3>
                 <ProjectChart 
                   projectStats={projectStats}
                   type="pie"
@@ -206,8 +206,8 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
 
             {/* Tag Distribution Chart */}
             {tagStats.length > 0 && (
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Time by Tags</h3>
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Time by Tags</h3>
                 <ProjectChart 
                   projectStats={tagStats.map(tag => ({
                     projectName: tag.tagName,
@@ -224,8 +224,8 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
 
           {/* Timeline Chart */}
           {dailyStats.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Daily Time Tracking</h3>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Daily Time Tracking</h3>
               <TimelineChart 
                 dailyStats={dailyStats}
                 dateRange={dateRange}
@@ -236,26 +236,26 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
           {/* Project Details Table */}
           {projectStats.length > 0 && (
             <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Project Breakdown</h3>
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Project Breakdown</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Project
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total Time
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Sessions
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Avg Session
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Percentage
                       </th>
                     </tr>
@@ -263,19 +263,19 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
                   <tbody className="bg-white divide-y divide-gray-200">
                     {projectStats.map((project, index) => (
                       <tr key={project.projectName} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {project.projectName}
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <div className="truncate max-w-32 sm:max-w-none">{project.projectName}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {StatisticsService.formatDuration(project.totalDuration)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {project.recordCount}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {StatisticsService.formatDuration(project.averageDuration)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {StatisticsService.formatPercentage(project.percentage)}
                         </td>
                       </tr>

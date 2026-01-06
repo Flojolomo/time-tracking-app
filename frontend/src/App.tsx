@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
+import React from 'react';
 
 // Component to handle authenticated user redirects
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -139,37 +140,42 @@ function App() {
 // Dashboard layout component for consistent navigation
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">TimeTracker</h1>
-              <nav className="flex space-x-4">
+              
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex md:ml-8 md:space-x-4">
                 <a
                   href="/dashboard"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Dashboard
                 </a>
                 <a
                   href="/records"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Time Records
                 </a>
                 <a
                   href="/analytics"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Analytics
                 </a>
               </nav>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
+            
+            {/* Desktop User Menu */}
+            <div className="hidden md:flex md:items-center md:space-x-4">
+              <span className="text-sm text-gray-600 truncate max-w-48">Welcome, {user?.email}</span>
               <button
                 onClick={logout}
                 className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
@@ -177,12 +183,75 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 Sign out
               </button>
             </div>
+            
+            {/* Mobile menu button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                aria-expanded="false"
+              >
+                <span className="sr-only">Open main menu</span>
+                {!isMobileMenuOpen ? (
+                  <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                ) : (
+                  <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+              <a
+                href="/dashboard"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Dashboard
+              </a>
+              <a
+                href="/records"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Time Records
+              </a>
+              <a
+                href="/analytics"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Analytics
+              </a>
+              <div className="border-t border-gray-200 pt-4 pb-3">
+                <div className="px-3 py-2">
+                  <div className="text-sm text-gray-600 mb-2">Welcome, {user?.email}</div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
       
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div className="sm:px-0">
           {children}
         </div>
       </div>
@@ -200,30 +269,30 @@ function Dashboard() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="mt-2 text-2xl font-bold text-gray-900">Welcome to TimeTracker!</h2>
-        <p className="mt-1 text-gray-600">
+        <h2 className="mt-2 text-xl sm:text-2xl font-bold text-gray-900">Welcome to TimeTracker!</h2>
+        <p className="mt-1 text-sm sm:text-base text-gray-600 px-4">
           You are successfully logged in. Navigate to Time Records to start tracking your time.
         </p>
         <div className="mt-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Available Features</h3>
-            <ul className="text-left space-y-2 text-gray-600">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mx-4 sm:mx-0">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Available Features</h3>
+            <ul className="text-left space-y-2 text-sm sm:text-base text-gray-600">
               <li>• Time record creation and management</li>
               <li>• Project organization and auto-suggestions</li>
               <li>• Multiple view formats (daily, weekly, monthly)</li>
               <li>• Statistics and analytics dashboard</li>
               <li>• Data visualization with charts</li>
             </ul>
-            <div className="mt-4 space-x-4">
+            <div className="mt-4 flex flex-col sm:flex-row sm:justify-center space-y-3 sm:space-y-0 sm:space-x-4">
               <a
                 href="/records"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
                 View Time Records
               </a>
               <a
                 href="/analytics"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
                 View Analytics
               </a>
