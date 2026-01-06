@@ -83,16 +83,23 @@ function App() {
 
 ## Configuration
 
-The authentication system requires AWS Cognito configuration. Create a `.env` file based on `.env.example`:
+The authentication system requires AWS Cognito configuration using AWS Amplify Gen 2 structure. Update `amplify_outputs.json` with your AWS resources:
 
-```env
-VITE_AWS_REGION=us-east-1
-VITE_COGNITO_USER_POOL_ID=your-user-pool-id
-VITE_COGNITO_USER_POOL_CLIENT_ID=your-user-pool-client-id
-VITE_COGNITO_DOMAIN=your-cognito-domain
-VITE_API_ENDPOINT=https://your-api-gateway-url
-VITE_REDIRECT_SIGN_IN=http://localhost:5173/
-VITE_REDIRECT_SIGN_OUT=http://localhost:5173/
+```json
+{
+  "version": "1",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "your-user-pool-id",
+    "user_pool_client_id": "your-user-pool-client-id",
+    "identity_pool_id": "your-identity-pool-id",
+    "oauth": {
+      "domain": "your-app.auth.us-east-1.amazoncognito.com",
+      "redirect_sign_in_uri": ["http://localhost:3001/"],
+      "redirect_sign_out_uri": ["http://localhost:3001/"]
+    }
+  }
+}
 ```
 
 ## Troubleshooting

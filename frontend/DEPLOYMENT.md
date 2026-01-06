@@ -125,21 +125,49 @@ const deployment = new BucketDeployment(this, 'DeployWebsite', {
 
 ## Configuration File Structure
 
-The `public/config.js` file serves as a template:
+The `amplify_outputs.json` file follows AWS Amplify Gen 2 structure:
 
-```javascript
-window.__AWS_CONFIG__ = {
-  region: '${AWS_REGION}',
-  userPoolId: '${COGNITO_USER_POOL_ID}',
-  userPoolWebClientId: '${COGNITO_USER_POOL_CLIENT_ID}',
-  cognitoDomain: '${COGNITO_DOMAIN}',
-  apiEndpoint: '${API_ENDPOINT}',
-  redirectSignIn: '${REDIRECT_SIGN_IN}',
-  redirectSignOut: '${REDIRECT_SIGN_OUT}'
-};
+```json
+{
+  "version": "1",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "us-east-1_abc123",
+    "user_pool_client_id": "abc123def456",
+    "identity_pool_id": "us-east-1:12345678-1234-1234-1234-123456789012",
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_uppercase": true,
+      "require_numbers": true,
+      "require_symbols": true
+    },
+    "oauth": {
+      "identity_providers": ["COGNITO"],
+      "domain": "your-app.auth.us-east-1.amazoncognito.com",
+      "scopes": ["email", "openid", "profile"],
+      "redirect_sign_in_uri": ["https://your-domain.com/"],
+      "redirect_sign_out_uri": ["https://your-domain.com/"],
+      "response_type": "code"
+    },
+    "username_attributes": ["email"],
+    "user_verification_types": ["email"]
+  },
+  "data": {
+    "aws_region": "us-east-1",
+    "url": "https://api.your-domain.com/graphql",
+    "api_key": "",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "authorization_types": ["AMAZON_COGNITO_USER_POOLS"]
+  },
+  "storage": {
+    "aws_region": "us-east-1",
+    "bucket_name": "your-storage-bucket"
+  }
+}
 ```
 
-The deployment script replaces `${VARIABLE}` placeholders with actual values.
+The deployment process updates this file with actual AWS resource values.
 
 ## Verification
 
@@ -153,9 +181,10 @@ After deployment, verify the configuration by:
 ## Troubleshooting
 
 ### Configuration Not Loading
-- Check that `config.js` exists in the deployed S3 bucket
-- Verify the configuration values were properly injected
+- Check that `amplify_outputs.json` exists in the deployed S3 bucket
+- Verify the configuration values were properly updated before deployment
 - Ensure CloudFront cache is invalidated after deployment
+- Check browser console for configuration validation warnings
 
 ### Authentication Errors
 - Verify Cognito User Pool and Client IDs are correct
