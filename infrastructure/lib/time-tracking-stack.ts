@@ -6,7 +6,6 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 
 export class TimeTrackingStack extends cdk.Stack {
@@ -51,6 +50,24 @@ export class TimeTrackingStack extends cdk.Stack {
       autoVerify: {
         email: true,
       },
+      standardAttributes: {
+        email: {
+          required: true,
+          mutable: true,
+        },
+        givenName: {
+          required: false,
+          mutable: true,
+        },
+        familyName: {
+          required: false,
+          mutable: true,
+        },
+      },
+      customAttributes: {
+        'timezone': new cognito.StringAttribute({ minLen: 1, maxLen: 50, mutable: true }),
+        'preferences': new cognito.StringAttribute({ minLen: 1, maxLen: 1000, mutable: true }),
+      },
       passwordPolicy: {
         minLength: 8,
         requireLowercase: true,
@@ -59,21 +76,80 @@ export class TimeTrackingStack extends cdk.Stack {
         requireSymbols: false,
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      userVerification: {
+        emailSubject: 'Time Tracker - Verify your email',
+        emailBody: 'Welcome to Time Tracker! Please verify your email by clicking this link: {##Verify Email##}',
+        emailStyle: cognito.VerificationEmailStyle.LINK,
+      },
+      userInvitation: {
+        emailSubject: 'Welcome to Time Tracker',
+        emailBody: 'Welcome to Time Tracker! Your username is {username} and temporary password is {####}',
+      },
+      signInCaseSensitive: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     // Cognito User Pool Client
     const userPoolClient = new cognito.UserPoolClient(this, 'TimeTrackingUserPoolClient', {
       userPool,
+      userPoolClientName: 'TimeTrackingWebClient',
       authFlows: {
         adminUserPassword: true,
         userPassword: true,
         userSrp: true,
+        custom: true,
       },
       generateSecret: false,
       refreshTokenValidity: cdk.Duration.days(30),
       accessTokenValidity: cdk.Duration.hours(1),
       idTokenValidity: cdk.Duration.hours(1),
+      enableTokenRevocation: true,
+      preventUserExistenceErrors: true,
+      supportedIdentityProviders: [
+        cognito.UserPoolClientIdentityProvider.COGNITO,
+      ],
+      oAuth: {
+        flows: {
+          authorizationCodeGrant: true,
+          implicitCodeGrant: false,
+        },
+        scopes: [
+          cognito.OAuthScope.EMAIL,
+          cognito.OAuthScope.OPENID,
+          cognito.OAuthScope.PROFILE,
+        ],
+        callbackUrls: [
+          'http://localhost:5173/auth/callback', // Local development
+          `https://${this.account}.execute-api.${this.region}.amazonaws.com/prod/auth/callback`, // Production
+        ],
+        logoutUrls: [
+          'http://localhost:5173/', // Local development
+          `https://${this.account}.execute-api.${this.region}.amazonaws.com/prod/`, // Production
+        ],
+      },
+      readAttributes: new cognito.ClientAttributes()
+        .withStandardAttributes({
+          email: true,
+          emailVerified: true,
+          givenName: true,
+          familyName: true,
+        })
+        .withCustomAttributes('timezone', 'preferences'),
+      writeAttributes: new cognito.ClientAttributes()
+        .withStandardAttributes({
+          email: true,
+          givenName: true,
+          familyName: true,
+        })
+        .withCustomAttributes('timezone', 'preferences'),
+    });
+
+    // Cognito User Pool Domain for OAuth flows
+    const userPoolDomain = new cognito.UserPoolDomain(this, 'TimeTrackingUserPoolDomain', {
+      userPool,
+      cognitoDomain: {
+        domainPrefix: `time-tracking-${this.account}-${this.region}`,
+      },
     });
 
     // Lambda function for API handlers
@@ -106,6 +182,8 @@ export class TimeTrackingStack extends cdk.Stack {
         TABLE_NAME: timeRecordsTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
         USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
+        USER_POOL_DOMAIN: userPoolDomain.domainName,
+        REGION: this.region,
       },
     });
 
@@ -197,6 +275,16 @@ export class TimeTrackingStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'UserPoolClientId', {
       value: userPoolClient.userPoolClientId,
       description: 'Cognito User Pool Client ID',
+    });
+
+    new cdk.CfnOutput(this, 'UserPoolDomain', {
+      value: userPoolDomain.domainName,
+      description: 'Cognito User Pool Domain',
+    });
+
+    new cdk.CfnOutput(this, 'UserPoolRegion', {
+      value: this.region,
+      description: 'AWS Region for Cognito User Pool',
     });
 
     new cdk.CfnOutput(this, 'WebsiteUrl', {
