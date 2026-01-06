@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Auto Git Commit",
+  "description": "Automatically adds new files to git and commits any changes to existing files, while respecting .gitignore rules",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new file has been created. Please run `git add .` to add any new files (respecting .gitignore), then run `git commit -m \"Add new files and commit changes\"` to commit all changes including this new file and any modifications to existing files."
+  },
+  "workspaceFolderName": "KiroProjects",
+  "shortName": "auto-git-commit"
+}
