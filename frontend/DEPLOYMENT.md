@@ -1,21 +1,21 @@
 # Deployment Guide
 
-This guide explains how to deploy the Time Tracking App frontend to AWS S3 as a static website.
+This guide explains how to deploy the Time Tracking App frontend to AWS S3 as a static website using AWS Amplify Gen 2 configuration.
 
 ## Architecture
 
-The frontend is designed to work as a static site hosted on S3 with CloudFront CDN. AWS configuration is injected at deployment time, not through environment variables.
+The frontend is designed to work as a static site hosted on S3 with CloudFront CDN. AWS configuration uses Amplify Gen 2 structure with `amplify_outputs.json` for runtime configuration.
 
 ## Development vs Production Configuration
 
 ### Development
-- Uses `.env` file with `VITE_*` environment variables
-- Configuration is baked into the build at compile time
+- Uses `amplify_outputs.json` with placeholder values
+- Configuration is loaded dynamically at runtime
 - Suitable for local development with `npm run dev`
 
 ### Production (S3 Static Hosting)
-- Uses runtime configuration injection
-- AWS values are injected into `config.js` after build
+- Uses the same `amplify_outputs.json` structure
+- AWS values are injected into `amplify_outputs.json` during deployment
 - No environment variables needed in the S3 environment
 
 ## Deployment Process

@@ -48,21 +48,27 @@ optimizeDeps: {
 }
 ```
 
-### 3. Environment Variables Not Loading
+### 3. AWS Amplify Gen 2 Configuration
 
-**Problem**: AWS configuration not working, environment variables undefined.
+**Problem**: AWS configuration not working, authentication errors.
 
 **Solution**:
-1. Create `.env` file based on `.env.example`
-2. Ensure all variables start with `VITE_`
-3. Restart the development server after adding new environment variables
-4. Use `import.meta.env` instead of `process.env` in Vite
+1. Update `amplify_outputs.json` with your AWS Cognito configuration
+2. Deploy AWS infrastructure using CDK first to get the required values
+3. Restart the development server after updating configuration
+4. Configuration is loaded at application startup
 
-**Example `.env`**:
-```env
-VITE_AWS_REGION=us-east-1
-VITE_COGNITO_USER_POOL_ID=your-user-pool-id
-VITE_COGNITO_USER_POOL_CLIENT_ID=your-user-pool-client-id
+**Required amplify_outputs.json structure**:
+```json
+{
+  "version": "1",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "your-user-pool-id",
+    "user_pool_client_id": "your-client-id",
+    "identity_pool_id": "your-identity-pool-id"
+  }
+}
 ```
 
 ### 4. Amplify Configuration Errors
