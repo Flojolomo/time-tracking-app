@@ -117,16 +117,20 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
     const { fetchAuthSession } = await import('aws-amplify/auth');
     const session = await fetchAuthSession();
+    
     const token = session.tokens?.accessToken?.toString();
+    
+    if (!token) {
+      console.warn('No access token available - user may not be authenticated');
+      throw new Error('User not authenticated - please log in');
+    }
     
     return {
       'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
+      'Authorization': `Bearer ${token}`,
     };
   } catch (error) {
     console.error('Failed to get auth headers:', error);
-    return {
-      'Content-Type': 'application/json',
-    };
+    throw new Error('Authentication failed - please log in again');
   }
 }

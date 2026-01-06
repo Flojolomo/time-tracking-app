@@ -82,19 +82,44 @@ const createSuccessResponse = (statusCode: number, data: any, event?: APIGateway
 // Helper function to extract user ID from JWT token
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
   try {
+    // Get the Authorization header
     const authHeader = event.headers.Authorization || event.headers.authorization;
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('No valid Authorization header found');
       return null;
     }
 
-    // For now, we'll extract from the requestContext if available (API Gateway with Cognito authorizer)
-    if (event.requestContext?.authorizer?.claims?.sub) {
-      return event.requestContext.authorizer.claims.sub;
-    }
+    const token = authHeader.substring(7);
+    
+    try {
+      // Decode JWT payload (without verification for now)
+      // JWT structure: header.payload.signature
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('Invalid JWT token format');
+        return null;
+      }
 
-    // If no authorizer context, we'll need to decode the JWT token
-    // For simplicity in this implementation, we'll return null and handle auth later
-    return null;
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      console.log('JWT payload:', JSON.stringify(payload, null, 2));
+      
+      // Extract user ID from different possible fields
+      const userId = payload.sub || 
+                    payload['cognito:username'] || 
+                    payload.username ||
+                    payload.user_id;
+      
+      if (userId) {
+        console.log('User ID extracted from JWT:', userId);
+        return userId;
+      } else {
+        console.error('No user ID found in JWT payload');
+        return null;
+      }
+    } catch (jwtError) {
+      console.error('Error decoding JWT:', jwtError);
+      return null;
+    }
   } catch (error) {
     console.error('Error extracting user ID:', error);
     return null;
