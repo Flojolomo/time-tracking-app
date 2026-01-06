@@ -14,3 +14,11 @@ export { StatsDashboard } from './StatsDashboard';
 export { ProjectChart } from './ProjectChart';
 export { TimelineChart } from './TimelineChart';
 export { MetricsCards } from './MetricsCards';
+
+// Error handling and UI components
+export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';
+export { LoadingSpinner, FullPageLoading, ButtonLoading, LoadingOverlay, SkeletonLoader } from './LoadingSpinner';
+export { ErrorMessage, NetworkErrorMessage, ValidationError, SuccessMessage } from './ErrorMessage';
+export { NotificationContainer } from './NotificationContainer';
+export { NetworkStatusBanner } from './NetworkStatusBanner';
+export { OfflineStatusBar } from './OfflineStatusBar';

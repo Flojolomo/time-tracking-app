@@ -2,7 +2,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
-import React from 'react';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { NotificationContainer } from './components/NotificationContainer';
+import { NetworkStatusBanner } from './components/NetworkStatusBanner';
+import { OfflineStatusBar } from './components/OfflineStatusBar';
+import { registerServiceWorker } from './utils/serviceWorker';
+import React, { useEffect } from 'react';
 
 // Component to handle authenticated user redirects
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -27,113 +33,131 @@ function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  return (
-    <ViewStateProvider>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={
-          <AuthenticatedRoute>
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="max-w-md w-full">
-                <ConfigurationStatus />
-                <LoginForm onSuccess={() => window.location.href = '/dashboard'} />
-              </div>
-            </div>
-          </AuthenticatedRoute>
-        } />
-        <Route path="/signup" element={
-          <AuthenticatedRoute>
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="max-w-md w-full">
-                <ConfigurationStatus />
-                <SignupForm onSuccess={() => window.location.href = '/login'} />
-              </div>
-            </div>
-          </AuthenticatedRoute>
-        } />
-        
-        {/* Development/Demo route */}
-        <Route path="/demo" element={
-          <div className="min-h-screen bg-gray-50">
-            <div className="container mx-auto px-4 py-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-                Time Tracking App - Development Demo
-              </h1>
-              
-              {/* Configuration status for development */}
-              <ConfigurationStatus />
-              
-              {/* Demo of authentication components */}
-              <div className="mb-8">
-                <AuthDemo />
-              </div>
+  // Register service worker on app start
+  useEffect(() => {
+    registerServiceWorker().then(status => {
+      if (status.isRegistered) {
+        console.log('Service Worker registered successfully');
+      } else {
+        console.log('Service Worker registration failed or not supported');
+      }
+    });
+  }, []);
 
-              {/* Example of protected content */}
-              <ProtectedRoute>
-                <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Protected Content
-                  </h2>
-                  <p className="text-gray-600">
-                    This content is only visible to authenticated users.
-                  </p>
+  return (
+    <ErrorBoundary>
+      <NotificationProvider>
+        <ViewStateProvider>
+          <NetworkStatusBanner />
+          <OfflineStatusBar />
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={
+              <AuthenticatedRoute>
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="max-w-md w-full">
+                    <ConfigurationStatus />
+                    <LoginForm onSuccess={() => window.location.href = '/dashboard'} />
+                  </div>
                 </div>
+              </AuthenticatedRoute>
+            } />
+            <Route path="/signup" element={
+              <AuthenticatedRoute>
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="max-w-md w-full">
+                    <ConfigurationStatus />
+                    <SignupForm onSuccess={() => window.location.href = '/login'} />
+                  </div>
+                </div>
+              </AuthenticatedRoute>
+            } />
+            
+            {/* Development/Demo route */}
+            <Route path="/demo" element={
+              <div className="min-h-screen bg-gray-50">
+                <div className="container mx-auto px-4 py-8">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+                    Time Tracking App - Development Demo
+                  </h1>
+                  
+                  {/* Configuration status for development */}
+                  <ConfigurationStatus />
+                  
+                  {/* Demo of authentication components */}
+                  <div className="mb-8">
+                    <AuthDemo />
+                  </div>
+
+                  {/* Example of protected content */}
+                  <ProtectedRoute>
+                    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                        Protected Content
+                      </h2>
+                      <p className="text-gray-600">
+                        This content is only visible to authenticated users.
+                      </p>
+                    </div>
+                  </ProtectedRoute>
+                </div>
+              </div>
+            } />
+            
+            {/* Protected routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
               </ProtectedRoute>
-            </div>
-          </div>
-        } />
-        
-        {/* Protected routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        
-        {/* Time record views with different URL paths */}
-        <Route path="/records" element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <TimeRecordViews />
-            </DashboardLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/records/daily" element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <TimeRecordViews />
-            </DashboardLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/records/weekly" element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <TimeRecordViews />
-            </DashboardLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/records/monthly" element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <TimeRecordViews />
-            </DashboardLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Statistics/Analytics route */}
-        <Route path="/analytics" element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <StatsDashboard />
-            </DashboardLayout>
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </ViewStateProvider>
+            } />
+            
+            {/* Time record views with different URL paths */}
+            <Route path="/records" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <TimeRecordViews />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/records/daily" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <TimeRecordViews />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/records/weekly" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <TimeRecordViews />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/records/monthly" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <TimeRecordViews />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Statistics/Analytics route */}
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <StatsDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+          </Routes>
+          <NotificationContainer />
+        </ViewStateProvider>
+      </NotificationProvider>
+    </ErrorBoundary>
   )
 }
 

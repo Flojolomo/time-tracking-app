@@ -2,7 +2,7 @@
  * Time Record data access layer with CRUD operations using REST API
  */
 
-import { handleApiError, calculateDuration, validateTimeRecord, formatDateForAPI, getApiBaseUrl, getAuthHeaders } from './apiClient';
+import { handleApiError, calculateDuration, validateTimeRecord, formatDateForAPI, getApiBaseUrl, getAuthHeaders, apiRequest } from './apiClient';
 import type { 
   TimeRecord, 
   CreateTimeRecordInput, 
@@ -48,18 +48,11 @@ export class TimeRecordService {
         updatedAt: now
       };
 
-      const response = await fetch(`${apiBaseUrl}/api/time-records`, {
+      return await apiRequest<TimeRecord>(`${apiBaseUrl}/api/time-records`, {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody)
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
     } catch (error) {
       throw new Error(`Failed to create time record: ${handleApiError(error)}`);
     }
@@ -84,18 +77,11 @@ export class TimeRecordService {
 
       const url = `${apiBaseUrl}/api/time-records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
-      const response = await fetch(url, {
+      const records = await apiRequest<TimeRecord[]>(url, {
         method: 'GET',
         headers
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const records = await response.json();
-      
       // Sort by start time (most recent first)
       records.sort((a: TimeRecord, b: TimeRecord) => 
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()

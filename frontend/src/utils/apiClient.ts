@@ -3,6 +3,8 @@
  * Uses REST API endpoints deployed via AWS CDK
  */
 
+import { fetchWithRetry, handleApiResponse } from './networkUtils';
+
 /**
  * Utility function to handle API errors
  */
@@ -16,6 +18,28 @@ export function handleApiError(error: any): string {
   }
   
   return 'An unexpected error occurred';
+}
+
+/**
+ * Enhanced API request function with retry logic
+ */
+export async function apiRequest<T>(
+  url: string,
+  options?: RequestInit,
+  retryOptions?: { maxRetries?: number }
+): Promise<T> {
+  try {
+    const response = await fetchWithRetry(url, options, retryOptions);
+    return await handleApiResponse<T>(response);
+  } catch (error: any) {
+    // Add context to network errors
+    if (error.isNetworkError) {
+      throw new Error('Network error - please check your internet connection and try again');
+    }
+    
+    // Re-throw with better error message
+    throw new Error(handleApiError(error));
+  }
 }
 
 /**

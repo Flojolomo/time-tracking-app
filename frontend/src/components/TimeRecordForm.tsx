@@ -3,6 +3,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { CreateTimeRecordInput, UpdateTimeRecordInput, TimeRecord } from '../types';
 import { calculateDuration } from '../utils/apiClient';
 import { ProjectAutocomplete } from './ProjectAutocomplete';
+import { LoadingOverlay, ButtonLoading } from './LoadingSpinner';
+import { ErrorMessage, ValidationError } from './ErrorMessage';
+import { useNotifications } from '../contexts/NotificationContext';
+import { useNetworkAwareOperation } from '../hooks/useNetworkStatus';
+import { useFormAutoSave } from '../hooks/useOffline';
 
 interface TimeRecordFormProps {
   initialData?: TimeRecord;
@@ -27,6 +32,9 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   isLoading = false
 }) => {
   const [submitError, setSubmitError] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const { showSuccess, showError } = useNotifications();
+  const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
   
   // Initialize form with default values
   const {
@@ -48,6 +56,10 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
 
   // Watch form values for validation
   const watchedValues = watch();
+  
+  // Auto-save form data
+  const formId = initialData ? `edit-record-${initialData.id}` : 'new-record';
+  const { lastSaved, clearDraft } = useFormAutoSave(formId, watchedValues, true);
 
   // Reset form when initialData changes
   useEffect(() => {
@@ -100,12 +112,12 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   const onFormSubmit = async (data: FormData) => {
     try {
       setSubmitError('');
+      setValidationErrors([]);
       
       // Validate form data
       const validationErrors = validateForm(data);
       if (Object.keys(validationErrors).length > 0) {
-        // Set first error as submit error
-        setSubmitError(Object.values(validationErrors)[0]);
+        setValidationErrors(Object.values(validationErrors));
         return;
       }
 
@@ -132,57 +144,81 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
         tags: tags.length > 0 ? tags : undefined
       };
 
-      // Add ID for updates
-      if (initialData) {
-        await onSubmit({
-          id: initialData.id,
-          ...submissionData
-        } as UpdateTimeRecordInput);
-      } else {
-        await onSubmit(submissionData as CreateTimeRecordInput);
-      }
+      // Execute with retry logic
+      await executeWithRetry(async () => {
+        if (initialData) {
+          await onSubmit({
+            id: initialData.id,
+            ...submissionData
+          } as UpdateTimeRecordInput);
+        } else {
+          await onSubmit(submissionData as CreateTimeRecordInput);
+        }
+      });
 
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to save time record');
+      // Show success message
+      showSuccess(
+        initialData ? 'Time record updated' : 'Time record created',
+        'Your time record has been saved successfully.'
+      );
+
+      // Clear auto-saved draft
+      clearDraft();
+
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to save time record';
+      setSubmitError(errorMessage);
+      showError('Save Failed', errorMessage);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 max-w-2xl mx-auto">
-      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-        {initialData ? 'Edit Time Record' : 'New Time Record'}
-      </h2>
-
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 sm:space-y-6">
-        {/* Project Name Field */}
-        <div>
-          <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
-            Project Name *
-          </label>
-          <Controller
-            name="projectName"
-            control={control}
-            rules={{
-              required: 'Project name is required',
-              validate: (value) => value.trim().length > 0 || 'Project name cannot be empty'
-            }}
-            render={({ field }) => (
-              <ProjectAutocomplete
-                id="projectName"
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                placeholder="Enter project name"
-                disabled={isLoading || isSubmitting}
-                error={!!errors.projectName}
-                className={errors.projectName ? 'border-red-500' : ''}
-              />
-            )}
-          />
-          {errors.projectName && (
-            <p className="mt-1 text-sm text-red-600">{errors.projectName.message}</p>
+    <LoadingOverlay isLoading={isLoading} text="Loading form...">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 max-w-2xl mx-auto">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+          {initialData ? 'Edit Time Record' : 'New Time Record'}
+          {lastSaved && (
+            <div className="text-xs text-gray-500 font-normal mt-1">
+              Auto-saved {lastSaved.toLocaleTimeString()}
+            </div>
           )}
-        </div>
+        </h2>
+
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 sm:space-y-6">
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <ValidationError errors={validationErrors} />
+          )}
+
+          {/* Project Name Field */}
+          <div>
+            <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
+              Project Name *
+            </label>
+            <Controller
+              name="projectName"
+              control={control}
+              rules={{
+                required: 'Project name is required',
+                validate: (value) => value.trim().length > 0 || 'Project name cannot be empty'
+              }}
+              render={({ field }) => (
+                <ProjectAutocomplete
+                  id="projectName"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Enter project name"
+                  disabled={isLoading || isSubmitting}
+                  error={!!errors.projectName}
+                  className={errors.projectName ? 'border-red-500' : ''}
+                />
+              )}
+            />
+            {errors.projectName && (
+              <p className="mt-1 text-sm text-red-600">{errors.projectName.message}</p>
+            )}
+          </div>
 
         {/* Date Field */}
         <div>
@@ -331,9 +367,10 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
 
         {/* Error Display */}
         {submitError && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-sm text-red-600">{submitError}</p>
-          </div>
+          <ErrorMessage 
+            error={submitError} 
+            onDismiss={() => setSubmitError('')}
+          />
         )}
 
         {/* Form Actions */}
@@ -343,7 +380,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
               type="button"
               onClick={onCancel}
               className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading || isSubmitting || isRetrying}
             >
               Cancel
             </button>
@@ -351,13 +388,18 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
           <button
             type="submit"
             className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-            disabled={isLoading || isSubmitting}
+            disabled={isLoading || isSubmitting || isRetrying}
           >
-            {isSubmitting ? 'Saving...' : initialData ? 'Update Record' : 'Create Record'}
+            {(isSubmitting || isRetrying) ? (
+              <ButtonLoading text={isRetrying ? 'Retrying...' : 'Saving...'} />
+            ) : (
+              initialData ? 'Update Record' : 'Create Record'
+            )}
           </button>
         </div>
       </form>
     </div>
+  </LoadingOverlay>
   );
 };
 
