@@ -188,7 +188,15 @@ export class TimeTrackingStack extends cdk.Stack {
     const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/timeRecords/dist'),
+      code: lambda.Code.fromAsset('lambda/timeRecords', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'npm ci && npm run build && cp -r dist/* /asset-output/'
+          ],
+        },
+      }),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
       environment: {
@@ -211,7 +219,15 @@ export class TimeTrackingStack extends cdk.Stack {
     const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/projects/dist'),
+      code: lambda.Code.fromAsset('lambda/projects', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          command: [
+            'bash', '-c',
+            'npm ci && npm run build && cp -r dist/* /asset-output/'
+          ],
+        },
+      }),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
       environment: {
