@@ -3,6 +3,8 @@
 ## Overview
 This document describes the AWS Cognito User Pool configuration for the Time Tracking application.
 
+**Infrastructure Version:** AWS CDK 2.233.0 with Node.js 20.x Lambda runtime
+
 ## Configuration Details
 
 ### User Pool Settings

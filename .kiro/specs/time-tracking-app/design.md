@@ -42,7 +42,7 @@ graph TB
 - **Chart.js** with react-chartjs-2 for statistics visualization
 
 **Backend:**
-- **AWS Lambda** (Node.js 18) for serverless compute
+- **AWS Lambda** (Node.js 20) for serverless compute
 - **AWS API Gateway** for REST API endpoints
 - **AWS DynamoDB** for NoSQL data storage
 - **AWS Cognito** for authentication and user management

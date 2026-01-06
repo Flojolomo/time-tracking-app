@@ -154,7 +154,7 @@ export class TimeTrackingStack extends cdk.Stack {
 
     // Lambda function for API handlers
     const apiHandler = new lambda.Function(this, 'TimeTrackingApiHandler', {
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
         exports.handler = async (event) => {
@@ -240,7 +240,12 @@ export class TimeTrackingStack extends cdk.Stack {
       websiteIndexDocument: 'index.html',
       websiteErrorDocument: 'index.html',
       publicReadAccess: true,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      }),
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
@@ -248,7 +253,7 @@ export class TimeTrackingStack extends cdk.Stack {
     // CloudFront Distribution
     const distribution = new cloudfront.Distribution(this, 'TimeTrackingDistribution', {
       defaultBehavior: {
-        origin: new origins.S3Origin(websiteBucket),
+        origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       },
       defaultRootObject: 'index.html',
