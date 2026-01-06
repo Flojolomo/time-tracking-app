@@ -295,6 +295,13 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
+    // Cognito User Pool Authorizer
+    const cognitoAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
+      cognitoUserPools: [userPool],
+      identitySource: 'method.request.header.Authorization',
+      authorizerName: 'TimeTrackingAuthorizer'
+    });
+
     // API Gateway resources and methods
     const apiResource = api.root.addResource('api');
     

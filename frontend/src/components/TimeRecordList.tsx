@@ -69,6 +69,7 @@ interface TimeRecordListProps {
   onDateChange: (date: Date) => void;
   filters?: TimeRecordFilters;
   onEditRecord?: (record: TimeRecord) => void;
+  onDeleteRecord?: (record: TimeRecord) => void;
 }
 
 export const TimeRecordList: React.FC<TimeRecordListProps> = ({
@@ -76,10 +77,27 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   selectedDate,
   onDateChange,
   filters,
-  onEditRecord
+  onEditRecord,
+  onDeleteRecord
 }) => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Handle delete record
+  const handleDeleteRecord = async (record: TimeRecord) => {
+    if (!window.confirm('Are you sure you want to delete this time record?')) {
+      return;
+    }
+
+    try {
+      await TimeRecordService.deleteTimeRecord(record.id);
+      // Refresh the records list
+      await loadRecords();
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      // You might want to show a notification here
+    }
+  };
   const [error, setError] = useState<string | null>(null);
 
   // Calculate date range based on view type and selected date
@@ -112,29 +130,30 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
     }
   }, [viewType, selectedDate]);
 
+  // Load records function
+  const loadRecords = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const fetchFilters: TimeRecordFilters = {
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+        ...filters
+      };
+      
+      const fetchedRecords = await TimeRecordService.getTimeRecords(fetchFilters);
+      setRecords(fetchedRecords);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch time records');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch records when date range or filters change
   useEffect(() => {
-    const fetchRecords = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const fetchFilters: TimeRecordFilters = {
-          startDate: dateRange.start,
-          endDate: dateRange.end,
-          ...filters
-        };
-        
-        const fetchedRecords = await TimeRecordService.getTimeRecords(fetchFilters);
-        setRecords(fetchedRecords);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch time records');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecords();
+    loadRecords();
   }, [dateRange.start, dateRange.end, filters]);
 
   // Group records based on view type
@@ -319,6 +338,8 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
                 date={date}
                 records={dayRecords}
                 showDate={viewType !== 'daily'}
+                onEditRecord={onEditRecord}
+                onDeleteRecord={onDeleteRecord}
               />
             ))}
         </div>
@@ -332,9 +353,11 @@ interface DayGroupProps {
   date: string;
   records: TimeRecord[];
   showDate: boolean;
+  onEditRecord?: (record: TimeRecord) => void;
+  onDeleteRecord?: (record: TimeRecord) => void;
 }
 
-const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate }) => {
+const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate, onEditRecord, onDeleteRecord }) => {
   const dayTotal = calculateTotalDuration(records);
   const displayDate = new Date(date + 'T00:00:00');
 
@@ -363,7 +386,12 @@ const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate }) => {
         {records
           .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
           .map((record) => (
-            <TimeRecordItem key={record.id} record={record} />
+            <TimeRecordItem 
+              key={record.id} 
+              record={record} 
+              onEdit={onEditRecord}
+              onDelete={onDeleteRecord}
+            />
           ))}
       </div>
     </div>
@@ -373,9 +401,11 @@ const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate }) => {
 // Component for individual time record display
 interface TimeRecordItemProps {
   record: TimeRecord;
+  onEdit?: (record: TimeRecord) => void;
+  onDelete?: (record: TimeRecord) => void;
 }
 
-const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
+const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelete }) => {
   const startTime = new Date(record.startTime);
   const endTime = record.endTime ? new Date(record.endTime) : null;
   
@@ -432,6 +462,7 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
         
         <div className="flex items-center justify-end space-x-2 ml-0 sm:ml-4">
           <button
+            onClick={() => onEdit?.(record)}
             className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded transition-colors"
             title="Edit record"
           >
@@ -441,6 +472,7 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
           </button>
           
           <button
+            onClick={() => onDelete?.(record)}
             className="p-2 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded transition-colors"
             title="Delete record"
           >

@@ -149,7 +149,7 @@ export class PendingActions {
     const actions = this.getAll();
     const newAction: OfflineAction = {
       ...action,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 11),
       timestamp: Date.now(),
       retryCount: 0
     };
@@ -275,7 +275,7 @@ export class FormDrafts {
  * Utility functions
  */
 export function generateOfflineId(): string {
-  return 'offline_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+  return 'offline_' + Date.now().toString() + '_' + Math.random().toString(36).substring(2, 11);
 }
 
 export function isOfflineId(id: string): boolean {

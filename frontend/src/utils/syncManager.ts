@@ -268,7 +268,7 @@ export class SyncManager {
    */
   createOfflineTimeRecord(data: any): OfflineTimeRecord {
     const offlineRecord: OfflineTimeRecord = {
-      id: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       projectName: data.projectName,
       description: data.description,
       startTime: data.startTime,
