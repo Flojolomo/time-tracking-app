@@ -230,7 +230,63 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
+    // Grant DynamoDB permissions to Lambda functions
+    timeRecordsTable.grantReadWriteData(timeRecordsHandler);
+    timeRecordsTable.grantReadWriteData(projectsHandler);
+
+    // API Gateway
+    const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
+      restApiName: 'Time Tracking API',
+      description: 'API for time tracking application',
+      defaultCorsPreflightOptions: {
+        allowOrigins: [
+          'http://localhost:3001',
+          'http://localhost:3000',
+          'http://localhost:5173',
+          `https://${distribution.distributionDomainName}`
+        ],
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent'],
+        allowCredentials: true,
+      },
+    });
+
+    // API Gateway resources and methods
+    const apiResource = api.root.addResource('api');
+    
+    // Time records endpoints
+    const timeRecordsResource = apiResource.addResource('time-records');
+    timeRecordsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler));
+    timeRecordsResource.addMethod('POST', new apigateway.LambdaIntegration(timeRecordsHandler));
+    
+    const timeRecordResource = timeRecordsResource.addResource('{id}');
+    timeRecordResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler));
+    timeRecordResource.addMethod('DELETE', new apigateway.LambdaIntegration(timeRecordsHandler));
+    
+    // Statistics endpoint
+    const statsResource = apiResource.addResource('stats');
+    statsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler));
+    
+    // Projects endpoints
+    const projectsResource = apiResource.addResource('projects');
+    projectsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler));
+    
+    const projectSuggestionsResource = projectsResource.addResource('suggestions');
+    projectSuggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler));
+
     // Update OAuth URLs to use CloudFront domain
+    const cloudfrontUrl = `https://${distribution.distributionDomainName}`;
+    
+    // Update User Pool Client with CloudFront URL
+    const cfnUserPoolClient = userPoolClient.node.defaultChild as cognito.CfnUserPoolClient;
+    cfnUserPoolClient.callbackUrLs = [
+      'http://localhost:3001/',
+      cloudfrontUrl + '/'
+    ];
+    cfnUserPoolClient.logoutUrLs = [
+      'http://localhost:3001/',
+      cloudfrontUrl + '/'
+    ];
     
     // Create Identity Pool for AWS credentials
     const identityPool = new cognito.CfnIdentityPool(this, 'TimeTrackingIdentityPool', {
