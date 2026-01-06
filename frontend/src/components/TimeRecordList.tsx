@@ -1,0 +1,451 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { TimeRecord, TimeRecordFilters } from '../types';
+import { TimeRecordService } from '../utils/timeRecordService';
+
+// View types for different time periods
+export type ViewType = 'daily' | 'weekly' | 'monthly';
+
+// Date navigation utilities
+const formatDate = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
+const formatDisplayDate = (date: Date): string => {
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+};
+
+const formatDisplayWeek = (startDate: Date, endDate: Date): string => {
+  const start = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const end = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${start} - ${end}`;
+};
+
+const formatDisplayMonth = (date: Date): string => {
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+};
+
+const getWeekStart = (date: Date): Date => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day;
+  return new Date(d.setDate(diff));
+};
+
+const getWeekEnd = (date: Date): Date => {
+  const weekStart = getWeekStart(date);
+  return new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+};
+
+const getMonthStart = (date: Date): Date => {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+};
+
+const getMonthEnd = (date: Date): Date => {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+};
+
+// Calculate total duration for a list of records
+const calculateTotalDuration = (records: TimeRecord[]): number => {
+  return records.reduce((total, record) => total + (record.duration || 0), 0);
+};
+
+// Format duration in minutes to hours and minutes
+const formatDuration = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+};
+
+interface TimeRecordListProps {
+  viewType: ViewType;
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
+  filters?: TimeRecordFilters;
+}
+
+export const TimeRecordList: React.FC<TimeRecordListProps> = ({
+  viewType,
+  selectedDate,
+  onDateChange,
+  filters
+}) => {
+  const [records, setRecords] = useState<TimeRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Calculate date range based on view type and selected date
+  const dateRange = useMemo(() => {
+    switch (viewType) {
+      case 'daily':
+        return {
+          start: formatDate(selectedDate),
+          end: formatDate(selectedDate)
+        };
+      case 'weekly':
+        const weekStart = getWeekStart(selectedDate);
+        const weekEnd = getWeekEnd(selectedDate);
+        return {
+          start: formatDate(weekStart),
+          end: formatDate(weekEnd)
+        };
+      case 'monthly':
+        const monthStart = getMonthStart(selectedDate);
+        const monthEnd = getMonthEnd(selectedDate);
+        return {
+          start: formatDate(monthStart),
+          end: formatDate(monthEnd)
+        };
+      default:
+        return {
+          start: formatDate(selectedDate),
+          end: formatDate(selectedDate)
+        };
+    }
+  }, [viewType, selectedDate]);
+
+  // Fetch records when date range or filters change
+  useEffect(() => {
+    const fetchRecords = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const fetchFilters: TimeRecordFilters = {
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+          ...filters
+        };
+        
+        const fetchedRecords = await TimeRecordService.getTimeRecords(fetchFilters);
+        setRecords(fetchedRecords);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch time records');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecords();
+  }, [dateRange.start, dateRange.end, filters]);
+
+  // Group records based on view type
+  const groupedRecords = useMemo(() => {
+    switch (viewType) {
+      case 'daily':
+        return { [formatDate(selectedDate)]: records };
+      
+      case 'weekly':
+        const weeklyGroups: Record<string, TimeRecord[]> = {};
+        records.forEach(record => {
+          const recordDate = formatDate(new Date(record.startTime));
+          if (!weeklyGroups[recordDate]) {
+            weeklyGroups[recordDate] = [];
+          }
+          weeklyGroups[recordDate].push(record);
+        });
+        return weeklyGroups;
+      
+      case 'monthly':
+        const monthlyGroups: Record<string, TimeRecord[]> = {};
+        records.forEach(record => {
+          const recordDate = formatDate(new Date(record.startTime));
+          if (!monthlyGroups[recordDate]) {
+            monthlyGroups[recordDate] = [];
+          }
+          monthlyGroups[recordDate].push(record);
+        });
+        return monthlyGroups;
+      
+      default:
+        return {};
+    }
+  }, [records, viewType, selectedDate]);
+
+  // Navigation handlers
+  const navigatePrevious = () => {
+    const newDate = new Date(selectedDate);
+    switch (viewType) {
+      case 'daily':
+        newDate.setDate(newDate.getDate() - 1);
+        break;
+      case 'weekly':
+        newDate.setDate(newDate.getDate() - 7);
+        break;
+      case 'monthly':
+        newDate.setMonth(newDate.getMonth() - 1);
+        break;
+    }
+    onDateChange(newDate);
+  };
+
+  const navigateNext = () => {
+    const newDate = new Date(selectedDate);
+    switch (viewType) {
+      case 'daily':
+        newDate.setDate(newDate.getDate() + 1);
+        break;
+      case 'weekly':
+        newDate.setDate(newDate.getDate() + 7);
+        break;
+      case 'monthly':
+        newDate.setMonth(newDate.getMonth() + 1);
+        break;
+    }
+    onDateChange(newDate);
+  };
+
+  const navigateToday = () => {
+    onDateChange(new Date());
+  };
+
+  // Get display title based on view type
+  const getDisplayTitle = (): string => {
+    switch (viewType) {
+      case 'daily':
+        return formatDisplayDate(selectedDate);
+      case 'weekly':
+        const weekStart = getWeekStart(selectedDate);
+        const weekEnd = getWeekEnd(selectedDate);
+        return formatDisplayWeek(weekStart, weekEnd);
+      case 'monthly':
+        return formatDisplayMonth(selectedDate);
+      default:
+        return '';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <span className="ml-2 text-gray-600">Loading time records...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Error loading time records</h3>
+            <p className="mt-1 text-sm text-red-700">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const totalDuration = calculateTotalDuration(records);
+
+  return (
+    <div className="space-y-6">
+      {/* Navigation Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={navigatePrevious}
+            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          <h2 className="text-xl font-semibold text-gray-900 min-w-0">
+            {getDisplayTitle()}
+          </h2>
+          
+          <button
+            onClick={navigateNext}
+            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={navigateToday}
+            className="px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Today
+          </button>
+          
+          {totalDuration > 0 && (
+            <div className="text-sm text-gray-600">
+              Total: <span className="font-medium">{formatDuration(totalDuration)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Records Display */}
+      {Object.keys(groupedRecords).length === 0 ? (
+        <div className="text-center py-12">
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No time records</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            No time records found for the selected {viewType} period.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedRecords)
+            .sort(([a], [b]) => b.localeCompare(a)) // Sort dates descending
+            .map(([date, dayRecords]) => (
+              <DayGroup
+                key={date}
+                date={date}
+                records={dayRecords}
+                showDate={viewType !== 'daily'}
+              />
+            ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Component for displaying records grouped by day
+interface DayGroupProps {
+  date: string;
+  records: TimeRecord[];
+  showDate: boolean;
+}
+
+const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate }) => {
+  const dayTotal = calculateTotalDuration(records);
+  const displayDate = new Date(date + 'T00:00:00');
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {showDate && (
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900">
+              {displayDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </h3>
+            {dayTotal > 0 && (
+              <span className="text-sm font-medium text-gray-600">
+                {formatDuration(dayTotal)}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="divide-y divide-gray-200">
+        {records
+          .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+          .map((record) => (
+            <TimeRecordItem key={record.id} record={record} />
+          ))}
+      </div>
+    </div>
+  );
+};
+
+// Component for individual time record display
+interface TimeRecordItemProps {
+  record: TimeRecord;
+}
+
+const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record }) => {
+  const startTime = new Date(record.startTime);
+  const endTime = record.endTime ? new Date(record.endTime) : null;
+  
+  const formatTime = (date: Date): string => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  return (
+    <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-3">
+            <h4 className="text-sm font-medium text-gray-900 truncate">
+              {record.projectName}
+            </h4>
+            
+            {record.tags && record.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {record.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {record.description && (
+            <p className="mt-1 text-sm text-gray-600 truncate">
+              {record.description}
+            </p>
+          )}
+          
+          <div className="mt-2 flex items-center text-xs text-gray-500 space-x-4">
+            <span>
+              {formatTime(startTime)}
+              {endTime && ` - ${formatTime(endTime)}`}
+            </span>
+            
+            {record.duration && (
+              <span className="font-medium">
+                {formatDuration(record.duration)}
+              </span>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2 ml-4">
+          <button
+            className="p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+            title="Edit record"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          
+          <button
+            className="p-1 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+            title="Delete record"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
