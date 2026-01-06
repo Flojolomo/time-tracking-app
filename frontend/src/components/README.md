@@ -95,6 +95,18 @@ VITE_REDIRECT_SIGN_IN=http://localhost:5173/
 VITE_REDIRECT_SIGN_OUT=http://localhost:5173/
 ```
 
+## Troubleshooting
+
+### ReferenceError: global is not defined
+
+This error has been resolved with polyfills and Vite configuration updates. If you still encounter this issue:
+
+1. Ensure `src/polyfills.ts` is imported in `main.tsx`
+2. Check that `vite.config.ts` includes the global polyfill
+3. Verify the script tag in `index.html` is present
+
+For more troubleshooting information, see `TROUBLESHOOTING.md`.
+
 ## Usage Example
 
 ```tsx

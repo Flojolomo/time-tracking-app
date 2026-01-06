@@ -11,5 +11,18 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
+  },
+  define: {
+    global: 'globalThis',
+    'process.env': {}
+  },
+  resolve: {
+    alias: {
+      './runtimeConfig': './runtimeConfig.browser',
+    },
+  },
+  optimizeDeps: {
+    include: ['aws-amplify'],
+    exclude: ['@aws-amplify/ui-react']
   }
 })
