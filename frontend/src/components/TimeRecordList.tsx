@@ -69,7 +69,6 @@ interface TimeRecordListProps {
   onDateChange: (date: Date) => void;
   filters?: TimeRecordFilters;
   onEditRecord?: (record: TimeRecord) => void;
-  onDeleteRecord?: (record: TimeRecord) => void;
 }
 
 export const TimeRecordList: React.FC<TimeRecordListProps> = ({
