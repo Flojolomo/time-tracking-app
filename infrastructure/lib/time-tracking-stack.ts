@@ -375,35 +375,43 @@ export class TimeTrackingStack extends cdk.Stack {
     // Complete Amplify Outputs JSON
     new cdk.CfnOutput(this, 'AmplifyOutputsJson', {
       value: JSON.stringify({
-        version: "1",
-        auth: {
-          aws_region: this.region,
-          user_pool_id: userPool.userPoolId,
-          user_pool_client_id: userPoolClient.userPoolClientId,
-          identity_pool_id: identityPool.ref,
-          password_policy: {
-            min_length: 8,
-            require_lowercase: true,
-            require_uppercase: true,
-            require_numbers: true,
-            require_symbols: false
-          },
-          oauth: {
-            identity_providers: ["COGNITO"],
-            domain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
-            scopes: ["email", "openid", "profile"],
-            redirect_sign_in_uri: [
-              "http://localhost:3001/",
-              `https://${distribution.distributionDomainName}/`
-            ],
-            redirect_sign_out_uri: [
-              "http://localhost:3001/",
-              `https://${distribution.distributionDomainName}/`
-            ],
-            response_type: "code"
-          },
-          username_attributes: ["email"],
-          user_verification_types: ["email"]
+        Auth: {
+          Cognito: {
+            userPoolId: userPool.userPoolId,
+            userPoolClientId: userPoolClient.userPoolClientId,
+            identityPoolId: identityPool.ref,
+            loginWith: {
+              oauth: {
+                domain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
+                scopes: ['openid', 'email', 'profile'],
+                redirectSignIn: [
+                  'http://localhost:3001/',
+                  `https://${distribution.distributionDomainName}/`
+                ],
+                redirectSignOut: [
+                  'http://localhost:3001/',
+                  `https://${distribution.distributionDomainName}/`
+                ],
+                responseType: 'code'
+              },
+              email: true,
+              username: false
+            },
+            signUpVerificationMethod: 'code',
+            userAttributes: {
+              email: {
+                required: true
+              }
+            },
+            allowGuestAccess: false,
+            passwordFormat: {
+              minLength: 8,
+              requireLowercase: true,
+              requireUppercase: true,
+              requireNumbers: true,
+              requireSpecialCharacters: false
+            }
+          }
         }
       }, null, 2),
       description: 'Complete amplify_outputs.json configuration - copy this to frontend/public/amplify_outputs.json',

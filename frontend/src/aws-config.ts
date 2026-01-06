@@ -18,29 +18,37 @@ async function loadAmplifyConfig() {
     console.error('Failed to load AWS configuration:', error);
     // Return default configuration for development
     return {
-      version: "1",
-      auth: {
-        aws_region: "us-east-1",
-        user_pool_id: "",
-        user_pool_client_id: "",
-        identity_pool_id: "",
-        password_policy: {
-          min_length: 8,
-          require_lowercase: true,
-          require_uppercase: true,
-          require_numbers: true,
-          require_symbols: true
-        },
-        oauth: {
-          identity_providers: ["COGNITO"],
-          domain: "",
-          scopes: ["email", "openid", "profile"],
-          redirect_sign_in_uri: ["http://localhost:3001/"],
-          redirect_sign_out_uri: ["http://localhost:3001/"],
-          response_type: "code"
-        },
-        username_attributes: ["email"],
-        user_verification_types: ["email"]
+      Auth: {
+        Cognito: {
+          userPoolId: "",
+          userPoolClientId: "",
+          identityPoolId: "",
+          loginWith: {
+            oauth: {
+              domain: "",
+              scopes: ['openid', 'email', 'profile'],
+              redirectSignIn: ['http://localhost:3001/'],
+              redirectSignOut: ['http://localhost:3001/'],
+              responseType: 'code'
+            },
+            email: true,
+            username: false
+          },
+          signUpVerificationMethod: 'code',
+          userAttributes: {
+            email: {
+              required: true
+            }
+          },
+          allowGuestAccess: false,
+          passwordFormat: {
+            minLength: 8,
+            requireLowercase: true,
+            requireUppercase: true,
+            requireNumbers: true,
+            requireSpecialCharacters: false
+          }
+        }
       }
     };
   }
@@ -49,19 +57,19 @@ async function loadAmplifyConfig() {
 // Check if we're in development mode without proper AWS config
 export function isDevelopmentMode(config?: any): boolean {
   if (!config) return true;
-  return !config.auth.user_pool_id || !config.auth.user_pool_client_id;
+  return !config.Auth?.Cognito?.userPoolId || !config.Auth?.Cognito?.userPoolClientId;
 }
 
 // Validation function to ensure required config is present
 export function validateAwsConfig(config: any): { isValid: boolean; missing: string[] } {
   const missing: string[] = [];
   
-  if (!config?.auth?.user_pool_id) {
-    missing.push('auth.user_pool_id');
+  if (!config?.Auth?.Cognito?.userPoolId) {
+    missing.push('Auth.Cognito.userPoolId');
   }
   
-  if (!config?.auth?.user_pool_client_id) {
-    missing.push('auth.user_pool_client_id');
+  if (!config?.Auth?.Cognito?.userPoolClientId) {
+    missing.push('Auth.Cognito.userPoolClientId');
   }
   
   return {
