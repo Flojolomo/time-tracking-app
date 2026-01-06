@@ -105,12 +105,9 @@ const amplifyConfig = {
       redirect_sign_in_uri: [`https://${distribution.distributionDomainName}/`],
       redirect_sign_out_uri: [`https://${distribution.distributionDomainName}/`],
       response_type: "code"
-    }
-  },
-  data: {
-    aws_region: this.region,
-    url: api.url,
-    default_authorization_type: "AMAZON_COGNITO_USER_POOLS"
+    },
+    username_attributes: ["email"],
+    user_verification_types: ["email"]
   }
 };
 
@@ -128,7 +125,7 @@ const deployment = new BucketDeployment(this, 'DeployWebsite', {
 
 ## Configuration File Structure
 
-The `amplify_outputs.json` file follows AWS Amplify Gen 2 structure:
+The `amplify_outputs.json` file follows AWS Amplify Gen 2 structure for authentication only:
 
 ```json
 {
@@ -155,17 +152,6 @@ The `amplify_outputs.json` file follows AWS Amplify Gen 2 structure:
     },
     "username_attributes": ["email"],
     "user_verification_types": ["email"]
-  },
-  "data": {
-    "aws_region": "us-east-1",
-    "url": "https://api.your-domain.com/graphql",
-    "api_key": "",
-    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
-    "authorization_types": ["AMAZON_COGNITO_USER_POOLS"]
-  },
-  "storage": {
-    "aws_region": "us-east-1",
-    "bucket_name": "your-storage-bucket"
   }
 }
 ```

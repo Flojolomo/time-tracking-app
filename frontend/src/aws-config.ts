@@ -41,17 +41,6 @@ async function loadAmplifyConfig() {
         },
         username_attributes: ["email"],
         user_verification_types: ["email"]
-      },
-      data: {
-        aws_region: "us-east-1",
-        url: "",
-        api_key: "",
-        default_authorization_type: "AMAZON_COGNITO_USER_POOLS",
-        authorization_types: ["AMAZON_COGNITO_USER_POOLS"]
-      },
-      storage: {
-        aws_region: "us-east-1",
-        bucket_name: ""
       }
     };
   }
