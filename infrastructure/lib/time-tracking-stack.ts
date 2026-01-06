@@ -7,11 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { AmplifyConfigGenerator } from './amplify-config-generator';
-import { writeFileSync } from 'fs';
-import * as path from 'path';
 
 export class TimeTrackingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -271,7 +267,6 @@ export class TimeTrackingStack extends cdk.Stack {
     });
 
     // Update OAuth URLs to use CloudFront domain
-    const cloudfrontDomain = `https://${distribution.distributionDomainName}`;
     
     // Create Identity Pool for AWS credentials
     const identityPool = new cognito.CfnIdentityPool(this, 'TimeTrackingIdentityPool', {
@@ -311,26 +306,7 @@ export class TimeTrackingStack extends cdk.Stack {
         authenticated: authenticatedRole.roleArn,
       },
     });
-
-    // Generate Amplify configuration and deploy website
-    const configGenerator = new AmplifyConfigGenerator({
-      userPool,
-      userPoolClient,
-      userPoolDomain,
-      identityPool,
-      distribution,
-      websiteBucket,
-      region: this.region,
-    });
-
-    // Simple deployment without config generation
-    const deployment = new s3deploy.BucketDeployment(this, 'DeployWebsite', {
-      sources: [s3deploy.Source.asset(path.join(__dirname, '../../frontend/dist'))],
-      destinationBucket: websiteBucket,
-      distribution: distribution,
-      distributionPaths: ['/*']
-    });
-
+    
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
