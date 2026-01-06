@@ -319,11 +319,12 @@ export class TimeTrackingStack extends cdk.Stack {
       userPoolDomain,
       identityPool,
       distribution,
+      websiteBucket,
       region: this.region,
     });
 
-    // Deploy website with generated configuration
-    const deployment = configGenerator.createDeployment(
+    // Deploy website with generated configuration using bundling
+    const deployment = configGenerator.createDeploymentWithConfig(
       this,
       websiteBucket,
       distribution
