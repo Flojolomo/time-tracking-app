@@ -177,21 +177,26 @@ export class ProjectService {
   /**
    * Get project suggestions for autocomplete based on query
    */
-  static async getProjectSuggestions(query: string): Promise<Project[]> {
+  static async getProjectSuggestions(query: string): Promise<string[]> {
     try {
-      const projects = await this.getProjects(true); // Only active projects
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
       
-      if (!query.trim()) {
-        return projects.slice(0, 10); // Return first 10 projects if no query
-      }
-
-      const lowerQuery = query.toLowerCase();
-      const filteredProjects = projects.filter(project =>
-        project.name.toLowerCase().includes(lowerQuery) ||
-        (project.description && project.description.toLowerCase().includes(lowerQuery))
+      const response = await fetch(
+        `${apiBaseUrl}/api/projects/suggestions?q=${encodeURIComponent(query)}&limit=10`,
+        {
+          method: 'GET',
+          headers
+        }
       );
 
-      return filteredProjects.slice(0, 10); // Limit to 10 suggestions
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.suggestions || [];
     } catch (error) {
       throw new Error(`Failed to fetch project suggestions: ${handleApiError(error)}`);
     }

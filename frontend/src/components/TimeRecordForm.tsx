@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { CreateTimeRecordInput, UpdateTimeRecordInput, TimeRecord } from '../types';
 import { calculateDuration } from '../utils/apiClient';
+import { ProjectAutocomplete } from './ProjectAutocomplete';
 
 interface TimeRecordFormProps {
   initialData?: TimeRecord;
@@ -166,15 +167,15 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
               validate: (value) => value.trim().length > 0 || 'Project name cannot be empty'
             }}
             render={({ field }) => (
-              <input
-                {...field}
-                type="text"
+              <ProjectAutocomplete
                 id="projectName"
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.projectName ? 'border-red-500' : 'border-gray-300'
-                }`}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
                 placeholder="Enter project name"
                 disabled={isLoading || isSubmitting}
+                error={!!errors.projectName}
+                className={errors.projectName ? 'border-red-500' : ''}
               />
             )}
           />

@@ -6,3 +6,4 @@ export { AuthDemo } from './AuthDemo';
 export { ConfigurationStatus } from './ConfigurationStatus';
 export { LandingPage } from './LandingPage';
 export { TimeRecordForm } from './TimeRecordForm';
+export { ProjectAutocomplete } from './ProjectAutocomplete';

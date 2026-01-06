@@ -13,8 +13,17 @@ jest.mock('../../utils/apiClient', () => ({
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
     return Math.round((endTime - startTime) / (1000 * 60));
-  })
+  }),
+  getApiBaseUrl: jest.fn().mockResolvedValue('https://api.example.com'),
+  getAuthHeaders: jest.fn().mockResolvedValue({
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer mock-token'
+  }),
+  handleApiError: jest.fn((error) => error.message || 'Unknown error')
 }));
+
+// Mock fetch for ProjectAutocomplete
+global.fetch = jest.fn();
 
 describe('TimeRecordForm', () => {
   const mockOnSubmit = jest.fn();
@@ -22,6 +31,7 @@ describe('TimeRecordForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockClear();
   });
 
   describe('Component Rendering', () => {
@@ -123,6 +133,14 @@ describe('TimeRecordForm', () => {
       expect(screen.getByLabelText(/start time/i)).toHaveAttribute('type', 'time');
       expect(screen.getByLabelText(/end time/i)).toHaveAttribute('type', 'time');
       expect(screen.getByLabelText(/tags/i)).toHaveAttribute('type', 'text');
+    });
+
+    it('should use ProjectAutocomplete for project name field', () => {
+      render(<TimeRecordForm onSubmit={mockOnSubmit} />);
+
+      const projectInput = screen.getByLabelText(/project name/i);
+      expect(projectInput).toBeInTheDocument();
+      expect(projectInput).toHaveAttribute('autocomplete', 'off'); // ProjectAutocomplete sets this
     });
   });
 });
