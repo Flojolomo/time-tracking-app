@@ -69,44 +69,55 @@ VITE_COGNITO_USER_POOL_CLIENT_ID=your-user-pool-client-id
 
 **Problem**: "Amplify has not been configured correctly" or "OAuth responses require a User Pool defined in config"
 
-**Cause**: Missing or incorrect AWS Cognito configuration.
+**Cause**: Missing or incorrect AWS Cognito configuration in amplify_outputs.json.
 
 **Solution**:
 
-**For Development:**
-1. **Check Environment Variables**: Ensure `.env` file exists with correct values
-2. **Verify Variable Names**: Must start with `VITE_` prefix
-3. **Restart Dev Server**: Environment variables are loaded at startup
-4. **Run Setup Script**: Use `npm run setup-env` to create `.env` from template
+**AWS Amplify Gen 2 Configuration:**
+1. **Update amplify_outputs.json**: Add your AWS Cognito configuration
+2. **Deploy Infrastructure**: Use CDK to deploy AWS resources first
+3. **Get Configuration Values**: Copy User Pool ID and Client ID from AWS Console
+4. **Restart Dev Server**: Configuration is loaded at startup
 
-**For Production (S3 Static Hosting):**
-1. **Check config.js**: Verify `/config.js` exists in deployed site
-2. **Verify Injection**: Ensure deployment process injected real values (not `${VARIABLE}` placeholders)
-3. **CDK Integration**: Use the deployment script to inject configuration after build
-4. **CloudFront Cache**: Invalidate CloudFront cache after configuration changes
+**Required Configuration in amplify_outputs.json**:
+```json
+{
+  "version": "1",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "your-user-pool-id",
+    "user_pool_client_id": "your-client-id",
+    "identity_pool_id": "your-identity-pool-id"
+  }
+}
+```
 
 **Development Mode**: If AWS is not configured, the app will show a configuration status message with setup instructions.
 
 ### 5. Static Hosting Configuration
 
-**Problem**: Environment variables not working in production S3 deployment.
+**Problem**: Configuration not loading in production S3 deployment.
 
-**Cause**: S3 static hosting doesn't support server-side environment variables.
+**Cause**: amplify_outputs.json not properly included in build or deployment.
 
 **Solution**: 
-1. **Use Runtime Configuration**: The app loads configuration from `/config.js`
-2. **Deployment Process**: Use `configure-deployment.js` script to inject values
-3. **CDK Integration**: Configure values during CDK deployment process
-4. **No Environment Variables**: Production doesn't use `.env` files
+1. **Verify Build Process**: Ensure amplify_outputs.json is included in dist folder
+2. **CDK Integration**: Update deployment to inject real values into amplify_outputs.json
+3. **No Environment Variables**: Production uses amplify_outputs.json, not .env files
+4. **Runtime Loading**: Configuration is loaded dynamically at application startup
 
 **Example CDK Integration**:
 ```typescript
 // In your CDK stack, after building the frontend
-const configScript = `node scripts/configure-deployment.js '${JSON.stringify({
-  region: this.region,
-  userPoolId: userPool.userPoolId,
-  userPoolWebClientId: client.userPoolClientId
-})}'`;
+// Update amplify_outputs.json with deployed resource values
+const amplifyConfig = {
+  version: "1",
+  auth: {
+    aws_region: this.region,
+    user_pool_id: userPool.userPoolId,
+    user_pool_client_id: client.userPoolClientId
+  }
+};
 ```
 
 ### 4. Authentication Errors
