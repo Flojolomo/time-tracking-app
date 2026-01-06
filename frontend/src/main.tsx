@@ -5,7 +5,7 @@ import { Amplify } from 'aws-amplify'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import { AuthProvider } from './hooks/useAuth'
-import { getAmplifyConfig, validateAwsConfig, isDevelopmentMode } from './aws-config'
+import { getAmplifyConfig, validateAwsConfig } from './aws-config'
 import './index.css'
 
 // Configure AWS Amplify with amplify_outputs.json

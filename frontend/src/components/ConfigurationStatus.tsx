@@ -1,9 +1,11 @@
-import { isDevelopmentMode } from '../aws-config';
+import { isDevelopmentMode, validateAwsConfig } from '../aws-config';
 
 export function ConfigurationStatus() {
   if (!isDevelopmentMode()) {
     return null; // Don't show if properly configured
   }
+
+  const validation = validateAwsConfig();
 
   return (
     <div className="max-w-2xl mx-auto mb-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -15,41 +17,43 @@ export function ConfigurationStatus() {
         </div>
         <div className="ml-3">
           <h3 className="text-sm font-medium text-yellow-800">
-            AWS Configuration Required
+            AWS Amplify Configuration Required
           </h3>
           <div className="mt-2 text-sm text-yellow-700">
             <p className="mb-3">
-              To enable authentication features, you need to configure AWS Cognito:
+              To enable authentication features, you need to configure AWS Cognito in your Amplify project:
             </p>
             
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-yellow-800 mb-2">For Development:</h4>
+                <h4 className="font-medium text-yellow-800 mb-2">Configuration Steps:</h4>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Run <code className="bg-yellow-100 px-1 rounded">npm run setup-env</code></li>
-                  <li>Edit the created <code className="bg-yellow-100 px-1 rounded">.env</code> file</li>
-                  <li>Add your AWS Cognito User Pool details</li>
+                  <li>Deploy your AWS infrastructure using CDK (see infrastructure folder)</li>
+                  <li>Update <code className="bg-yellow-100 px-1 rounded">amplify_outputs.json</code> with your deployed resources</li>
+                  <li>Add your Cognito User Pool ID and Client ID</li>
                   <li>Restart the development server</li>
                 </ol>
               </div>
               
               <div>
-                <h4 className="font-medium text-yellow-800 mb-2">For Production (S3 Static Hosting):</h4>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Deploy AWS infrastructure (CDK will handle configuration)</li>
-                  <li>Build process injects config into <code className="bg-yellow-100 px-1 rounded">config.js</code></li>
-                  <li>No environment variables needed in production</li>
-                </ol>
+                <h4 className="font-medium text-yellow-800 mb-2">Missing Configuration:</h4>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  {validation.missing.map((field) => (
+                    <li key={field}>
+                      <code className="bg-yellow-100 px-1 rounded">{field}</code>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
             
             <div className="mt-4 p-3 bg-yellow-100 rounded text-xs">
-              <strong>Required AWS values:</strong>
+              <strong>AWS Amplify Gen 2 Structure:</strong>
               <ul className="mt-1 space-y-1">
-                <li>• Cognito User Pool ID</li>
-                <li>• Cognito User Pool Client ID</li>
-                <li>• AWS Region</li>
-                <li>• API Gateway Endpoint (optional)</li>
+                <li>• Uses <code>amplify_outputs.json</code> for configuration</li>
+                <li>• Runtime configuration loaded dynamically</li>
+                <li>• No environment variables needed</li>
+                <li>• Infrastructure deployed via AWS CDK</li>
               </ul>
             </div>
           </div>
