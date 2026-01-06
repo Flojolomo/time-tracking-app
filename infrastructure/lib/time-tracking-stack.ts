@@ -308,8 +308,8 @@ export class TimeTrackingStack extends cdk.Stack {
     // Time records endpoints
     const timeRecordsResource = apiResource.addResource('time-records');
     timeRecordsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      // authorizer: cognitoAuthorizer,
+      // authorizationType: apigateway.AuthorizationType.COGNITO
     });
     timeRecordsResource.addMethod('POST', new apigateway.LambdaIntegration(timeRecordsHandler), {
       authorizer: cognitoAuthorizer,
