@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Auth } from 'aws-amplify';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
+import { isDevelopmentMode } from '../aws-config';
 
 // Create Auth Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +20,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuthState = async () => {
     try {
       setIsLoading(true);
+      
+      // If in development mode without AWS config, skip auth check
+      if (isDevelopmentMode()) {
+        setUser(null);
+        setError('AWS Cognito not configured. Please set up your .env file with AWS credentials.');
+        return;
+      }
+
       const currentUser = await Auth.currentAuthenticatedUser();
       const session = await Auth.currentSession();
       
@@ -29,8 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken: session.getAccessToken().getJwtToken()
       });
     } catch (error) {
-      // User is not authenticated
+      // User is not authenticated or AWS not configured
       setUser(null);
+      if (isDevelopmentMode()) {
+        setError('AWS Cognito not configured. Please create a .env file with your AWS Cognito settings.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       setIsLoading(true);
+      
+      // Check if AWS is configured
+      if (isDevelopmentMode()) {
+        throw new Error('AWS Cognito not configured. Please set up your .env file with AWS credentials.');
+      }
       
       const cognitoUser = await Auth.signIn(credentials.email, credentials.password);
       
@@ -70,6 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       setIsLoading(true);
       
+      // Check if AWS is configured
+      if (isDevelopmentMode()) {
+        throw new Error('AWS Cognito not configured. Please set up your .env file with AWS credentials.');
+      }
+      
       await Auth.signUp({
         username: credentials.email,
         password: credentials.password,
@@ -94,7 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       setError(null);
-      await Auth.signOut();
+      
+      if (!isDevelopmentMode()) {
+        await Auth.signOut();
+      }
+      
       setUser(null);
     } catch (error: any) {
       const errorMessage = error.message || 'Logout failed';

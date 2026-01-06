@@ -1,5 +1,6 @@
 import { AuthDemo } from './components/AuthDemo';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ConfigurationStatus } from './components/ConfigurationStatus';
 
 function App() {
   return (
@@ -8,6 +9,9 @@ function App() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
           Time Tracking App
         </h1>
+        
+        {/* Configuration status for development */}
+        <ConfigurationStatus />
         
         {/* Demo of authentication components */}
         <div className="mb-8">

@@ -56,6 +56,7 @@ optimizeDeps: {
 1. Create `.env` file based on `.env.example`
 2. Ensure all variables start with `VITE_`
 3. Restart the development server after adding new environment variables
+4. Use `import.meta.env` instead of `process.env` in Vite
 
 **Example `.env`**:
 ```env
@@ -63,6 +64,20 @@ VITE_AWS_REGION=us-east-1
 VITE_COGNITO_USER_POOL_ID=your-user-pool-id
 VITE_COGNITO_USER_POOL_CLIENT_ID=your-user-pool-client-id
 ```
+
+### 4. Amplify Configuration Errors
+
+**Problem**: "Amplify has not been configured correctly" or "OAuth responses require a User Pool defined in config"
+
+**Cause**: Missing or incorrect AWS Cognito configuration.
+
+**Solution**:
+1. **Check Environment Variables**: Ensure `.env` file exists with correct values
+2. **Verify Variable Names**: Must start with `VITE_` prefix
+3. **Restart Dev Server**: Environment variables are loaded at startup
+4. **Check AWS Console**: Verify User Pool and Client IDs are correct
+
+**Development Mode**: If AWS is not configured, the app will show a configuration status message with setup instructions.
 
 ### 4. Authentication Errors
 

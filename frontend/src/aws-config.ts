@@ -3,16 +3,16 @@
 
 export const awsConfig = {
   Auth: {
-    region: process.env.VITE_AWS_REGION || 'us-east-1',
-    userPoolId: process.env.VITE_COGNITO_USER_POOL_ID || '',
-    userPoolWebClientId: process.env.VITE_COGNITO_USER_POOL_CLIENT_ID || '',
+    region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
+    userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || '',
+    userPoolWebClientId: import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID || '',
     mandatorySignIn: true,
     authenticationFlowType: 'USER_SRP_AUTH',
     oauth: {
-      domain: process.env.VITE_COGNITO_DOMAIN || '',
+      domain: import.meta.env.VITE_COGNITO_DOMAIN || '',
       scope: ['email', 'profile', 'openid'],
-      redirectSignIn: process.env.VITE_REDIRECT_SIGN_IN || 'http://localhost:5173/',
-      redirectSignOut: process.env.VITE_REDIRECT_SIGN_OUT || 'http://localhost:5173/',
+      redirectSignIn: import.meta.env.VITE_REDIRECT_SIGN_IN || 'http://localhost:3001/',
+      redirectSignOut: import.meta.env.VITE_REDIRECT_SIGN_OUT || 'http://localhost:3001/',
       responseType: 'code'
     }
   },
@@ -20,8 +20,8 @@ export const awsConfig = {
     endpoints: [
       {
         name: 'timetracking',
-        endpoint: process.env.VITE_API_ENDPOINT || 'http://localhost:3000',
-        region: process.env.VITE_AWS_REGION || 'us-east-1'
+        endpoint: import.meta.env.VITE_API_ENDPOINT || 'http://localhost:3000',
+        region: import.meta.env.VITE_AWS_REGION || 'us-east-1'
       }
     ]
   }
@@ -34,12 +34,19 @@ export function validateAwsConfig(): boolean {
     'VITE_COGNITO_USER_POOL_CLIENT_ID'
   ];
 
-  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  const missingVars = requiredVars.filter(varName => !import.meta.env[varName]);
   
   if (missingVars.length > 0) {
     console.warn('Missing required AWS configuration:', missingVars);
+    console.warn('Please create a .env file based on .env.example with your AWS Cognito configuration');
     return false;
   }
   
   return true;
+}
+
+// Check if we're in development mode without proper AWS config
+export function isDevelopmentMode(): boolean {
+  return !import.meta.env.VITE_COGNITO_USER_POOL_ID || 
+         !import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID;
 }
