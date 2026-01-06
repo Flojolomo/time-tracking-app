@@ -8,7 +8,7 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "A new file has been created. Please run `git add .` to add any new files (respecting .gitignore), then run `git commit -m \"Add new files and commit changes\"` to commit all changes including this new file and any modifications to existing files."
+    "prompt": "A new file has been created. Please run `git add .` to add any new files (respecting .gitignore), then run `git commit -m \"Add new files and commit changes\"` to commit all changes including this new file and any modifications to existing files.\nEnsure a proper commit message about why those changes where applied."
   },
   "workspaceFolderName": "KiroProjects",
   "shortName": "auto-git-commit"
