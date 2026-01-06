@@ -99,3 +99,50 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   error: string | null;
 }
+
+// Statistics types
+export interface ProjectStatistics {
+  projectName: string;
+  totalDuration: number; // in minutes
+  recordCount: number;
+  averageDuration: number; // in minutes
+  percentage: number; // percentage of total time
+}
+
+export interface TagStatistics {
+  tagName: string;
+  totalDuration: number; // in minutes
+  recordCount: number;
+  percentage: number; // percentage of total time
+}
+
+export interface TimeStatistics {
+  totalDuration: number; // in minutes
+  totalRecords: number;
+  averageDailyTime: number; // in minutes
+  averageSessionDuration: number; // in minutes
+  productiveHours: number; // total hours worked
+}
+
+export interface DailyStatistics {
+  date: string; // YYYY-MM-DD format
+  totalDuration: number; // in minutes
+  recordCount: number;
+  projects: string[];
+}
+
+export interface WeeklyStatistics {
+  weekStart: string; // YYYY-MM-DD format
+  weekEnd: string; // YYYY-MM-DD format
+  totalDuration: number; // in minutes
+  dailyBreakdown: DailyStatistics[];
+  averageDailyTime: number; // in minutes
+}
+
+export interface MonthlyStatistics {
+  month: string; // YYYY-MM format
+  totalDuration: number; // in minutes
+  weeklyBreakdown: WeeklyStatistics[];
+  averageDailyTime: number; // in minutes
+  workingDays: number;
+}

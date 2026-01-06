@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews } from './components';
+import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 
@@ -122,6 +122,15 @@ function App() {
             </DashboardLayout>
           </ProtectedRoute>
         } />
+        
+        {/* Statistics/Analytics route */}
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <StatsDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
       </Routes>
     </ViewStateProvider>
   )
@@ -150,6 +159,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Time Records
+                </a>
+                <a
+                  href="/analytics"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Analytics
                 </a>
               </nav>
             </div>
@@ -196,15 +211,21 @@ function Dashboard() {
               <li>• Time record creation and management</li>
               <li>• Project organization and auto-suggestions</li>
               <li>• Multiple view formats (daily, weekly, monthly)</li>
-              <li>• Statistics and analytics dashboard (coming soon)</li>
-              <li>• Data visualization with charts (coming soon)</li>
+              <li>• Statistics and analytics dashboard</li>
+              <li>• Data visualization with charts</li>
             </ul>
-            <div className="mt-4">
+            <div className="mt-4 space-x-4">
               <a
                 href="/records"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 View Time Records
+              </a>
+              <a
+                href="/analytics"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                View Analytics
               </a>
             </div>
           </div>

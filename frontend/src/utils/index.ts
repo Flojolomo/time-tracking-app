@@ -17,4 +17,5 @@ export const formatTime = (time: string): string => {
 // Export data access services
 export { TimeRecordService } from './timeRecordService';
 export { ProjectService } from './projectService';
+export { StatisticsService } from './statisticsService';
 export * from './apiClient';
