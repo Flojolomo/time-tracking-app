@@ -43,8 +43,11 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   const handleFormSubmit = async (data: any) => {
     try {
       if (editingRecord) {
-        // Update existing record
-        await TimeRecordService.updateTimeRecord(editingRecord.id, data);
+        // Update existing record - include the id in the data
+        await TimeRecordService.updateTimeRecord({
+          id: editingRecord.id,
+          ...data
+        });
       } else {
         // Create new record
         await TimeRecordService.createTimeRecord(data);

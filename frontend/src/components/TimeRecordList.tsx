@@ -339,7 +339,7 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
                 records={dayRecords}
                 showDate={viewType !== 'daily'}
                 onEditRecord={onEditRecord}
-                onDeleteRecord={onDeleteRecord}
+                onDeleteRecord={handleDeleteRecord}
               />
             ))}
         </div>
