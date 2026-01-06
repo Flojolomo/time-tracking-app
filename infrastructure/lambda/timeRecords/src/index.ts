@@ -82,26 +82,47 @@ const createSuccessResponse = (statusCode: number, data: any, event?: APIGateway
 // Helper function to extract user ID from JWT token
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
   try {
+    console.log('=== DEBUG: Extracting User ID ===');
+    console.log('Headers:', JSON.stringify(event.headers, null, 2));
+    
     // Get the Authorization header
     const authHeader = event.headers.Authorization || event.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('No valid Authorization header found');
+    if (!authHeader) {
+      console.error('No Authorization header found');
+      return null;
+    }
+    
+    console.log('Authorization header:', authHeader);
+    
+    if (!authHeader.startsWith('Bearer ')) {
+      console.error('Authorization header does not start with Bearer');
       return null;
     }
 
     const token = authHeader.substring(7);
+    console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
     
     try {
       // Decode JWT payload (without verification for now)
       // JWT structure: header.payload.signature
       const parts = token.split('.');
       if (parts.length !== 3) {
-        console.error('Invalid JWT token format');
+        console.error('Invalid JWT token format - expected 3 parts, got:', parts.length);
         return null;
       }
 
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-      console.log('JWT payload:', JSON.stringify(payload, null, 2));
+      console.log('JWT parts lengths:', parts.map(p => p.length));
+      
+      // Decode the payload (second part)
+      const base64Payload = parts[1];
+      // Add padding if needed
+      const paddedPayload = base64Payload + '='.repeat((4 - base64Payload.length % 4) % 4);
+      
+      const payloadJson = Buffer.from(paddedPayload, 'base64').toString();
+      console.log('Decoded payload JSON:', payloadJson);
+      
+      const payload = JSON.parse(payloadJson);
+      console.log('Parsed payload:', JSON.stringify(payload, null, 2));
       
       // Extract user ID from different possible fields
       const userId = payload.sub || 
@@ -109,19 +130,24 @@ const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
                     payload.username ||
                     payload.user_id;
       
+      console.log('Available fields in payload:', Object.keys(payload));
+      console.log('Extracted userId:', userId);
+      
       if (userId) {
-        console.log('User ID extracted from JWT:', userId);
+        console.log('SUCCESS: User ID extracted from JWT:', userId);
         return userId;
       } else {
-        console.error('No user ID found in JWT payload');
+        console.error('ERROR: No user ID found in JWT payload');
         return null;
       }
     } catch (jwtError) {
       console.error('Error decoding JWT:', jwtError);
+      console.error('JWT Error stack:', jwtError instanceof Error ? jwtError.stack : 'No stack trace');
       return null;
     }
   } catch (error) {
     console.error('Error extracting user ID:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return null;
   }
 };
