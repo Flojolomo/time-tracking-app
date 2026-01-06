@@ -54,7 +54,7 @@ This implementation plan breaks down the time tracking application into discrete
     - Set up DynamoDB client and connection utilities
     - _Requirements: 2.4, 7.1_
 
-  - [ ] 4.2 Create Lambda functions for time records API
+  - [x] 4.2 Create Lambda functions for time records API
     - Implement GET /api/time-records with filtering
     - Implement POST /api/time-records for creation
     - Implement PUT /api/time-records/{id} for updates

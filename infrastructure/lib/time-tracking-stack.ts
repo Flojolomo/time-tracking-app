@@ -152,32 +152,13 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
-    // Lambda function for API handlers
-    const apiHandler = new lambda.Function(this, 'TimeTrackingApiHandler', {
+    // Lambda function for time records API
+    const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromInline(`
-        exports.handler = async (event) => {
-          console.log('Event:', JSON.stringify(event, null, 2));
-          
-          const response = {
-            statusCode: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-              'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
-            },
-            body: JSON.stringify({
-              message: 'Time Tracking API - Setup Complete',
-              path: event.path,
-              method: event.httpMethod
-            })
-          };
-          
-          return response;
-        };
-      `),
+      code: lambda.Code.fromAsset('lambda/timeRecords'),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
       environment: {
         TABLE_NAME: timeRecordsTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
@@ -187,8 +168,25 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
-    // Grant DynamoDB permissions to Lambda
-    timeRecordsTable.grantReadWriteData(apiHandler);
+    // Lambda function for projects API
+    const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/projects'),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        TABLE_NAME: timeRecordsTable.tableName,
+        USER_POOL_ID: userPool.userPoolId,
+        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
+        USER_POOL_DOMAIN: userPoolDomain.domainName,
+        REGION: this.region,
+      },
+    });
+
+    // Grant DynamoDB permissions to Lambda functions
+    timeRecordsTable.grantReadWriteData(timeRecordsHandler);
+    timeRecordsTable.grantReadWriteData(projectsHandler);
 
     // API Gateway
     const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
@@ -207,32 +205,33 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
-    // API Gateway Integration
-    const lambdaIntegration = new apigateway.LambdaIntegration(apiHandler);
+    // API Gateway Integrations
+    const timeRecordsIntegration = new apigateway.LambdaIntegration(timeRecordsHandler);
+    const projectsIntegration = new apigateway.LambdaIntegration(projectsHandler);
 
     // API Routes
     const apiResource = api.root.addResource('api');
     
     // Time Records routes
     const timeRecordsResource = apiResource.addResource('time-records');
-    timeRecordsResource.addMethod('GET', lambdaIntegration);
-    timeRecordsResource.addMethod('POST', lambdaIntegration);
+    timeRecordsResource.addMethod('GET', timeRecordsIntegration);
+    timeRecordsResource.addMethod('POST', timeRecordsIntegration);
     
     const timeRecordResource = timeRecordsResource.addResource('{id}');
-    timeRecordResource.addMethod('GET', lambdaIntegration);
-    timeRecordResource.addMethod('PUT', lambdaIntegration);
-    timeRecordResource.addMethod('DELETE', lambdaIntegration);
+    timeRecordResource.addMethod('GET', timeRecordsIntegration);
+    timeRecordResource.addMethod('PUT', timeRecordsIntegration);
+    timeRecordResource.addMethod('DELETE', timeRecordsIntegration);
 
     // Projects routes
     const projectsResource = apiResource.addResource('projects');
-    projectsResource.addMethod('GET', lambdaIntegration);
+    projectsResource.addMethod('GET', projectsIntegration);
     
     const suggestionsResource = projectsResource.addResource('suggestions');
-    suggestionsResource.addMethod('GET', lambdaIntegration);
+    suggestionsResource.addMethod('GET', projectsIntegration);
 
-    // Statistics routes
+    // Statistics routes (placeholder for now - will use time records handler)
     const statsResource = apiResource.addResource('stats');
-    statsResource.addMethod('GET', lambdaIntegration);
+    statsResource.addMethod('GET', timeRecordsIntegration);
 
     // S3 Bucket for frontend hosting
     const websiteBucket = new s3.Bucket(this, 'TimeTrackingWebsite', {
