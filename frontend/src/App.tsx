@@ -1,5 +1,28 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm } from './components';
+import { useAuth } from './hooks/useAuth';
+
+// Component to handle authenticated user redirects
+function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <>{children}</>;
+}
 
 function App() {
   return (
@@ -7,20 +30,24 @@ function App() {
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="max-w-md w-full">
-            <ConfigurationStatus />
-            <LoginForm />
+        <AuthenticatedRoute>
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="max-w-md w-full">
+              <ConfigurationStatus />
+              <LoginForm onSuccess={() => window.location.href = '/dashboard'} />
+            </div>
           </div>
-        </div>
+        </AuthenticatedRoute>
       } />
       <Route path="/signup" element={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="max-w-md w-full">
-            <ConfigurationStatus />
-            <SignupForm />
+        <AuthenticatedRoute>
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="max-w-md w-full">
+              <ConfigurationStatus />
+              <SignupForm onSuccess={() => window.location.href = '/login'} />
+            </div>
           </div>
-        </div>
+        </AuthenticatedRoute>
       } />
       
       {/* Development/Demo route */}
@@ -57,16 +84,67 @@ function App() {
       {/* Protected routes - placeholder for future implementation */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h1>
-              <p className="text-gray-600">Time tracking dashboard will be implemented in future tasks.</p>
-            </div>
-          </div>
+          <Dashboard />
         </ProtectedRoute>
       } />
     </Routes>
   )
+}
+
+// Dashboard component for authenticated users
+function Dashboard() {
+  const { user, logout } = useAuth();
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-gray-900">TimeTracker</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
+              <button
+                onClick={logout}
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+      
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="mt-2 text-2xl font-bold text-gray-900">Welcome to TimeTracker!</h2>
+            <p className="mt-1 text-gray-600">
+              You are successfully logged in. The time tracking dashboard will be implemented in future tasks.
+            </p>
+            <div className="mt-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Coming Soon</h3>
+                <ul className="text-left space-y-2 text-gray-600">
+                  <li>• Time record creation and management</li>
+                  <li>• Project organization and auto-suggestions</li>
+                  <li>• Multiple view formats (daily, weekly, monthly)</li>
+                  <li>• Statistics and analytics dashboard</li>
+                  <li>• Data visualization with charts</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default App
