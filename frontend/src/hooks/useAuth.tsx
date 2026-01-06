@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { Auth } from 'aws-amplify';
+import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
 import { getAmplifyConfig, isDevelopmentMode } from '../aws-config';
 
@@ -33,14 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const currentUser = await Auth.currentAuthenticatedUser();
-      const session = await Auth.currentSession();
+      const currentUser = await getCurrentUser();
+      const session = await fetchAuthSession();
       
       setUser({
-        userId: currentUser.attributes.sub,
-        email: currentUser.attributes.email,
-        name: currentUser.attributes.name,
-        accessToken: session.getAccessToken().getJwtToken()
+        userId: currentUser.userId,
+        email: currentUser.signInDetails?.loginId || '',
+        name: currentUser.signInDetails?.loginId || '',
+        accessToken: session.tokens?.accessToken?.toString() || ''
       });
     } catch (error) {
       // User is not authenticated or AWS not configured
@@ -63,21 +63,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
       }
       
-      const cognitoUser = await Auth.signIn(credentials.email, credentials.password);
-      
-      if (cognitoUser.challengeName === 'NEW_PASSWORD_REQUIRED') {
-        throw new Error('New password required. Please contact support.');
-      }
-      
-      const session = await Auth.currentSession();
-      const currentUser = await Auth.currentAuthenticatedUser();
-      
-      setUser({
-        userId: currentUser.attributes.sub,
-        email: currentUser.attributes.email,
-        name: currentUser.attributes.name,
-        accessToken: session.getAccessToken().getJwtToken()
+      const { isSignedIn } = await signIn({
+        username: credentials.email,
+        password: credentials.password,
       });
+      
+      if (isSignedIn) {
+        const currentUser = await getCurrentUser();
+        const session = await fetchAuthSession();
+        
+        setUser({
+          userId: currentUser.userId,
+          email: currentUser.signInDetails?.loginId || '',
+          name: currentUser.signInDetails?.loginId || '',
+          accessToken: session.tokens?.accessToken?.toString() || ''
+        });
+      }
     } catch (error: any) {
       const errorMessage = error.message || 'Login failed';
       setError(errorMessage);
@@ -97,13 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
       }
       
-      await Auth.signUp({
+      await signUp({
         username: credentials.email,
         password: credentials.password,
-        attributes: {
-          email: credentials.email,
-          name: credentials.name || ''
-        }
+        options: {
+          userAttributes: {
+            email: credentials.email,
+            given_name: credentials.name || '',
+          },
+        },
       });
       
       // Note: User will need to verify email before they can sign in
@@ -123,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       
       if (config && !isDevelopmentMode(config)) {
-        await Auth.signOut();
+        await signOut();
       }
       
       setUser(null);

@@ -348,34 +348,48 @@ export class TimeTrackingStack extends cdk.Stack {
       description: 'S3 Bucket Name for website hosting',
     });
 
-    // Complete Amplify Outputs JSON for AWS Amplify v5
+    // Complete Amplify Gen 2 Outputs JSON
     new cdk.CfnOutput(this, 'AmplifyOutputsJson', {
       value: JSON.stringify({
-        aws_project_region: this.region,
-        aws_cognito_region: this.region,
-        aws_user_pools_id: userPool.userPoolId,
-        aws_user_pools_web_client_id: userPoolClient.userPoolClientId,
-        aws_cognito_identity_pool_id: identityPool.ref,
-        oauth: {
-          domain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
-          scope: ["email", "openid", "profile"],
-          redirectSignIn: `http://localhost:3001/,https://${distribution.distributionDomainName}/`,
-          redirectSignOut: `http://localhost:3001/,https://${distribution.distributionDomainName}/`,
-          responseType: "code"
+        version: "1",
+        auth: {
+          aws_region: this.region,
+          user_pool_id: userPool.userPoolId,
+          user_pool_client_id: userPoolClient.userPoolClientId,
+          identity_pool_id: identityPool.ref,
+          password_policy: {
+            min_length: 8,
+            require_lowercase: true,
+            require_uppercase: true,
+            require_numbers: true,
+            require_symbols: false
+          },
+          oauth: {
+            identity_providers: ["COGNITO"],
+            domain: `${userPoolDomain.domainName}.auth.${this.region}.amazoncognito.com`,
+            scopes: ["email", "openid", "profile"],
+            redirect_sign_in_uri: [
+              "http://localhost:3001/",
+              `https://${distribution.distributionDomainName}/`
+            ],
+            redirect_sign_out_uri: [
+              "http://localhost:3001/",
+              `https://${distribution.distributionDomainName}/`
+            ],
+            response_type: "code"
+          },
+          username_attributes: ["email"],
+          user_verification_types: ["email"]
         },
-        federationTarget: "COGNITO_USER_POOLS",
-        aws_cognito_username_attributes: ["EMAIL"],
-        aws_cognito_social_providers: [],
-        aws_cognito_signup_attributes: ["EMAIL"],
-        aws_cognito_mfa_configuration: "OFF",
-        aws_cognito_mfa_types: ["SMS"],
-        aws_cognito_password_protection_settings: {
-          passwordPolicyMinLength: 8,
-          passwordPolicyCharacters: ["REQUIRES_LOWERCASE", "REQUIRES_UPPERCASE", "REQUIRES_NUMBERS"]
-        },
-        aws_cognito_verification_mechanisms: ["EMAIL"]
+        data: {
+          aws_region: this.region,
+          url: api.url,
+          api_key: "",
+          default_authorization_type: "AMAZON_COGNITO_USER_POOLS",
+          authorization_types: ["AMAZON_COGNITO_USER_POOLS"]
+        }
       }, null, 2),
-      description: 'Complete amplify_outputs.json configuration for AWS Amplify v5 - copy this to frontend/public/amplify_outputs.json',
+      description: 'Complete amplify_outputs.json configuration for AWS Amplify Gen 2 - copy this to frontend/public/amplify_outputs.json',
     });
   }
 }

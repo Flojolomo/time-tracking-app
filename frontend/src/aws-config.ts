@@ -1,4 +1,4 @@
-// AWS Amplify configuration using standard Amplify v5 format
+// AWS Amplify Gen 2 configuration
 let amplifyConfig: any = null;
 
 // Fetch configuration from static file
@@ -18,29 +18,30 @@ async function loadAmplifyConfig() {
     console.error('Failed to load AWS configuration:', error);
     // Return default configuration for development
     return {
-      aws_project_region: "us-east-1",
-      aws_cognito_region: "us-east-1",
-      aws_user_pools_id: "",
-      aws_user_pools_web_client_id: "",
-      aws_cognito_identity_pool_id: "",
-      oauth: {
-        domain: "",
-        scope: ["email", "openid", "profile"],
-        redirectSignIn: "http://localhost:3001/",
-        redirectSignOut: "http://localhost:3001/",
-        responseType: "code"
-      },
-      federationTarget: "COGNITO_USER_POOLS",
-      aws_cognito_username_attributes: ["EMAIL"],
-      aws_cognito_social_providers: [],
-      aws_cognito_signup_attributes: ["EMAIL"],
-      aws_cognito_mfa_configuration: "OFF",
-      aws_cognito_mfa_types: ["SMS"],
-      aws_cognito_password_protection_settings: {
-        passwordPolicyMinLength: 8,
-        passwordPolicyCharacters: ["REQUIRES_LOWERCASE", "REQUIRES_UPPERCASE", "REQUIRES_NUMBERS"]
-      },
-      aws_cognito_verification_mechanisms: ["EMAIL"]
+      version: "1",
+      auth: {
+        aws_region: "us-east-1",
+        user_pool_id: "",
+        user_pool_client_id: "",
+        identity_pool_id: "",
+        password_policy: {
+          min_length: 8,
+          require_lowercase: true,
+          require_uppercase: true,
+          require_numbers: true,
+          require_symbols: false
+        },
+        oauth: {
+          identity_providers: ["COGNITO"],
+          domain: "",
+          scopes: ["email", "openid", "profile"],
+          redirect_sign_in_uri: ["http://localhost:3001/"],
+          redirect_sign_out_uri: ["http://localhost:3001/"],
+          response_type: "code"
+        },
+        username_attributes: ["email"],
+        user_verification_types: ["email"]
+      }
     };
   }
 }
@@ -48,19 +49,19 @@ async function loadAmplifyConfig() {
 // Check if we're in development mode without proper AWS config
 export function isDevelopmentMode(config?: any): boolean {
   if (!config) return true;
-  return !config.aws_user_pools_id || !config.aws_user_pools_web_client_id;
+  return !config.auth?.user_pool_id || !config.auth?.user_pool_client_id;
 }
 
 // Validation function to ensure required config is present
 export function validateAwsConfig(config: any): { isValid: boolean; missing: string[] } {
   const missing: string[] = [];
   
-  if (!config?.aws_user_pools_id) {
-    missing.push('aws_user_pools_id');
+  if (!config?.auth?.user_pool_id) {
+    missing.push('auth.user_pool_id');
   }
   
-  if (!config?.aws_user_pools_web_client_id) {
-    missing.push('aws_user_pools_web_client_id');
+  if (!config?.auth?.user_pool_client_id) {
+    missing.push('auth.user_pool_client_id');
   }
   
   return {

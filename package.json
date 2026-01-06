@@ -1,0 +1,17 @@
+{
+  "name": "time-tracking-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build --prefix amplify",
+    "sandbox": "ampx sandbox",
+    "deploy": "ampx deploy --branch main",
+    "generate": "ampx generate outputs --branch main",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "deploy:infrastructure": "npm run deploy --prefix infrastructure"
+  },
+  "devDependencies": {
+    "@aws-amplify/backend-cli": "^1.0.0"
+  }
+}
