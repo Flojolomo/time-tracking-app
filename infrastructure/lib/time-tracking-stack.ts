@@ -307,23 +307,44 @@ export class TimeTrackingStack extends cdk.Stack {
     
     // Time records endpoints
     const timeRecordsResource = apiResource.addResource('time-records');
-    timeRecordsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler));
-    timeRecordsResource.addMethod('POST', new apigateway.LambdaIntegration(timeRecordsHandler));
+    timeRecordsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    timeRecordsResource.addMethod('POST', new apigateway.LambdaIntegration(timeRecordsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
     
     const timeRecordResource = timeRecordsResource.addResource('{id}');
-    timeRecordResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler));
-    timeRecordResource.addMethod('DELETE', new apigateway.LambdaIntegration(timeRecordsHandler));
+    timeRecordResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    timeRecordResource.addMethod('DELETE', new apigateway.LambdaIntegration(timeRecordsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
     
     // Statistics endpoint
     const statsResource = apiResource.addResource('stats');
-    statsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler));
+    statsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
     
     // Projects endpoints
     const projectsResource = apiResource.addResource('projects');
-    projectsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler));
+    projectsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
     
     const projectSuggestionsResource = projectsResource.addResource('suggestions');
-    projectSuggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler));
+    projectSuggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler), {
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
 
     // Update OAuth URLs to use CloudFront domain
     const cloudfrontUrl = `https://${distribution.distributionDomainName}`;

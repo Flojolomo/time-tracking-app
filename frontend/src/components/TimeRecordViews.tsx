@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { TimeRecordList } from './TimeRecordList';
 import { TimeRecordForm } from './TimeRecordForm';
 import { ViewSelector } from './ViewSelector';
-import { TimeRecordFilters } from '../types';
+import { TimeRecordFilters, TimeRecord } from '../types';
 import { useViewState } from '../contexts/ViewStateContext';
 import { useViewRouting } from '../hooks/useViewRouting';
 
@@ -18,7 +18,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   const { state, setDate, setFilters } = useViewState();
   const { navigateToView } = useViewRouting();
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
+  const [editingRecord, setEditingRecord] = useState<TimeRecord | undefined>(undefined);
 
   // Update context filters when props change
   useEffect(() => {
@@ -35,11 +35,11 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
 
   const handleFormSuccess = () => {
     setShowForm(false);
-    setEditingRecord(null);
+    setEditingRecord(undefined);
     // The TimeRecordList will automatically refresh due to React Query
   };
 
-  const handleEditRecord = (record: any) => {
+  const handleEditRecord = (record: TimeRecord) => {
     setEditingRecord(record);
     setShowForm(true);
   };
@@ -74,7 +74,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
             onSuccess={handleFormSuccess}
             onCancel={() => {
               setShowForm(false);
-              setEditingRecord(null);
+              setEditingRecord(undefined);
             }}
           />
         </div>
