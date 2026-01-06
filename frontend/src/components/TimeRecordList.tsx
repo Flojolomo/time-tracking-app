@@ -76,8 +76,7 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   selectedDate,
   onDateChange,
   filters,
-  onEditRecord,
-  onDeleteRecord
+  onEditRecord
 }) => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
