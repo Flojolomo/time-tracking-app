@@ -1,8 +1,8 @@
 /**
- * Project data access layer with CRUD operations
+ * Project data access layer with CRUD operations using REST API
  */
 
-import { client, handleAmplifyError, formatDateForDB } from './amplifyClient';
+import { handleApiError, formatDateForAPI, getApiBaseUrl, getAuthHeaders } from './apiClient';
 import type { 
   Project, 
   CreateProjectInput, 
@@ -19,24 +19,33 @@ export class ProjectService {
         throw new Error('Project name is required');
       }
 
-      const now = formatDateForDB(new Date());
+      const now = formatDateForAPI(new Date());
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
       
-      const result = await client.models.Project.create({
+      const requestBody = {
         name: input.name.trim(),
         description: input.description || '',
         color: input.color || '#3B82F6', // Default blue color
         isActive: input.isActive !== undefined ? input.isActive : true,
         createdAt: now,
         updatedAt: now
+      };
+
+      const response = await fetch(`${apiBaseUrl}/api/projects`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
       });
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return result.data as Project;
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to create project: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to create project: ${handleApiError(error)}`);
     }
   }
 
@@ -45,32 +54,29 @@ export class ProjectService {
    */
   static async getProjects(activeOnly: boolean = false): Promise<Project[]> {
     try {
-      let query = client.models.Project.list();
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      
+      const queryParams = activeOnly ? '?active=true' : '';
+      
+      const response = await fetch(`${apiBaseUrl}/api/projects${queryParams}`, {
+        method: 'GET',
+        headers
+      });
 
-      if (activeOnly) {
-        query = client.models.Project.list({
-          filter: {
-            isActive: {
-              eq: true
-            }
-          }
-        });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result = await query;
-
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
-      }
-
-      const projects = result.data as Project[];
+      const projects = await response.json();
 
       // Sort by name alphabetically
-      projects.sort((a, b) => a.name.localeCompare(b.name));
+      projects.sort((a: Project, b: Project) => a.name.localeCompare(b.name));
 
       return projects;
     } catch (error) {
-      throw new Error(`Failed to fetch projects: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch projects: ${handleApiError(error)}`);
     }
   }
 
@@ -79,15 +85,26 @@ export class ProjectService {
    */
   static async getProject(id: string): Promise<Project | null> {
     try {
-      const result = await client.models.Project.get({ id });
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      
+      const response = await fetch(`${apiBaseUrl}/api/projects/${id}`, {
+        method: 'GET',
+        headers
+      });
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      if (response.status === 404) {
+        return null;
       }
 
-      return result.data as Project | null;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to fetch project: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch project: ${handleApiError(error)}`);
     }
   }
 
@@ -101,8 +118,7 @@ export class ProjectService {
       }
 
       const updateData: any = {
-        id: input.id,
-        updatedAt: formatDateForDB(new Date())
+        updatedAt: formatDateForAPI(new Date())
       };
 
       // Only include fields that are being updated
@@ -111,15 +127,23 @@ export class ProjectService {
       if (input.color !== undefined) updateData.color = input.color;
       if (input.isActive !== undefined) updateData.isActive = input.isActive;
 
-      const result = await client.models.Project.update(updateData);
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      const response = await fetch(`${apiBaseUrl}/api/projects/${input.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return result.data as Project;
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to update project: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to update project: ${handleApiError(error)}`);
     }
   }
 
@@ -129,16 +153,24 @@ export class ProjectService {
   static async deleteProject(id: string, hardDelete: boolean = false): Promise<void> {
     try {
       if (hardDelete) {
-        const result = await client.models.Project.delete({ id });
-        if (result.errors) {
-          throw new Error(handleAmplifyError(result));
+        const apiBaseUrl = await getApiBaseUrl();
+        const headers = await getAuthHeaders();
+
+        const response = await fetch(`${apiBaseUrl}/api/projects/${id}`, {
+          method: 'DELETE',
+          headers
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
         }
       } else {
         // Soft delete by setting isActive to false
         await this.updateProject({ id, isActive: false });
       }
     } catch (error) {
-      throw new Error(`Failed to delete project: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to delete project: ${handleApiError(error)}`);
     }
   }
 
@@ -161,7 +193,7 @@ export class ProjectService {
 
       return filteredProjects.slice(0, 10); // Limit to 10 suggestions
     } catch (error) {
-      throw new Error(`Failed to fetch project suggestions: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch project suggestions: ${handleApiError(error)}`);
     }
   }
 
@@ -182,7 +214,7 @@ export class ProjectService {
         (project.description && project.description.toLowerCase().includes(lowerSearchTerm))
       );
     } catch (error) {
-      throw new Error(`Failed to search projects: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to search projects: ${handleApiError(error)}`);
     }
   }
 
@@ -196,7 +228,7 @@ export class ProjectService {
         project.name.toLowerCase() === name.toLowerCase()
       ) || null;
     } catch (error) {
-      throw new Error(`Failed to find project by name: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to find project by name: ${handleApiError(error)}`);
     }
   }
 }

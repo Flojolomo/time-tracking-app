@@ -1,8 +1,8 @@
 /**
- * Time Record data access layer with CRUD operations
+ * Time Record data access layer with CRUD operations using REST API
  */
 
-import { client, handleAmplifyError, calculateDuration, validateTimeRecord, formatDateForDB } from './amplifyClient';
+import { handleApiError, calculateDuration, validateTimeRecord, formatDateForAPI, getApiBaseUrl, getAuthHeaders } from './apiClient';
 import type { 
   TimeRecord, 
   CreateTimeRecordInput, 
@@ -33,9 +33,11 @@ export class TimeRecordService {
         duration = calculateDuration(input.startTime, input.endTime);
       }
 
-      const now = formatDateForDB(new Date());
+      const now = formatDateForAPI(new Date());
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
       
-      const result = await client.models.TimeRecord.create({
+      const requestBody = {
         projectName: input.projectName,
         description: input.description || '',
         startTime: input.startTime,
@@ -44,15 +46,22 @@ export class TimeRecordService {
         tags: input.tags || [],
         createdAt: now,
         updatedAt: now
+      };
+
+      const response = await fetch(`${apiBaseUrl}/api/time-records`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
       });
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return result.data as TimeRecord;
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to create time record: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to create time record: ${handleApiError(error)}`);
     }
   }
 
@@ -61,60 +70,40 @@ export class TimeRecordService {
    */
   static async getTimeRecords(filters?: TimeRecordFilters): Promise<TimeRecord[]> {
     try {
-      let query = client.models.TimeRecord.list();
-
-      // Apply filters if provided
-      if (filters?.projectName) {
-        query = client.models.TimeRecord.list({
-          filter: {
-            projectName: {
-              eq: filters.projectName
-            }
-          }
-        });
-      }
-
-      const result = await query;
-
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
-      }
-
-      let records = result.data as TimeRecord[];
-
-      // Apply date range filtering (client-side for now)
-      if (filters?.startDate || filters?.endDate) {
-        records = records.filter(record => {
-          const recordDate = new Date(record.startTime).toISOString().split('T')[0];
-          
-          if (filters.startDate && recordDate < filters.startDate) {
-            return false;
-          }
-          
-          if (filters.endDate && recordDate > filters.endDate) {
-            return false;
-          }
-          
-          return true;
-        });
-      }
-
-      // Apply tag filtering
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (filters?.projectName) queryParams.append('project', filters.projectName);
+      if (filters?.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters?.endDate) queryParams.append('endDate', filters.endDate);
       if (filters?.tags && filters.tags.length > 0) {
-        records = records.filter(record => {
-          if (!record.tags || record.tags.length === 0) {
-            return false;
-          }
-          return filters.tags!.some(tag => record.tags!.includes(tag));
-        });
+        filters.tags.forEach(tag => queryParams.append('tags', tag));
       }
 
+      const url = `${apiBaseUrl}/api/time-records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const records = await response.json();
+      
       // Sort by start time (most recent first)
-      records.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+      records.sort((a: TimeRecord, b: TimeRecord) => 
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+      );
 
       return records;
     } catch (error) {
-      throw new Error(`Failed to fetch time records: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch time records: ${handleApiError(error)}`);
     }
   }
 
@@ -123,15 +112,26 @@ export class TimeRecordService {
    */
   static async getTimeRecord(id: string): Promise<TimeRecord | null> {
     try {
-      const result = await client.models.TimeRecord.get({ id });
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      
+      const response = await fetch(`${apiBaseUrl}/api/time-records/${id}`, {
+        method: 'GET',
+        headers
+      });
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      if (response.status === 404) {
+        return null;
       }
 
-      return result.data as TimeRecord | null;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to fetch time record: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch time record: ${handleApiError(error)}`);
     }
   }
 
@@ -166,8 +166,7 @@ export class TimeRecordService {
       }
 
       const updateData: any = {
-        id: input.id,
-        updatedAt: formatDateForDB(new Date())
+        updatedAt: formatDateForAPI(new Date())
       };
 
       // Only include fields that are being updated
@@ -178,15 +177,23 @@ export class TimeRecordService {
       if (duration !== undefined) updateData.duration = duration;
       if (input.tags !== undefined) updateData.tags = input.tags;
 
-      const result = await client.models.TimeRecord.update(updateData);
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      const response = await fetch(`${apiBaseUrl}/api/time-records/${input.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return result.data as TimeRecord;
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to update time record: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to update time record: ${handleApiError(error)}`);
     }
   }
 
@@ -195,13 +202,20 @@ export class TimeRecordService {
    */
   static async deleteTimeRecord(id: string): Promise<void> {
     try {
-      const result = await client.models.TimeRecord.delete({ id });
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
 
-      if (result.errors) {
-        throw new Error(handleAmplifyError(result));
+      const response = await fetch(`${apiBaseUrl}/api/time-records/${id}`, {
+        method: 'DELETE',
+        headers
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      throw new Error(`Failed to delete time record: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to delete time record: ${handleApiError(error)}`);
     }
   }
 
@@ -210,22 +224,24 @@ export class TimeRecordService {
    */
   static async getProjectSuggestions(query?: string): Promise<string[]> {
     try {
-      const records = await this.getTimeRecords();
+      const apiBaseUrl = await getApiBaseUrl();
+      const headers = await getAuthHeaders();
       
-      // Extract unique project names
-      const projectNames = [...new Set(records.map(record => record.projectName))];
+      const queryParams = query ? `?q=${encodeURIComponent(query)}` : '';
       
-      // Filter by query if provided
-      if (query) {
-        const lowerQuery = query.toLowerCase();
-        return projectNames.filter(name => 
-          name.toLowerCase().includes(lowerQuery)
-        );
+      const response = await fetch(`${apiBaseUrl}/api/projects/suggestions${queryParams}`, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
-      
-      return projectNames;
+
+      return await response.json();
     } catch (error) {
-      throw new Error(`Failed to fetch project suggestions: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch project suggestions: ${handleApiError(error)}`);
     }
   }
 
@@ -252,7 +268,7 @@ export class TimeRecordService {
 
       return groupedRecords;
     } catch (error) {
-      throw new Error(`Failed to fetch time records by date range: ${handleAmplifyError(error)}`);
+      throw new Error(`Failed to fetch time records by date range: ${handleApiError(error)}`);
     }
   }
 }

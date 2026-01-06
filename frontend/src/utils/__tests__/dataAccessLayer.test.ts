@@ -5,7 +5,7 @@
 
 import { TimeRecordService } from '../timeRecordService';
 import { ProjectService } from '../projectService';
-import { validateTimeRecord, calculateDuration, formatDateForDB } from '../amplifyClient';
+import { validateTimeRecord, calculateDuration, formatDateForAPI } from '../apiClient';
 
 describe('Data Access Layer', () => {
   describe('TimeRecordService', () => {
@@ -80,17 +80,17 @@ describe('Data Access Layer', () => {
       });
     });
 
-    describe('formatDateForDB', () => {
+    describe('formatDateForAPI', () => {
       it('should format Date object to ISO string', () => {
         const date = new Date('2024-01-01T10:00:00Z');
-        const formatted = formatDateForDB(date);
+        const formatted = formatDateForAPI(date);
         
         expect(formatted).toBe('2024-01-01T10:00:00.000Z');
       });
 
       it('should return string as-is', () => {
         const dateString = '2024-01-01T10:00:00Z';
-        const formatted = formatDateForDB(dateString);
+        const formatted = formatDateForAPI(dateString);
         
         expect(formatted).toBe(dateString);
       });
