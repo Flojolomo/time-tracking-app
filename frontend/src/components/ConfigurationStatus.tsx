@@ -71,9 +71,10 @@ export function ConfigurationStatus() {
             </div>
             
             <div className="mt-4 p-3 bg-yellow-100 rounded text-xs">
-              <strong>AWS Amplify Gen 2 Structure:</strong>
+              <strong>AWS Amplify v5 Configuration:</strong>
               <ul className="mt-1 space-y-1">
                 <li>• Uses <code>public/amplify_outputs.json</code> for configuration</li>
+                <li>• Standard AWS Amplify v5 format</li>
                 <li>• Runtime configuration loaded dynamically</li>
                 <li>• No environment variables needed</li>
                 <li>• Infrastructure deployed via AWS CDK</li>
