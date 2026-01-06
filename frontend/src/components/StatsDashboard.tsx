@@ -12,9 +12,7 @@ import type {
   TimeStatistics,
   DailyStatistics 
 } from '../types';
-import { ProjectChart } from './ProjectChart';
-import { TimelineChart } from './TimelineChart';
-import { MetricsCards } from './MetricsCards';
+import { ProjectChart, TimelineChart, MetricsCards } from './index';
 
 interface StatsDashboardProps {
   className?: string;
