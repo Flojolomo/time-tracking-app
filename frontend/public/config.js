@@ -1,17 +1,49 @@
-// AWS Configuration for Production Deployment
-// This file will be populated by the CDK deployment process
+// Runtime configuration for Time Tracking App
+// This file is loaded dynamically at runtime and can be updated without rebuilding the app
 
-window.__AWS_CONFIG__ = {
-  region: '${AWS_REGION}',
-  userPoolId: '${COGNITO_USER_POOL_ID}',
-  userPoolWebClientId: '${COGNITO_USER_POOL_CLIENT_ID}',
-  cognitoDomain: '${COGNITO_DOMAIN}',
-  apiEndpoint: '${API_ENDPOINT}',
-  redirectSignIn: '${REDIRECT_SIGN_IN}',
-  redirectSignOut: '${REDIRECT_SIGN_OUT}'
+window.APP_CONFIG = {
+  aws: {
+    region: 'us-east-1',
+    cognito: {
+      userPoolId: '', // Set this to your Cognito User Pool ID
+      userPoolWebClientId: '', // Set this to your Cognito User Pool Client ID
+      domain: '', // Set this to your Cognito domain (optional)
+    },
+    api: {
+      endpoint: '', // Set this to your API Gateway endpoint
+    }
+  },
+  app: {
+    name: 'Time Tracking App',
+    version: '1.0.0',
+    environment: 'development' // development, staging, production
+  },
+  features: {
+    enableOAuth: false, // Set to true if using OAuth
+    enableMFA: false, // Set to true if using MFA
+    enableAnalytics: false // Set to true if using analytics
+  }
 };
 
-// Development fallback - if variables aren't replaced, clear the config
-if (window.__AWS_CONFIG__.userPoolId.startsWith('${')) {
-  window.__AWS_CONFIG__ = null;
-}
+// Development mode detection
+window.APP_CONFIG.isDevelopmentMode = function() {
+  return !this.aws.cognito.userPoolId || !this.aws.cognito.userPoolWebClientId;
+};
+
+// Validation function
+window.APP_CONFIG.validate = function() {
+  const required = [
+    'aws.cognito.userPoolId',
+    'aws.cognito.userPoolWebClientId'
+  ];
+  
+  const missing = required.filter(path => {
+    const value = path.split('.').reduce((obj, key) => obj?.[key], this);
+    return !value;
+  });
+  
+  return {
+    isValid: missing.length === 0,
+    missing: missing
+  };
+};

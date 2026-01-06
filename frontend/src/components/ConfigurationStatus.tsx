@@ -19,20 +19,37 @@ export function ConfigurationStatus() {
           </h3>
           <div className="mt-2 text-sm text-yellow-700">
             <p className="mb-3">
-              To enable authentication features, you need to configure AWS Cognito. Follow these steps:
+              To enable authentication features, you need to configure AWS Cognito:
             </p>
-            <ol className="list-decimal list-inside space-y-2">
-              <li>Deploy the AWS infrastructure (task 2.1 should provide the values)</li>
-              <li>Create a <code className="bg-yellow-100 px-1 rounded">.env</code> file in the frontend directory</li>
-              <li>Copy the template from <code className="bg-yellow-100 px-1 rounded">.env.example</code></li>
-              <li>Fill in your AWS Cognito User Pool details</li>
-            </ol>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-yellow-800 mb-2">For Development:</h4>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Run <code className="bg-yellow-100 px-1 rounded">npm run setup-env</code></li>
+                  <li>Edit the created <code className="bg-yellow-100 px-1 rounded">.env</code> file</li>
+                  <li>Add your AWS Cognito User Pool details</li>
+                  <li>Restart the development server</li>
+                </ol>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-yellow-800 mb-2">For Production (S3 Static Hosting):</h4>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Deploy AWS infrastructure (CDK will handle configuration)</li>
+                  <li>Build process injects config into <code className="bg-yellow-100 px-1 rounded">config.js</code></li>
+                  <li>No environment variables needed in production</li>
+                </ol>
+              </div>
+            </div>
+            
             <div className="mt-4 p-3 bg-yellow-100 rounded text-xs">
-              <strong>Required variables:</strong>
+              <strong>Required AWS values:</strong>
               <ul className="mt-1 space-y-1">
-                <li>• VITE_COGNITO_USER_POOL_ID</li>
-                <li>• VITE_COGNITO_USER_POOL_CLIENT_ID</li>
-                <li>• VITE_AWS_REGION</li>
+                <li>• Cognito User Pool ID</li>
+                <li>• Cognito User Pool Client ID</li>
+                <li>• AWS Region</li>
+                <li>• API Gateway Endpoint (optional)</li>
               </ul>
             </div>
           </div>
