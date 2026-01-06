@@ -3,10 +3,15 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
+import { AmplifyConfigGenerator } from './amplify-config-generator';
+import { writeFileSync } from 'fs';
+import * as path from 'path';
 
 export class TimeTrackingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -118,13 +123,12 @@ export class TimeTrackingStack extends cdk.Stack {
           cognito.OAuthScope.OPENID,
           cognito.OAuthScope.PROFILE,
         ],
+        // Initial callback URLs - will be updated after CloudFront is created
         callbackUrls: [
-          'http://localhost:5173/auth/callback', // Local development
-          `https://${this.account}.execute-api.${this.region}.amazonaws.com/prod/auth/callback`, // Production
+          'http://localhost:3001/', // Local development
         ],
         logoutUrls: [
-          'http://localhost:5173/', // Local development
-          `https://${this.account}.execute-api.${this.region}.amazonaws.com/prod/`, // Production
+          'http://localhost:3001/', // Local development
         ],
       },
       readAttributes: new cognito.ClientAttributes()
@@ -266,6 +270,65 @@ export class TimeTrackingStack extends cdk.Stack {
       ],
     });
 
+    // Update OAuth URLs to use CloudFront domain
+    const cloudfrontDomain = `https://${distribution.distributionDomainName}`;
+    
+    // Create Identity Pool for AWS credentials
+    const identityPool = new cognito.CfnIdentityPool(this, 'TimeTrackingIdentityPool', {
+      identityPoolName: 'TimeTrackingIdentityPool',
+      allowUnauthenticatedIdentities: false,
+      cognitoIdentityProviders: [
+        {
+          clientId: userPoolClient.userPoolClientId,
+          providerName: userPool.userPoolProviderName,
+        },
+      ],
+    });
+
+    // Create roles for authenticated users
+    const authenticatedRole = new iam.Role(this, 'CognitoAuthenticatedRole', {
+      assumedBy: new iam.FederatedPrincipal(
+        'cognito-identity.amazonaws.com',
+        {
+          StringEquals: {
+            'cognito-identity.amazonaws.com:aud': identityPool.ref,
+          },
+          'ForAnyValue:StringLike': {
+            'cognito-identity.amazonaws.com:amr': 'authenticated',
+          },
+        },
+        'sts:AssumeRoleWithWebIdentity'
+      ),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonCognitoPowerUser'),
+      ],
+    });
+
+    // Attach the role to the identity pool
+    new cognito.CfnIdentityPoolRoleAttachment(this, 'IdentityPoolRoleAttachment', {
+      identityPoolId: identityPool.ref,
+      roles: {
+        authenticated: authenticatedRole.roleArn,
+      },
+    });
+
+    // Generate Amplify configuration and deploy website
+    const configGenerator = new AmplifyConfigGenerator({
+      userPool,
+      userPoolClient,
+      userPoolDomain,
+      identityPool,
+      distribution,
+      region: this.region,
+    });
+
+    // Deploy website with generated configuration
+    const deployment = configGenerator.createDeployment(
+      this,
+      websiteBucket,
+      distribution
+    );
+
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
@@ -282,6 +345,11 @@ export class TimeTrackingStack extends cdk.Stack {
       description: 'Cognito User Pool Client ID',
     });
 
+    new cdk.CfnOutput(this, 'IdentityPoolId', {
+      value: identityPool.ref,
+      description: 'Cognito Identity Pool ID',
+    });
+
     new cdk.CfnOutput(this, 'UserPoolDomain', {
       value: userPoolDomain.domainName,
       description: 'Cognito User Pool Domain',
@@ -293,7 +361,7 @@ export class TimeTrackingStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'WebsiteUrl', {
-      value: distribution.distributionDomainName,
+      value: `https://${distribution.distributionDomainName}`,
       description: 'CloudFront Distribution URL',
     });
 
