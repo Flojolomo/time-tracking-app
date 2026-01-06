@@ -68,13 +68,15 @@ interface TimeRecordListProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   filters?: TimeRecordFilters;
+  onEditRecord?: (record: TimeRecord) => void;
 }
 
 export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   viewType,
   selectedDate,
   onDateChange,
-  filters
+  filters,
+  onEditRecord
 }) => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
