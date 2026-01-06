@@ -390,7 +390,7 @@ const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate, onEditReco
               key={record.id} 
               record={record} 
               onEdit={onEditRecord}
-              onDelete={handleDeleteRecord}
+              onDelete={onDeleteRecord}
             />
           ))}
       </div>
