@@ -13,3 +13,8 @@ export const formatDate = (date: string): string => {
 export const formatTime = (time: string): string => {
   return new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
+
+// Export data access services
+export { TimeRecordService } from './timeRecordService';
+export { ProjectService } from './projectService';
+export * from './amplifyClient';

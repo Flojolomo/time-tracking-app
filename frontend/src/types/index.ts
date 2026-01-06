@@ -1,24 +1,68 @@
 // Type definitions for the application
 
 export interface TimeRecord {
-  recordId: string;
+  id: string;
   userId: string;
-  project: string;
+  projectName: string;
+  description?: string;
+  startTime: string; // ISO 8601 timestamp
+  endTime?: string; // ISO 8601 timestamp
+  duration?: number; // Duration in minutes
+  tags?: string[];
+  createdAt?: string; // ISO 8601 timestamp
+  updatedAt?: string; // ISO 8601 timestamp
+}
+
+export interface CreateTimeRecordInput {
+  projectName: string;
+  description?: string;
   startTime: string;
-  endTime: string;
-  date: string;
-  duration: number;
-  comment: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
+  endTime?: string;
+  duration?: number;
+  tags?: string[];
+}
+
+export interface UpdateTimeRecordInput {
+  id: string;
+  projectName?: string;
+  description?: string;
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  tags?: string[];
+}
+
+export interface TimeRecordFilters {
+  startDate?: string; // YYYY-MM-DD format
+  endDate?: string; // YYYY-MM-DD format
+  projectName?: string;
+  tags?: string[];
 }
 
 export interface Project {
-  projectName: string;
-  lastUsed: string;
-  totalRecords: number;
-  totalDuration: number;
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  userId: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateProjectInput {
+  name: string;
+  description?: string;
+  color?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateProjectInput {
+  id: string;
+  name?: string;
+  description?: string;
+  color?: string;
+  isActive?: boolean;
 }
 
 export interface User {

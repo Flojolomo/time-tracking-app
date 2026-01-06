@@ -4,7 +4,7 @@ const schema = a.schema({
   TimeRecord: a
     .model({
       id: a.id(),
-      userId: a.string().required(),
+      userId: a.string(),
       projectName: a.string().required(),
       description: a.string(),
       startTime: a.datetime().required(),
@@ -24,7 +24,7 @@ const schema = a.schema({
       name: a.string().required(),
       description: a.string(),
       color: a.string(),
-      userId: a.string().required(),
+      userId: a.string(),
       isActive: a.boolean().default(true),
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
