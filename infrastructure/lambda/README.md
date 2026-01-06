@@ -7,6 +7,66 @@ This directory contains the AWS Lambda functions that implement the Time Trackin
 - `timeRecords/` - Lambda function handling time records CRUD operations and statistics
 - `projects/` - Lambda function handling project suggestions and project data
 
+## Build System
+
+### Directory Structure
+```
+infrastructure/
+├── lambda/
+│   ├── timeRecords/
+│   │   ├── src/           # TypeScript source files
+│   │   ├── dist/          # Compiled JavaScript (excluded from git)
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── projects/
+│       ├── src/           # TypeScript source files
+│       ├── dist/          # Compiled JavaScript (excluded from git)
+│       ├── package.json
+│       └── tsconfig.json
+├── dist/                  # Infrastructure compiled files (excluded from git)
+├── lib/                   # Infrastructure TypeScript source
+├── bin/                   # Infrastructure TypeScript source
+└── package.json
+```
+
+### Build Commands
+
+From the `infrastructure/` directory:
+
+```bash
+# Build everything (infrastructure + all lambdas)
+npm run build:all
+
+# Build only infrastructure
+npm run build
+
+# Build only lambda functions
+npm run build:lambdas
+
+# Build individual lambda functions
+npm run build:lambda:timeRecords
+npm run build:lambda:projects
+
+# Clean compiled files
+npm run clean:all          # Clean everything
+npm run clean              # Clean infrastructure only
+npm run clean:lambdas      # Clean lambda functions only
+
+# CDK commands (automatically build before running)
+npm run deploy             # Build all + deploy
+npm run synth              # Build all + synthesize
+npm run diff               # Build all + show diff
+```
+
+### Version Control
+
+All compiled files are excluded from version control:
+- `infrastructure/dist/` - Infrastructure compiled files
+- `infrastructure/lambda/*/dist/` - Lambda compiled files
+- `infrastructure/cdk.out/` - CDK output files
+
+Only TypeScript source files and configuration are tracked in git.
+
 ## API Endpoints
 
 ### Time Records API (`timeRecords/`)
