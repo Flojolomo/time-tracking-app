@@ -1,26 +1,42 @@
 {
   "version": "1",
   "auth": {
-    "aws_region": "us-east-1",
-    "user_pool_id": "",
-    "user_pool_client_id": "",
-    "identity_pool_id": "",
+    "aws_region": "eu-central-1",
+    "user_pool_id": "eu-central-1_PbdRXgiO5",
+    "user_pool_client_id": "3m636djicr4q1detiii55f8dkd",
+    "identity_pool_id": "eu-central-1:bfd3bdc0-56a9-43e6-8ff1-c01b4b5d3140",
     "password_policy": {
       "min_length": 8,
       "require_lowercase": true,
       "require_uppercase": true,
       "require_numbers": true,
-      "require_symbols": true
+      "require_symbols": false
     },
     "oauth": {
-      "identity_providers": ["COGNITO"],
-      "domain": "",
-      "scopes": ["email", "openid", "profile"],
-      "redirect_sign_in_uri": ["http://localhost:3001/"],
-      "redirect_sign_out_uri": ["http://localhost:3001/"],
+      "identity_providers": [
+        "COGNITO"
+      ],
+      "domain": "time-tracking-891612555353-eu-central-1.auth.eu-central-1.amazoncognito.com",
+      "scopes": [
+        "email",
+        "openid",
+        "profile"
+      ],
+      "redirect_sign_in_uri": [
+        "http://localhost:3001/",
+        "https://d55crnosjyzta.cloudfront.net/"
+      ],
+      "redirect_sign_out_uri": [
+        "http://localhost:3001/",
+        "https://d55crnosjyzta.cloudfront.net/"
+      ],
       "response_type": "code"
     },
-    "username_attributes": ["email"],
-    "user_verification_types": ["email"]
+    "username_attributes": [
+      "email"
+    ],
+    "user_verification_types": [
+      "email"
+    ]
   }
 }
