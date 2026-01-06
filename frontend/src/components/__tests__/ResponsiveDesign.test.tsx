@@ -3,9 +3,7 @@
  * Tests to verify mobile-friendly responsive design implementations
  */
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import { ViewSelector } from '../ViewSelector';
 import { MetricsCards } from '../MetricsCards';
 import { TimeStatistics } from '../../types';
@@ -16,7 +14,7 @@ const mockTimeStats: TimeStatistics = {
   averageDailyTime: 240, // 4 hours
   totalRecords: 12,
   averageSessionDuration: 40, // 40 minutes
-  workingDays: 2
+  productiveHours: 8 // 8 hours
 };
 
 describe('Responsive Design Components', () => {

@@ -152,88 +152,7 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
-    // Lambda function for time records API
-    const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/timeRecords/dist'),
-      timeout: cdk.Duration.seconds(30),
-      memorySize: 256,
-      environment: {
-        TABLE_NAME: timeRecordsTable.tableName,
-        USER_POOL_ID: userPool.userPoolId,
-        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
-        USER_POOL_DOMAIN: userPoolDomain.domainName,
-        REGION: this.region,
-      },
-    });
-
-    // Lambda function for projects API
-    const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/projects/dist'),
-      timeout: cdk.Duration.seconds(30),
-      memorySize: 256,
-      environment: {
-        TABLE_NAME: timeRecordsTable.tableName,
-        USER_POOL_ID: userPool.userPoolId,
-        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
-        USER_POOL_DOMAIN: userPoolDomain.domainName,
-        REGION: this.region,
-      },
-    });
-
-    // Grant DynamoDB permissions to Lambda functions
-    timeRecordsTable.grantReadWriteData(timeRecordsHandler);
-    timeRecordsTable.grantReadWriteData(projectsHandler);
-
-    // API Gateway
-    const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
-      restApiName: 'Time Tracking API',
-      description: 'API for time tracking application',
-      defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: [
-          'Content-Type',
-          'X-Amz-Date',
-          'Authorization',
-          'X-Api-Key',
-          'X-Amz-Security-Token',
-        ],
-      },
-    });
-
-    // API Gateway Integrations
-    const timeRecordsIntegration = new apigateway.LambdaIntegration(timeRecordsHandler);
-    const projectsIntegration = new apigateway.LambdaIntegration(projectsHandler);
-
-    // API Routes
-    const apiResource = api.root.addResource('api');
-    
-    // Time Records routes
-    const timeRecordsResource = apiResource.addResource('time-records');
-    timeRecordsResource.addMethod('GET', timeRecordsIntegration);
-    timeRecordsResource.addMethod('POST', timeRecordsIntegration);
-    
-    const timeRecordResource = timeRecordsResource.addResource('{id}');
-    timeRecordResource.addMethod('GET', timeRecordsIntegration);
-    timeRecordResource.addMethod('PUT', timeRecordsIntegration);
-    timeRecordResource.addMethod('DELETE', timeRecordsIntegration);
-
-    // Projects routes
-    const projectsResource = apiResource.addResource('projects');
-    projectsResource.addMethod('GET', projectsIntegration);
-    
-    const suggestionsResource = projectsResource.addResource('suggestions');
-    suggestionsResource.addMethod('GET', projectsIntegration);
-
-    // Statistics routes (placeholder for now - will use time records handler)
-    const statsResource = apiResource.addResource('stats');
-    statsResource.addMethod('GET', timeRecordsIntegration);
-
-    // S3 Bucket for frontend hosting
+    // S3 Bucket for frontend hosting (must be created before CloudFront)
     const websiteBucket = new s3.Bucket(this, 'TimeTrackingWebsite', {
       bucketName: `time-tracking-website-${this.account}-${this.region}`,
       websiteIndexDocument: 'index.html',
@@ -263,6 +182,52 @@ export class TimeTrackingStack extends cdk.Stack {
           responsePagePath: '/index.html',
         },
       ],
+    });
+
+    // Lambda function for time records API
+    const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/timeRecords/dist'),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        TABLE_NAME: timeRecordsTable.tableName,
+        USER_POOL_ID: userPool.userPoolId,
+        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
+        USER_POOL_DOMAIN: userPoolDomain.domainName,
+        REGION: this.region,
+        CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
+        ALLOWED_ORIGINS: [
+          'http://localhost:3001',
+          'http://localhost:3000',
+          'http://localhost:5173',
+          `https://${distribution.distributionDomainName}`
+        ].join(',')
+      },
+    });
+
+    // Lambda function for projects API
+    const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/projects/dist'),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        TABLE_NAME: timeRecordsTable.tableName,
+        USER_POOL_ID: userPool.userPoolId,
+        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
+        USER_POOL_DOMAIN: userPoolDomain.domainName,
+        REGION: this.region,
+        CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
+        ALLOWED_ORIGINS: [
+          'http://localhost:3001',
+          'http://localhost:3000',
+          'http://localhost:5173',
+          `https://${distribution.distributionDomainName}`
+        ].join(',')
+      },
     });
 
     // Update OAuth URLs to use CloudFront domain

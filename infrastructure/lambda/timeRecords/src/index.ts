@@ -27,25 +27,55 @@ interface TimeRecord {
   updatedAt: string;    // ISO 8601 timestamp
 }
 
+// Helper function to get allowed origin based on request
+const getAllowedOrigin = (event: APIGatewayProxyEvent): string => {
+  const origin = event.headers.origin || event.headers.Origin;
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:3001',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  
+  // Add CloudFront domain if available
+  if (process.env.CLOUDFRONT_DOMAIN) {
+    allowedOrigins.push(`https://${process.env.CLOUDFRONT_DOMAIN}`);
+  }
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin;
+  }
+  
+  // Default to CloudFront domain or first allowed origin
+  return process.env.CLOUDFRONT_DOMAIN 
+    ? `https://${process.env.CLOUDFRONT_DOMAIN}` 
+    : allowedOrigins[0];
+};
+
 // Helper function to create CORS headers
-const createCorsHeaders = () => ({
+const createCorsHeaders = (event?: APIGatewayProxyEvent) => ({
   'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
+  'Access-Control-Allow-Origin': event ? getAllowedOrigin(event) : (
+    process.env.CLOUDFRONT_DOMAIN 
+      ? `https://${process.env.CLOUDFRONT_DOMAIN}` 
+      : 'http://localhost:3001'
+  ),
+  'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400'
 });
 
 // Helper function to create error response
-const createErrorResponse = (statusCode: number, message: string): APIGatewayProxyResult => ({
+const createErrorResponse = (statusCode: number, message: string, event?: APIGatewayProxyEvent): APIGatewayProxyResult => ({
   statusCode,
-  headers: createCorsHeaders(),
+  headers: createCorsHeaders(event),
   body: JSON.stringify({ error: message })
 });
 
 // Helper function to create success response
-const createSuccessResponse = (statusCode: number, data: any): APIGatewayProxyResult => ({
+const createSuccessResponse = (statusCode: number, data: any, event?: APIGatewayProxyEvent): APIGatewayProxyResult => ({
   statusCode,
-  headers: createCorsHeaders(),
+  headers: createCorsHeaders(event),
   body: JSON.stringify(data)
 });
 
@@ -144,7 +174,7 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const queryParams = event.queryStringParameters || {};
@@ -188,10 +218,10 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       timeRecords,
       count: timeRecords.length,
       lastEvaluatedKey: result.LastEvaluatedKey
-    });
+    }, event);
   } catch (error) {
     console.error('Error getting time records:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -200,18 +230,18 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     const validation = validateTimeRecord(data);
 
     if (!validation.isValid) {
-      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`);
+      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`, event);
     }
 
     const recordId = uuidv4();
@@ -243,13 +273,13 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     await docClient.send(command);
 
-    return createSuccessResponse(201, timeRecord);
+    return createSuccessResponse(201, timeRecord, event);
   } catch (error) {
     console.error('Error creating time record:', error);
     if (error instanceof SyntaxError) {
-      return createErrorResponse(400, 'Invalid JSON in request body');
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -258,23 +288,23 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const recordId = event.pathParameters?.id;
     if (!recordId) {
-      return createErrorResponse(400, 'Record ID is required');
+      return createErrorResponse(400, 'Record ID is required', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     const validation = validateTimeRecord(data);
 
     if (!validation.isValid) {
-      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`);
+      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`, event);
     }
 
     // First, get the existing record to verify ownership and get the current SK
@@ -293,7 +323,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
     const existingRecord = getResult.Items?.[0];
 
     if (!existingRecord) {
-      return createErrorResponse(404, 'Time record not found');
+      return createErrorResponse(404, 'Time record not found', event);
     }
 
     const now = new Date().toISOString();
@@ -337,7 +367,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       });
 
       await docClient.send(putCommand);
-      return createSuccessResponse(200, newTimeRecord);
+      return createSuccessResponse(200, newTimeRecord, event);
     } else {
       // Update existing record in place
       const updateCommand = new UpdateCommand({
@@ -361,14 +391,14 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       });
 
       const updateResult = await docClient.send(updateCommand);
-      return createSuccessResponse(200, updateResult.Attributes);
+      return createSuccessResponse(200, updateResult.Attributes, event);
     }
   } catch (error) {
     console.error('Error updating time record:', error);
     if (error instanceof SyntaxError) {
-      return createErrorResponse(400, 'Invalid JSON in request body');
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -377,12 +407,12 @@ const deleteTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const recordId = event.pathParameters?.id;
     if (!recordId) {
-      return createErrorResponse(400, 'Record ID is required');
+      return createErrorResponse(400, 'Record ID is required', event);
     }
 
     // First, get the existing record to verify ownership and get the SK
@@ -401,7 +431,7 @@ const deleteTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
     const existingRecord = getResult.Items?.[0];
 
     if (!existingRecord) {
-      return createErrorResponse(404, 'Time record not found');
+      return createErrorResponse(404, 'Time record not found', event);
     }
 
     // Delete the record
@@ -415,10 +445,10 @@ const deleteTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     await docClient.send(deleteCommand);
 
-    return createSuccessResponse(200, { message: 'Time record deleted successfully', recordId });
+    return createSuccessResponse(200, { message: 'Time record deleted successfully', recordId }, event);
   } catch (error) {
     console.error('Error deleting time record:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -427,7 +457,7 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const queryParams = event.queryStringParameters || {};
@@ -519,10 +549,10 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       dailyTotals
     };
 
-    return createSuccessResponse(200, statistics);
+    return createSuccessResponse(200, statistics, event);
   } catch (error) {
     console.error('Error getting statistics:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -532,7 +562,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: createCorsHeaders(),
+      headers: createCorsHeaders(event),
       body: ''
     };
   }
@@ -553,10 +583,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     } else if (path === '/api/stats' && method === 'GET') {
       return await getStatistics(event);
     } else {
-      return createErrorResponse(404, 'Not found');
+      return createErrorResponse(404, 'Not found', event);
     }
   } catch (error) {
     console.error('Unhandled error:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };

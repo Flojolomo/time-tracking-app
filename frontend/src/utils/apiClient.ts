@@ -77,7 +77,9 @@ export async function getApiBaseUrl(): Promise<string> {
   try {
     const response = await fetch('/amplify_outputs.json');
     const config = await response.json();
-    return config.data?.url || '';
+    const url = config.data?.url || '';
+    // Remove trailing slash to prevent double slashes in URLs
+    return url.endsWith('/') ? url.slice(0, -1) : url;
   } catch (error) {
     console.error('Failed to load API configuration:', error);
     return '';
