@@ -10,7 +10,12 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
+    }
   },
   define: {
     global: 'globalThis',
@@ -24,5 +29,6 @@ export default defineConfig({
   optimizeDeps: {
     include: ['aws-amplify'],
     exclude: ['@aws-amplify/ui-react']
-  }
+  },
+  publicDir: 'public'
 })

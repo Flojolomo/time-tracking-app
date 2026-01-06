@@ -1,11 +1,34 @@
-import { isDevelopmentMode, validateAwsConfig } from '../aws-config';
+import { useState, useEffect } from 'react';
+import { getAmplifyConfig, isDevelopmentMode, validateAwsConfig } from '../aws-config';
 
 export function ConfigurationStatus() {
-  if (!isDevelopmentMode()) {
+  const [config, setConfig] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadConfiguration();
+  }, []);
+
+  const loadConfiguration = async () => {
+    try {
+      const amplifyConfig = await getAmplifyConfig();
+      setConfig(amplifyConfig);
+    } catch (error) {
+      console.error('Failed to load configuration:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return null; // Don't show anything while loading
+  }
+
+  if (!config || !isDevelopmentMode(config)) {
     return null; // Don't show if properly configured
   }
 
-  const validation = validateAwsConfig();
+  const validation = validateAwsConfig(config);
 
   return (
     <div className="max-w-2xl mx-auto mb-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -29,7 +52,7 @@ export function ConfigurationStatus() {
                 <h4 className="font-medium text-yellow-800 mb-2">Configuration Steps:</h4>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
                   <li>Deploy your AWS infrastructure using CDK (see infrastructure folder)</li>
-                  <li>Update <code className="bg-yellow-100 px-1 rounded">amplify_outputs.json</code> with your deployed resources</li>
+                  <li>Update <code className="bg-yellow-100 px-1 rounded">public/amplify_outputs.json</code> with your deployed resources</li>
                   <li>Add your Cognito User Pool ID and Client ID</li>
                   <li>Restart the development server</li>
                 </ol>
@@ -50,7 +73,7 @@ export function ConfigurationStatus() {
             <div className="mt-4 p-3 bg-yellow-100 rounded text-xs">
               <strong>AWS Amplify Gen 2 Structure:</strong>
               <ul className="mt-1 space-y-1">
-                <li>• Uses <code>amplify_outputs.json</code> for configuration</li>
+                <li>• Uses <code>public/amplify_outputs.json</code> for configuration</li>
                 <li>• Runtime configuration loaded dynamically</li>
                 <li>• No environment variables needed</li>
                 <li>• Infrastructure deployed via AWS CDK</li>

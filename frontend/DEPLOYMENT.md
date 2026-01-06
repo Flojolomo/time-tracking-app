@@ -28,14 +28,14 @@ npm run build
 This creates a `dist/` directory with the static files.
 
 ### 2. Configure AWS Values
-After building, update the AWS configuration in `amplify_outputs.json`:
+After building, update the AWS configuration in `dist/amplify_outputs.json`:
 
 ```bash
-# Update amplify_outputs.json with your deployed AWS resources
-# This can be done manually or through your CDK deployment process
+# The CDK deployment process will update this file with actual AWS resource values
+# This can be done as part of the BucketDeployment process
 ```
 
-Example configuration:
+Example configuration that CDK will inject:
 ```json
 {
   "version": "1",
@@ -80,7 +80,10 @@ import { writeFileSync } from 'fs';
 import * as path from 'path';
 
 // After creating your Cognito User Pool and other resources
-// Update amplify_outputs.json with deployed resource values
+// Build the frontend first
+execSync('npm run build', { cwd: path.join(__dirname, '../frontend') });
+
+// Update amplify_outputs.json in the dist folder with deployed resource values
 const amplifyConfig = {
   version: "1",
   auth: {
@@ -111,8 +114,8 @@ const amplifyConfig = {
   }
 };
 
-// Write the configuration to amplify_outputs.json before deployment
-const configPath = path.join(__dirname, '../frontend/amplify_outputs.json');
+// Write the configuration to the built dist folder
+const configPath = path.join(__dirname, '../frontend/dist/amplify_outputs.json');
 writeFileSync(configPath, JSON.stringify(amplifyConfig, null, 2));
 
 const deployment = new BucketDeployment(this, 'DeployWebsite', {
