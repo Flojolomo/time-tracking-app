@@ -60,10 +60,26 @@ const createSuccessResponse = (statusCode: number, data: any, event?: APIGateway
   body: JSON.stringify(data)
 });
 
-// Helper function to extract user ID from JWT token
+// Helper function to extract user ID from request context (set by API Gateway Cognito Authorizer)
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
   try {
     console.log('=== DEBUG: Extracting User ID ===');
+    console.log('Request context:', JSON.stringify(event.requestContext, null, 2));
+    
+    // When using Cognito User Pool Authorizer, API Gateway adds user info to requestContext.authorizer
+    if (event.requestContext.authorizer && event.requestContext.authorizer.claims) {
+      const claims = event.requestContext.authorizer.claims;
+      console.log('Cognito claims from authorizer:', JSON.stringify(claims, null, 2));
+      
+      const userId = claims.sub || claims['cognito:username'] || claims.username;
+      if (userId) {
+        console.log('SUCCESS: User ID extracted from authorizer context:', userId);
+        return userId;
+      }
+    }
+    
+    // Fallback: try to extract from Authorization header (for manual JWT decoding)
+    console.log('No authorizer context found, trying manual JWT extraction...');
     console.log('Headers:', JSON.stringify(event.headers, null, 2));
     
     // Get the Authorization header
