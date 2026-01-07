@@ -22,7 +22,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
   const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showStopForm, setShowStopForm] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [error, setError] = useState<string>('');
   
   const { showSuccess, showError } = useNotifications();
@@ -46,32 +45,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
   useEffect(() => {
     loadActiveRecord();
   }, []);
-
-  // Update elapsed time every second when timer is active
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (activeRecord) {
-      const updateElapsedTime = () => {
-        const start = new Date(activeRecord.startTime);
-        const now = new Date();
-        const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
-        setElapsedTime(elapsed);
-      };
-
-      // Update immediately
-      updateElapsedTime();
-      
-      // Then update every second
-      interval = setInterval(updateElapsedTime, 1000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [activeRecord]);
 
   const loadActiveRecord = async () => {
     try {
@@ -141,7 +114,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
       // Reset state
       setActiveRecord(null);
       setShowStopForm(false);
-      setElapsedTime(0);
       reset();
 
       showSuccess('Timer Stopped', 'Your time record has been saved successfully!');
@@ -151,17 +123,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
       setError(errorMessage);
       showError('Stop Failed', errorMessage);
     }
-  };
-
-  const formatElapsedTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
