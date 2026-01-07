@@ -9,6 +9,7 @@ A comprehensive time tracking web application that allows authenticated users to
 - **Time_Record**: A logged entry containing project, start/end times, tags, and comments
 - **Project**: A categorized work container that can be assigned to time records
 - **User**: An authenticated person who can create and manage time records
+- **Profile_Page**: Interface allowing users to manage their account settings and personal information
 - **Landing_Page**: Public interface showing application description and demo
 - **Time_Tracker**: The core system managing all time tracking functionality
 - **Authentication_System**: Component managing user login/logout and access control
@@ -28,6 +29,12 @@ A comprehensive time tracking web application that allows authenticated users to
 3. THE Authentication_System SHALL provide login and registration functionality
 4. WHEN a user successfully authenticates, THE Time_Tracker SHALL redirect them to the main application interface
 5. WHEN an authenticated user accesses the application, THE Time_Tracker SHALL display their personal time records and functionality
+6. WHEN a user forgets their password, THE Authentication_System SHALL provide password reset functionality via email
+7. THE Authentication_System SHALL provide a profile page for authenticated users
+8. WHEN on the profile page, THE Authentication_System SHALL allow users to update their password
+9. WHEN on the profile page, THE Authentication_System SHALL allow users to update their personal information
+10. WHEN on the profile page, THE Authentication_System SHALL allow users to delete their profile
+11. WHEN a user deletes their profile, THE Time_Tracker SHALL delete all associated time records permanently
 
 ### Requirement 2: Time Record Management
 
@@ -35,14 +42,14 @@ A comprehensive time tracking web application that allows authenticated users to
 
 #### Acceptance Criteria
 
-1. WHEN creating a time record, THE Time_Tracker SHALL require project, start time, end time, and date
+1. WHEN creating a time record, THE Time_Tracker SHALL require project, start time, end time, and date fields
 2. WHEN a user enters project information, THE Auto_Suggester SHALL provide suggestions from existing projects
 3. WHEN a user saves a time record, THE Time_Tracker SHALL validate that end time is after start time
 4. WHEN a user saves a time record, THE Time_Tracker SHALL persist the record with all required fields
 5. THE Time_Tracker SHALL allow users to edit existing time records
 6. THE Time_Tracker SHALL allow users to delete time records they own
 7. WHEN creating a time record, THE Time_Tracker SHALL accept optional comment and tags fields
-8. WHEN a user creates, updates, or deletes a time record, THE Time_Tracker SHALL refresh the current view to display up-to-date data 
+8. WHEN a user creates, updates, or deletes a time record, THE Time_Tracker SHALL refresh the current view to display updated data 
 
 ### Requirement 3: Project Management and Auto-Suggestion
 
@@ -50,9 +57,9 @@ A comprehensive time tracking web application that allows authenticated users to
 
 #### Acceptance Criteria
 
-1. WHEN a user types in the project field, THE Auto_Suggester SHALL display matching project names from their existing records
+1. WHEN a user types in the project field, THE Auto_Suggester SHALL display matching project names from the user's existing records
 2. WHEN a user selects a suggested project, THE Time_Tracker SHALL populate the project field with the selected value
-3. WHEN a user enters a new project name, THE Time_Tracker SHALL accept and store it for future suggestions
+3. WHEN a user enters a new project name, THE Time_Tracker SHALL accept and store the name for future suggestions
 4. THE Auto_Suggester SHALL filter suggestions based on partial text matches
 5. THE Auto_Suggester SHALL prioritize recently used projects in suggestions
 
@@ -62,9 +69,9 @@ A comprehensive time tracking web application that allows authenticated users to
 
 #### Acceptance Criteria
 
-1. THE Time_Tracker SHALL provide daily view showing all records for a selected day
-2. THE Time_Tracker SHALL provide weekly view showing records grouped by day within a week
-3. THE Time_Tracker SHALL provide monthly view showing records organized by weeks and days
+1. THE Time_Tracker SHALL provide a daily view showing all records for a selected day
+2. THE Time_Tracker SHALL provide a weekly view showing records grouped by day within a week
+3. THE Time_Tracker SHALL provide a monthly view showing records organized by weeks and days
 4. WHEN switching between views, THE Time_Tracker SHALL maintain user context and selected date ranges
 5. WHEN displaying time records, THE Time_Tracker SHALL show project, duration, tags, and comments for each entry
 6. THE Time_Tracker SHALL provide filtering capabilities by project name across all view screens
@@ -88,9 +95,9 @@ A comprehensive time tracking web application that allows authenticated users to
 
 #### Acceptance Criteria
 
-1. THE Time_Tracker SHALL display properly on desktop browsers with screen widths above 1024px
-2. THE Time_Tracker SHALL adapt layout for tablet devices with screen widths between 768px and 1024px
-3. THE Time_Tracker SHALL optimize interface for mobile devices with screen widths below 768px
+1. THE Time_Tracker SHALL display properly on desktop browsers with screen widths above 1024 pixels
+2. THE Time_Tracker SHALL adapt layout for tablet devices with screen widths between 768 and 1024 pixels
+3. THE Time_Tracker SHALL optimize interface for mobile devices with screen widths below 768 pixels
 4. WHEN on mobile devices, THE Time_Tracker SHALL provide touch-friendly interface elements
 5. THE Time_Tracker SHALL maintain full functionality across all supported device sizes
 
@@ -103,7 +110,7 @@ A comprehensive time tracking web application that allows authenticated users to
 1. THE Time_Tracker SHALL persist all time records to secure storage immediately upon creation
 2. THE Authentication_System SHALL ensure users can only access their own time records
 3. WHEN a user logs out and back in, THE Time_Tracker SHALL display all previously saved records
-4. THE Time_Tracker SHALL handle network interruptions gracefully and retry failed save operations
+4. WHEN network interruptions occur, THE Time_Tracker SHALL handle them gracefully and retry failed save operations
 5. THE Time_Tracker SHALL provide data backup and recovery mechanisms for user records
 
 ### Requirement 8: Live Timer and Active Record Management

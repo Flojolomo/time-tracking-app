@@ -31,9 +31,23 @@ This implementation plan breaks down the time tracking application into discrete
     - Create ProtectedRoute component for route protection
     - _Requirements: 1.3, 1.4, 1.5_
 
-  - [ ]* 2.3 Write basic unit test for authentication flow
+  - [ ] 2.3 Implement profile management functionality
+    - Create ProfilePage component for user account management
+    - Implement password reset functionality with email verification
+    - Add password update capability on profile page
+    - Add personal information update functionality
+    - Implement profile deletion with cascading record deletion
+    - _Requirements: 1.6, 1.7, 1.8, 1.9, 1.10, 1.11_
+
+  - [ ]* 2.4 Write basic unit test for authentication flow
     - Test login/signup form validation and user flow
     - _Requirements: 1.3, 1.4, 1.5_
+
+  - [ ]* 2.5 Write basic unit tests for profile management
+    - Test profile page functionality and validation
+    - Test password reset and update flows
+    - Test profile deletion with data cleanup
+    - _Requirements: 1.6, 1.7, 1.8, 1.9, 1.10, 1.11_
 
 - [x] 3. Landing Page and Public Interface
   - [x] 3.1 Create responsive landing page component
@@ -62,10 +76,23 @@ This implementation plan breaks down the time tracking application into discrete
     - Update data model to support active records with isActive field
     - _Requirements: 2.4, 2.5, 2.6, 4.6, 4.7, 7.1_
 
-  - [ ]* 4.3 Write basic unit tests for data operations
+  - [ ] 4.3 Create Lambda functions for profile management API
+    - Implement GET /api/profile for retrieving user profile information
+    - Implement PUT /api/profile for updating personal information
+    - Implement PUT /api/profile/password for password updates
+    - Implement DELETE /api/profile for profile deletion with cascading record cleanup
+    - Integrate with Cognito for password reset functionality
+    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11_
+
+  - [ ]* 4.4 Write basic unit tests for data operations
     - Test CRUD operations for time records
     - Test data validation and error handling
     - _Requirements: 2.4, 2.5, 2.6, 7.1_
+
+  - [ ]* 4.5 Write basic unit tests for profile API operations
+    - Test profile management API endpoints
+    - Test cascading deletion functionality
+    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11_
 
 - [x] 5. Time Record Form and Validation
   - [x] 5.1 Create TimeRecordForm component with validation
