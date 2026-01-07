@@ -278,22 +278,27 @@ export class TimeTrackingStack extends cdk.Stack {
     timeRecordsTable.grantReadWriteData(timeRecordsHandler);
     timeRecordsTable.grantReadWriteData(projectsHandler);
 
-    // API Gateway
+    // API Gateway with optimized CORS to minimize preflight requests
     const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
       restApiName: 'Time Tracking API',
       description: 'API for time tracking application',
       // Explicitly disable caching to prevent authorization issues
       policy: undefined,
       defaultCorsPreflightOptions: {
-        allowOrigins: [
-          'http://localhost:3001',
-          'http://localhost:3000',
-          'http://localhost:5173',
-          `https://${distribution.distributionDomainName}`
-        ],
+        allowOrigins: ['*'], // More permissive to avoid preflight
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent'],
-        allowCredentials: true,
+        allowHeaders: [
+          'Content-Type',
+          'Authorization', 
+          'X-Amz-Date',
+          'X-Api-Key',
+          'X-Amz-Security-Token',
+          'X-Amz-User-Agent',
+          'X-Amz-Content-Sha256',
+          'X-Amz-Target'
+        ],
+        allowCredentials: false, // Set to false to avoid preflight for simple requests
+        maxAge: cdk.Duration.hours(24), // Cache preflight responses longer
       },
     });
 
