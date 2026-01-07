@@ -23,7 +23,7 @@ export function ProfilePage() {
   const { user, logout, updateProfile, changePassword, requestPasswordReset, deleteProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); 
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'danger'>('profile');

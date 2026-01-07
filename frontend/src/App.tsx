@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ActiveRecordDisplay, ProfilePage } from './components';
+import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ProfilePage } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -309,21 +309,13 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
 // Dashboard component for authenticated users
 function Dashboard() {
-  const [refreshTrigger, setRefreshTrigger] = React.useState(0);
-
-  const handleTimerUpdate = () => {
-    // Trigger refresh of active record display and any other data
-    setRefreshTrigger(prev => prev + 1);
-  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Active Record Display */}
-        <ActiveRecordDisplay refreshTrigger={refreshTrigger} />
         
         {/* Timer Widget */}
-        <TimerWidget onTimerUpdate={handleTimerUpdate} />
+        <TimerWidget />
         
 
       </div>

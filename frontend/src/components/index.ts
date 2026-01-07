@@ -16,7 +16,6 @@ export { ProjectChart } from './ProjectChart';
 export { TimelineChart } from './TimelineChart';
 export { MetricsCards } from './MetricsCards';
 export { TimerWidget } from './TimerWidget';
-export { ActiveRecordDisplay } from './ActiveRecordDisplay';
 export { ProfilePage } from './ProfilePage';
 
 // Error handling and UI components

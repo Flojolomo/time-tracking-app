@@ -15,10 +15,9 @@ interface StopTimerFormData {
 }
 
 interface TimerWidgetProps {
-  onTimerUpdate?: () => void; // Callback to refresh data after timer operations
 }
 
-export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
+export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
   const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -106,7 +105,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
       });
 
       showSuccess('Timer Started', 'Your time tracking has begun!');
-      onTimerUpdate?.();
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to start timer';
       setError(errorMessage);
@@ -155,7 +153,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerUpdate }) => {
       reset();
 
       showSuccess('Timer Stopped', 'Your time record has been saved successfully!');
-      onTimerUpdate?.();
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to stop timer';
       setError(errorMessage);
