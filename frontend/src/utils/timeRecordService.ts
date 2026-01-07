@@ -165,10 +165,12 @@ export class TimeRecordService {
       const queryParams: Record<string, string> = {};
       if (query) queryParams.q = query;
       
-      return await apiRequest<string[]>('api/projects/suggestions', {
+      const response = await apiRequest<{ suggestions: string[]; count: number }>('api/projects/suggestions', {
         method: 'GET',
         queryParams
       });
+      
+      return response.suggestions || [];
     } catch (error) {
       throw new Error(`Failed to fetch project suggestions: ${handleApiError(error)}`);
     }

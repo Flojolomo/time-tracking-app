@@ -132,6 +132,7 @@ This implementation plan breaks down the time tracking application into discrete
     - Create RecordFilters component for project and tag filtering
     - Add filtering controls to all view screens (daily, weekly, monthly)
     - Implement backend filtering support in API endpoints
+    - Integrate route into API gateway
     - Ensure filters work across all time period views
     - _Requirements: 4.6, 4.7_
 

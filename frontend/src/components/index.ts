@@ -10,6 +10,7 @@ export { ProjectAutocomplete } from './ProjectAutocomplete';
 export { TimeRecordList } from './TimeRecordList';
 export { ViewSelector } from './ViewSelector';
 export { TimeRecordViews } from './TimeRecordViews';
+export { RecordFilters } from './RecordFilters';
 export { StatsDashboard } from './StatsDashboard';
 export { ProjectChart } from './ProjectChart';
 export { TimelineChart } from './TimelineChart';

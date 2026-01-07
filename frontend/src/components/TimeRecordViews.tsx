@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TimeRecordList } from './TimeRecordList';
 import { TimeRecordForm } from './TimeRecordForm';
 import { ViewSelector } from './ViewSelector';
+import { RecordFilters } from './RecordFilters';
 import { TimeRecordFilters, TimeRecord } from '../types';
 import { useViewState } from '../contexts/ViewStateContext';
 import { useViewRouting } from '../hooks/useViewRouting';
@@ -16,7 +17,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   filters,
   className = ''
 }) => {
-  const { state, setDate } = useViewState();
+  const { state, setDate, setFilters } = useViewState();
   const { navigateToView } = useViewRouting();
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<TimeRecord | undefined>(undefined);
@@ -35,6 +36,11 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
     filters?.endDate,
     filters?.tags?.join(',')
   ]);
+
+  // Handle filter changes
+  const handleFiltersChange = (newFilters: TimeRecordFilters) => {
+    setFilters(newFilters);
+  };
 
   const handleFormSuccess = () => {
     setShowForm(false);
@@ -95,6 +101,12 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
           />
         </div>
       </div>
+
+      {/* Filters */}
+      <RecordFilters
+        filters={mergedFilters}
+        onFiltersChange={handleFiltersChange}
+      />
 
       {/* Time Record Form */}
       {showForm && (

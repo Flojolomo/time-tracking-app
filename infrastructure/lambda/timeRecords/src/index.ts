@@ -215,7 +215,7 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     const queryParams = event.queryStringParameters || {};
-    const { startDate, endDate, project, limit = '50' } = queryParams;
+    const { startDate, endDate, project, tags, limit = '50' } = queryParams;
 
     const params: any = {
       TableName: TABLE_NAME,
@@ -240,23 +240,38 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       params.ExpressionAttributeValues[':endSK'] = `RECORD#${endDate}~`;
     }
 
+    // Build filter expressions
+    const filterExpressions: string[] = [];
+    
+    // Filter out active records from regular listings
+    filterExpressions.push('(attribute_not_exists(isActive) OR isActive = :notActive)');
+    params.ExpressionAttributeValues[':notActive'] = false;
+
     // Add project filtering if provided
     if (project) {
-      if (params.FilterExpression) {
-        params.FilterExpression += ' AND project = :project';
-      } else {
-        params.FilterExpression = 'project = :project';
-      }
+      filterExpressions.push('project = :project');
       params.ExpressionAttributeValues[':project'] = project;
     }
 
-    // Filter out active records from regular listings
-    if (params.FilterExpression) {
-      params.FilterExpression += ' AND (attribute_not_exists(isActive) OR isActive = :notActive)';
-    } else {
-      params.FilterExpression = 'attribute_not_exists(isActive) OR isActive = :notActive';
+    // Add tag filtering if provided
+    if (tags) {
+      const tagList = tags.split(',').map((tag: string) => tag.trim()).filter(Boolean);
+      if (tagList.length > 0) {
+        // Create filter expression for tags - record must contain ALL specified tags
+        const tagFilterExpressions = tagList.map((_, index) => `contains(tags, :tag${index})`);
+        filterExpressions.push(`(${tagFilterExpressions.join(' AND ')})`);
+        
+        // Add tag values to expression attribute values
+        tagList.forEach((tag, index) => {
+          params.ExpressionAttributeValues[`:tag${index}`] = tag;
+        });
+      }
     }
-    params.ExpressionAttributeValues[':notActive'] = false;
+
+    // Combine all filter expressions
+    if (filterExpressions.length > 0) {
+      params.FilterExpression = filterExpressions.join(' AND ');
+    }
 
     const command = new QueryCommand(params);
     const result = await docClient.send(command);
