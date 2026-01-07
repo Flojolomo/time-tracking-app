@@ -223,7 +223,6 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       ExpressionAttributeValues: {
         ':pk': `USER#${userId}`
       },
-      ExpressionAttributeNames: {}, // Initialize for reserved keywords
       ScanIndexForward: false, // Sort by SK in descending order (newest first)
       Limit: parseInt(limit)
     };
@@ -251,6 +250,10 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Add project filtering if provided (project is a reserved keyword)
     if (project) {
       filterExpressions.push('#project = :project');
+      // Only add ExpressionAttributeNames when we need it
+      if (!params.ExpressionAttributeNames) {
+        params.ExpressionAttributeNames = {};
+      }
       params.ExpressionAttributeNames['#project'] = 'project';
       params.ExpressionAttributeValues[':project'] = project;
     }
