@@ -34,8 +34,6 @@ export class TimeRecordService {
       }
 
       const now = formatDateForAPI(new Date());
-      const apiBaseUrl = await getApiBaseUrl();
-      const headers = await getAuthHeaders();
       
       const requestBody = {
         projectName: input.projectName,
@@ -48,10 +46,9 @@ export class TimeRecordService {
         updatedAt: now
       };
 
-      return await apiRequest<TimeRecord>(`${apiBaseUrl}/api/time-records`, {
+      return await apiRequest<TimeRecord>('api/time-records', {
         method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody)
+        body: requestBody
       });
     } catch (error) {
       throw new Error(`Failed to create time record: ${handleApiError(error)}`);
@@ -63,23 +60,18 @@ export class TimeRecordService {
    */
   static async getTimeRecords(filters?: TimeRecordFilters): Promise<TimeRecord[]> {
     try {
-      const apiBaseUrl = await getApiBaseUrl();
-      const headers = await getAuthHeaders();
-      
       // Build query parameters
-      const queryParams = new URLSearchParams();
-      if (filters?.projectName) queryParams.append('project', filters.projectName);
-      if (filters?.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters?.endDate) queryParams.append('endDate', filters.endDate);
+      const queryParams: Record<string, string> = {};
+      if (filters?.projectName) queryParams.project = filters.projectName;
+      if (filters?.startDate) queryParams.startDate = filters.startDate;
+      if (filters?.endDate) queryParams.endDate = filters.endDate;
       if (filters?.tags && filters.tags.length > 0) {
-        filters.tags.forEach(tag => queryParams.append('tags', tag));
+        queryParams.tags = filters.tags.join(',');
       }
 
-      const url = `${apiBaseUrl}/api/time-records${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-      
-      const records = await apiRequest<TimeRecord[]>(url, {
+      const records = await apiRequest<TimeRecord[]>('api/time-records', {
         method: 'GET',
-        headers
+        queryParams
       });
 
       // Sort by start time (most recent first)
@@ -98,25 +90,13 @@ export class TimeRecordService {
    */
   static async getTimeRecord(id: string): Promise<TimeRecord | null> {
     try {
-      const apiBaseUrl = await getApiBaseUrl();
-      const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${apiBaseUrl}/api/time-records/${id}`, {
-        method: 'GET',
-        headers
+      return await apiRequest<TimeRecord>(`api/time-records/${id}`, {
+        method: 'GET'
       });
-
-      if (response.status === 404) {
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
         return null;
       }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
       throw new Error(`Failed to fetch time record: ${handleApiError(error)}`);
     }
   }
@@ -163,21 +143,10 @@ export class TimeRecordService {
       if (duration !== undefined) updateData.duration = duration;
       if (input.tags !== undefined) updateData.tags = input.tags;
 
-      const apiBaseUrl = await getApiBaseUrl();
-      const headers = await getAuthHeaders();
-
-      const response = await fetch(`${apiBaseUrl}/api/time-records/${input.id}`, {
+      return await apiRequest<TimeRecord>(`api/time-records/${input.id}`, {
         method: 'PUT',
-        headers,
-        body: JSON.stringify(updateData)
+        body: updateData
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
     } catch (error) {
       throw new Error(`Failed to update time record: ${handleApiError(error)}`);
     }
@@ -188,18 +157,9 @@ export class TimeRecordService {
    */
   static async deleteTimeRecord(id: string): Promise<void> {
     try {
-      const apiBaseUrl = await getApiBaseUrl();
-      const headers = await getAuthHeaders();
-
-      const response = await fetch(`${apiBaseUrl}/api/time-records/${id}`, {
-        method: 'DELETE',
-        headers
+      await apiRequest<void>(`api/time-records/${id}`, {
+        method: 'DELETE'
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
     } catch (error) {
       throw new Error(`Failed to delete time record: ${handleApiError(error)}`);
     }
@@ -210,22 +170,13 @@ export class TimeRecordService {
    */
   static async getProjectSuggestions(query?: string): Promise<string[]> {
     try {
-      const apiBaseUrl = await getApiBaseUrl();
-      const headers = await getAuthHeaders();
+      const queryParams: Record<string, string> = {};
+      if (query) queryParams.q = query;
       
-      const queryParams = query ? `?q=${encodeURIComponent(query)}` : '';
-      
-      const response = await fetch(`${apiBaseUrl}/api/projects/suggestions${queryParams}`, {
+      return await apiRequest<string[]>('api/projects/suggestions', {
         method: 'GET',
-        headers
+        queryParams
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
     } catch (error) {
       throw new Error(`Failed to fetch project suggestions: ${handleApiError(error)}`);
     }

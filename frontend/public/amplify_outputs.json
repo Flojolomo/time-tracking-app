@@ -43,9 +43,18 @@
     "aws_region": "eu-central-1",
     "url": "https://kbcu0dv0d5.execute-api.eu-central-1.amazonaws.com/prod/",
     "api_key": "",
-    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "default_authorization_type": "AWS_IAM",
     "authorization_types": [
-      "AMAZON_COGNITO_USER_POOLS"
+      "AWS_IAM"
     ]
+  },
+  "custom": {
+    "API": {
+      "Time Tracking API": {
+        "endpoint": "https://kbcu0dv0d5.execute-api.eu-central-1.amazonaws.com/prod/",
+        "region": "eu-central-1",
+        "apiName": "Time Tracking API"
+      }
+    }
   }
 }

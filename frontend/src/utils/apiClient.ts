@@ -1,8 +1,9 @@
 /**
  * API client configuration and utilities for time tracking operations
- * Uses REST API endpoints deployed via AWS CDK
+ * Uses Amplify REST API with IAM authentication
  */
 
+import { get, post, put, del } from 'aws-amplify/api';
 import { fetchWithRetry, handleApiResponse } from './networkUtils';
 
 /**
@@ -21,16 +22,68 @@ export function handleApiError(error: any): string {
 }
 
 /**
- * Enhanced API request function with retry logic
+ * Enhanced API request function using Amplify REST API
  */
 export async function apiRequest<T>(
-  url: string,
-  options?: RequestInit,
-  retryOptions?: { maxRetries?: number }
+  path: string,
+  options?: {
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    body?: any;
+    queryParams?: Record<string, string>;
+  }
 ): Promise<T> {
   try {
-    const response = await fetchWithRetry(url, options, retryOptions);
-    return await handleApiResponse<T>(response);
+    const { method = 'GET', body, queryParams } = options || {};
+    
+    // Remove leading slash and API base URL since Amplify handles this
+    const cleanPath = path.replace(/^https?:\/\/[^\/]+/, '').replace(/^\//, '');
+    
+    let response;
+    
+    switch (method) {
+      case 'GET':
+        response = await get({
+          apiName: 'Time Tracking API',
+          path: cleanPath,
+          options: {
+            queryParams,
+          },
+        });
+        break;
+      case 'POST':
+        response = await post({
+          apiName: 'Time Tracking API',
+          path: cleanPath,
+          options: {
+            body,
+            queryParams,
+          },
+        });
+        break;
+      case 'PUT':
+        response = await put({
+          apiName: 'Time Tracking API',
+          path: cleanPath,
+          options: {
+            body,
+            queryParams,
+          },
+        });
+        break;
+      case 'DELETE':
+        response = await del({
+          apiName: 'Time Tracking API',
+          path: cleanPath,
+          options: {
+            queryParams,
+          },
+        });
+        break;
+      default:
+        throw new Error(`Unsupported HTTP method: ${method}`);
+    }
+    
+    return (await response.response).body as T;
   } catch (error: any) {
     // Add context to network errors
     if (error.isNetworkError) {
@@ -95,42 +148,19 @@ export function validateTimeRecord(data: {
 }
 
 /**
- * Get API base URL from configuration
+ * Get API base URL from configuration (deprecated - Amplify handles this)
  */
 export async function getApiBaseUrl(): Promise<string> {
-  try {
-    const response = await fetch('/amplify_outputs.json');
-    const config = await response.json();
-    const url = config.data?.url || '';
-    // Remove trailing slash to prevent double slashes in URLs
-    return url.endsWith('/') ? url.slice(0, -1) : url;
-  } catch (error) {
-    console.error('Failed to load API configuration:', error);
-    return '';
-  }
+  // This is now handled by Amplify, but keeping for backward compatibility
+  return '';
 }
 
 /**
- * Get authentication headers for API requests
+ * Get authentication headers for API requests (deprecated - Amplify handles this)
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  try {
-    const { fetchAuthSession } = await import('aws-amplify/auth');
-    const session = await fetchAuthSession();
-    
-    const token = session.tokens?.accessToken?.toString();
-    
-    if (!token) {
-      console.warn('No access token available - user may not be authenticated');
-      throw new Error('User not authenticated - please log in');
-    }
-    
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    };
-  } catch (error) {
-    console.error('Failed to get auth headers:', error);
-    throw new Error('Authentication failed - please log in again');
-  }
+  // This is now handled by Amplify automatically
+  return {
+    'Content-Type': 'application/json',
+  };
 }

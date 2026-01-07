@@ -336,78 +336,41 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
-    // Cognito User Pool Authorizer
-    const cognitoAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
-      cognitoUserPools: [userPool],
-      identitySource: 'method.request.header.Authorization',
-      authorizerName: 'TimeTrackingAuthorizer'
-    });
-
     // API Gateway resources and methods
     const apiResource = api.root.addResource('api');
     
     // Time records endpoints
     const timeRecordsResource = apiResource.addResource('time-records');
     timeRecordsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      // Disable caching for this method
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
     timeRecordsResource.addMethod('POST', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      // Disable caching for this method
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
     
     const timeRecordResource = timeRecordsResource.addResource('{id}');
     timeRecordResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
     timeRecordResource.addMethod('DELETE', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
     
     // Statistics endpoint
     const statsResource = apiResource.addResource('stats');
     statsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
     
     // Projects endpoints
     const projectsResource = apiResource.addResource('projects');
     projectsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
     
     const projectSuggestionsResource = projectsResource.addResource('suggestions');
     projectSuggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler), {
-      authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      requestParameters: {
-        'method.request.header.Authorization': true
-      }
+      authorizationType: apigateway.AuthorizationType.IAM,
     });
 
     // Update OAuth URLs to use CloudFront domain
@@ -454,6 +417,26 @@ export class TimeTrackingStack extends cdk.Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonCognitoPowerUser'),
       ],
     });
+
+    // Create IAM policy for API Gateway access
+    const apiPolicy = new iam.Policy(this, 'ApiGatewayPolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['execute-api:Invoke'],
+          resources: [
+            `${api.arnForExecuteApi('*', '/api/time-records', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/time-records/*', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/projects', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/projects/*', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/stats', 'prod')}`,
+          ],
+        }),
+      ],
+    });
+
+    // Attach API policy to authenticated role
+    authenticatedRole.attachInlinePolicy(apiPolicy);
 
     // Attach the role to the identity pool
     new cognito.CfnIdentityPoolRoleAttachment(this, 'IdentityPoolRoleAttachment', {
@@ -546,8 +529,17 @@ export class TimeTrackingStack extends cdk.Stack {
           aws_region: this.region,
           url: api.url,
           api_key: "",
-          default_authorization_type: "AMAZON_COGNITO_USER_POOLS",
-          authorization_types: ["AMAZON_COGNITO_USER_POOLS"]
+          default_authorization_type: "AWS_IAM",
+          authorization_types: ["AWS_IAM"]
+        },
+        custom: {
+          API: {
+            [api.restApiName]: {
+              endpoint: api.url,
+              region: this.region,
+              apiName: api.restApiName,
+            },
+          },
         }
       }, null, 2),
       description: 'Complete amplify_outputs.json configuration for AWS Amplify Gen 2 - copy this to frontend/public/amplify_outputs.json',
