@@ -426,12 +426,14 @@ function calculateDurationFromForm(data: FormData): number {
 }
 
 function formatDuration(minutes: number): string {
-  if (minutes < 60) {
-    return `${minutes} minutes`;
+  const roundedMinutes = Math.round(minutes);
+  
+  if (roundedMinutes < 60) {
+    return `${roundedMinutes} minutes`;
   }
   
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const hours = Math.floor(roundedMinutes / 60);
+  const remainingMinutes = roundedMinutes % 60;
   
   if (remainingMinutes === 0) {
     return `${hours} hour${hours !== 1 ? 's' : ''}`;
