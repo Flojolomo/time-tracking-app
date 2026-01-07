@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ActiveRecordDisplay } from './components';
+import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ActiveRecordDisplay, ProfilePage } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -153,6 +153,13 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
+            
+            {/* Profile route */}
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
           </Routes>
           <NotificationContainer />
         </ViewStateProvider>
@@ -200,6 +207,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             {/* Desktop User Menu */}
             <div className="hidden md:flex md:items-center md:space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
+              <a
+                href="/profile"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Profile
+              </a>
               <button
                 onClick={logout}
                 className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
@@ -258,15 +271,24 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
               <div className="border-t border-gray-200 pt-4 pb-3">
                 <div className="px-3 py-2">
                   <div className="text-sm text-gray-600 mb-2">Welcome, {user?.email}</div>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    Sign out
-                  </button>
+                  <div className="space-y-1">
+                    <a
+                      href="/profile"
+                      className="block text-sm text-gray-500 hover:text-gray-700 transition-colors py-1"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Profile
+                    </a>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="block text-sm text-gray-500 hover:text-gray-700 transition-colors py-1"
+                    >
+                      Sign out
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

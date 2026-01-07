@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, updatePassword, updateUserAttributes, deleteUser, resetPassword } from 'aws-amplify/auth';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
 import { getAmplifyConfig, isDevelopmentMode } from '../aws-config';
 
@@ -149,6 +149,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: { name?: string }) => {
+    try {
+      setError(null);
+      
+      if (!config || isDevelopmentMode(config)) {
+        throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
+      }
+      
+      await updateUserAttributes({
+        userAttributes: {
+          given_name: data.name || '',
+        }
+      });
+      
+      // Update local user state
+      if (user) {
+        setUser({
+          ...user,
+          name: data.name || user.name,
+        });
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Profile update failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    try {
+      setError(null);
+      
+      if (!config || isDevelopmentMode(config)) {
+        throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
+      }
+      
+      await updatePassword({
+        oldPassword,
+        newPassword,
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Password change failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    try {
+      setError(null);
+      
+      if (!config || isDevelopmentMode(config)) {
+        throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
+      }
+      
+      await resetPassword({
+        username: email,
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Password reset request failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const deleteProfile = async () => {
+    try {
+      setError(null);
+      
+      if (!config || isDevelopmentMode(config)) {
+        throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
+      }
+      
+      // Delete user from Cognito
+      await deleteUser();
+      
+      // Clear local state
+      setUser(null);
+    } catch (error: any) {
+      const errorMessage = error.message || 'Profile deletion failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -156,6 +241,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     signup,
     logout,
+    updateProfile,
+    changePassword,
+    requestPasswordReset,
+    deleteProfile,
     error
   };
 

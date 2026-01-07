@@ -98,6 +98,10 @@ export interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: { name?: string }) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  deleteProfile: () => Promise<void>;
   error: string | null;
 }
 
