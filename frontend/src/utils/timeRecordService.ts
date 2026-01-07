@@ -113,25 +113,6 @@ export class TimeRecordService {
    */
   static async updateTimeRecord(input: UpdateTimeRecordInput): Promise<TimeRecord> {
     try {
-      // Validate input data if start/end times are being updated
-      if (input.startTime || input.endTime) {
-        // Get current record to validate against
-        const currentRecord = await this.getTimeRecord(input.id);
-        if (!currentRecord) {
-          throw new Error('Time record not found');
-        }
-
-        const validation = validateTimeRecord({
-          startTime: input.startTime || currentRecord.startTime,
-          endTime: input.endTime || currentRecord.endTime,
-          projectName: input.projectName || currentRecord.projectName
-        });
-        
-        if (!validation.isValid) {
-          throw new Error(validation.errors.join(', '));
-        }
-      }
-
       // Calculate duration if both start and end times are available
       let duration = input.duration;
       if (input.startTime && input.endTime && !duration) {

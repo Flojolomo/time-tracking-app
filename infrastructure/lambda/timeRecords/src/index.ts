@@ -252,11 +252,18 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const command = new QueryCommand(params);
     const result = await docClient.send(command);
 
-    // Transform records to match frontend expectations
+    // Transform records to match frontend expectations - only return needed fields
     const timeRecords = (result.Items || []).map(item => ({
-      ...item,
-      projectName: item.project, // Map project to projectName for frontend
-      description: item.comment  // Map comment to description for frontend
+      id: item.recordId,
+      userId: item.userId,
+      projectName: item.project,
+      description: item.comment || '',
+      startTime: item.startTime,
+      endTime: item.endTime,
+      duration: item.duration,
+      tags: item.tags || [],
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
     }));
 
     return createSuccessResponse(200, {
@@ -321,11 +328,18 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     await docClient.send(command);
 
-    // Transform response to match frontend expectations
+    // Transform response to match frontend expectations - only return needed fields
     const responseRecord = {
-      ...timeRecord,
+      id: timeRecord.recordId,
+      userId: timeRecord.userId,
       projectName: timeRecord.project,
-      description: timeRecord.comment
+      description: timeRecord.comment || '',
+      startTime: timeRecord.startTime,
+      endTime: timeRecord.endTime,
+      duration: timeRecord.duration,
+      tags: timeRecord.tags || [],
+      createdAt: timeRecord.createdAt,
+      updatedAt: timeRecord.updatedAt
     };
 
     return createSuccessResponse(201, responseRecord, event);
@@ -426,11 +440,18 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
       await docClient.send(putCommand);
       
-      // Transform response to match frontend expectations
+      // Transform response to match frontend expectations - only return needed fields
       const responseRecord = {
-        ...newTimeRecord,
+        id: newTimeRecord.recordId,
+        userId: newTimeRecord.userId,
         projectName: newTimeRecord.project,
-        description: newTimeRecord.comment
+        description: newTimeRecord.comment || '',
+        startTime: newTimeRecord.startTime,
+        endTime: newTimeRecord.endTime,
+        duration: newTimeRecord.duration,
+        tags: newTimeRecord.tags || [],
+        createdAt: newTimeRecord.createdAt,
+        updatedAt: newTimeRecord.updatedAt
       };
       
       return createSuccessResponse(200, responseRecord, event);
@@ -442,7 +463,12 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
           PK: existingRecord.PK,
           SK: existingRecord.SK
         },
-        UpdateExpression: 'SET project = :project, startTime = :startTime, endTime = :endTime, duration = :duration, comment = :comment, tags = :tags, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
+        UpdateExpression: 'SET #project = :project, startTime = :startTime, endTime = :endTime, #duration = :duration, #comment = :comment, tags = :tags, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
+        ExpressionAttributeNames: {
+          '#project': 'project',
+          '#comment': 'comment',
+          '#duration': 'duration'
+        },
         ExpressionAttributeValues: {
           ':project': projectName,
           ':startTime': data.startTime,
@@ -458,11 +484,18 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
       const updateResult = await docClient.send(updateCommand);
       
-      // Transform response to match frontend expectations
+      // Transform response to match frontend expectations - only return needed fields
       const responseRecord = {
-        ...updateResult.Attributes,
+        id: updateResult.Attributes?.recordId,
+        userId: updateResult.Attributes?.userId,
         projectName: updateResult.Attributes?.project,
-        description: updateResult.Attributes?.comment
+        description: updateResult.Attributes?.comment || '',
+        startTime: updateResult.Attributes?.startTime,
+        endTime: updateResult.Attributes?.endTime,
+        duration: updateResult.Attributes?.duration,
+        tags: updateResult.Attributes?.tags || [],
+        createdAt: updateResult.Attributes?.createdAt,
+        updatedAt: updateResult.Attributes?.updatedAt
       };
       
       return createSuccessResponse(200, responseRecord, event);
