@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { TimeRecordList } from './TimeRecordList';
 import { TimeRecordForm } from './TimeRecordForm';
 import { ViewSelector } from './ViewSelector';
@@ -16,23 +16,25 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   filters,
   className = ''
 }) => {
-  const { state, setDate, setFilters } = useViewState();
+  const { state, setDate } = useViewState();
   const { navigateToView } = useViewRouting();
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<TimeRecord | undefined>(undefined);
 
-  // Update context filters when props change
-  useEffect(() => {
-    if (filters) {
-      setFilters({ ...state.filters, ...filters });
-    }
-  }, [filters, setFilters, state.filters]);
-
-  // Merge context filters with prop filters
-  const mergedFilters: TimeRecordFilters = {
+  // Merge context filters with prop filters (memoized to prevent unnecessary re-renders)
+  const mergedFilters: TimeRecordFilters = React.useMemo(() => ({
     ...state.filters,
     ...filters
-  };
+  }), [
+    state.filters.projectName,
+    state.filters.startDate, 
+    state.filters.endDate,
+    state.filters.tags?.join(','),
+    filters?.projectName,
+    filters?.startDate,
+    filters?.endDate,
+    filters?.tags?.join(',')
+  ]);
 
   const handleFormSuccess = () => {
     setShowForm(false);

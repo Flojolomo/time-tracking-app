@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { TimeRecord, TimeRecordFilters } from '../types';
 import { TimeRecordService } from '../utils/timeRecordService';
 
@@ -63,6 +63,36 @@ const formatDuration = (minutes: number): string => {
   return `${hours}h ${mins}m`;
 };
 
+// Helper to compute date range
+const computeDateRange = (viewType: ViewType, selectedDate: Date) => {
+  switch (viewType) {
+    case 'daily':
+      return {
+        start: formatDate(selectedDate),
+        end: formatDate(selectedDate)
+      };
+    case 'weekly':
+      const weekStart = getWeekStart(selectedDate);
+      const weekEnd = getWeekEnd(selectedDate);
+      return {
+        start: formatDate(weekStart),
+        end: formatDate(weekEnd)
+      };
+    case 'monthly':
+      const monthStart = getMonthStart(selectedDate);
+      const monthEnd = getMonthEnd(selectedDate);
+      return {
+        start: formatDate(monthStart),
+        end: formatDate(monthEnd)
+      };
+    default:
+      return {
+        start: formatDate(selectedDate),
+        end: formatDate(selectedDate)
+      };
+  }
+};
+
 interface TimeRecordListProps {
   viewType: ViewType;
   selectedDate: Date;
@@ -80,56 +110,32 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
 }) => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Handle delete record
-  const handleDeleteRecord = async (record: TimeRecord) => {
-    if (!window.confirm('Are you sure you want to delete this time record?')) {
-      return;
-    }
-
-    try {
-      await TimeRecordService.deleteTimeRecord(record.id);
-      // Refresh the records list
-      await loadRecords();
-    } catch (error) {
-      console.error('Error deleting record:', error);
-      // You might want to show a notification here
-    }
-  };
   const [error, setError] = useState<string | null>(null);
+  
+  // Track last fetched params to prevent duplicate requests
+  const lastFetchedRef = useRef<string>('');
 
-  // Calculate date range based on view type and selected date
-  const dateRange = useMemo(() => {
-    switch (viewType) {
-      case 'daily':
-        return {
-          start: formatDate(selectedDate),
-          end: formatDate(selectedDate)
-        };
-      case 'weekly':
-        const weekStart = getWeekStart(selectedDate);
-        const weekEnd = getWeekEnd(selectedDate);
-        return {
-          start: formatDate(weekStart),
-          end: formatDate(weekEnd)
-        };
-      case 'monthly':
-        const monthStart = getMonthStart(selectedDate);
-        const monthEnd = getMonthEnd(selectedDate);
-        return {
-          start: formatDate(monthStart),
-          end: formatDate(monthEnd)
-        };
-      default:
-        return {
-          start: formatDate(selectedDate),
-          end: formatDate(selectedDate)
-        };
-    }
-  }, [viewType, selectedDate]);
+  // Compute date range as strings (stable values)
+  const dateRange = computeDateRange(viewType, selectedDate);
+
+  // Create a stable fetch key from all dependencies
+  const fetchKey = useMemo(() => {
+    return JSON.stringify({
+      start: dateRange.start,
+      end: dateRange.end,
+      projectName: filters?.projectName,
+      tags: filters?.tags
+    });
+  }, [dateRange.start, dateRange.end, filters?.projectName, filters?.tags]);
 
   // Load records function
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
+    // Skip if we already fetched with these params
+    if (lastFetchedRef.current === fetchKey) {
+      return;
+    }
+    
+    lastFetchedRef.current = fetchKey;
     setLoading(true);
     setError(null);
     
@@ -147,12 +153,28 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
     } finally {
       setLoading(false);
     }
+  }, [fetchKey, dateRange.start, dateRange.end, filters]);
+
+  // Handle delete record
+  const handleDeleteRecord = async (record: TimeRecord) => {
+    if (!window.confirm('Are you sure you want to delete this time record?')) {
+      return;
+    }
+
+    try {
+      await TimeRecordService.deleteTimeRecord(record.id);
+      // Reset the fetch key to force a refresh
+      lastFetchedRef.current = '';
+      await loadRecords();
+    } catch (error) {
+      console.error('Error deleting record:', error);
+    }
   };
 
-  // Fetch records when date range or filters change
+  // Fetch records when fetch key changes
   useEffect(() => {
     loadRecords();
-  }, [dateRange.start, dateRange.end, filters]);
+  }, [loadRecords]);
 
   // Group records based on view type
   const groupedRecords = useMemo(() => {

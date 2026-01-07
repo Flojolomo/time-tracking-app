@@ -73,10 +73,13 @@ export class TimeRecordService {
         queryParams.tags = filters.tags.join(',');
       }
 
-      const records = await apiRequest<TimeRecord[]>('api/time-records', {
+      const response = await apiRequest<{ timeRecords: TimeRecord[]; count: number; lastEvaluatedKey?: any }>('api/time-records', {
         method: 'GET',
         queryParams
       });
+
+      // Extract records array from response
+      const records = response.timeRecords || [];
 
       // Sort by start time (most recent first)
       records.sort((a: TimeRecord, b: TimeRecord) => 

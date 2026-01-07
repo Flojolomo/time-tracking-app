@@ -1,16 +1,16 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ViewType } from '../components/TimeRecordList';
 import { useViewState } from '../contexts/ViewStateContext';
 
 /**
- * Hook that synchronizes view state with URL routing
- * Handles URL-based navigation for different view types
+ * Hook that provides navigation helpers for view routing
+ * and syncs URL path to view state
  */
 export const useViewRouting = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { state, setView } = useViewState();
+  const { setView } = useViewState();
 
   // Extract view type from URL path
   const getViewFromPath = (pathname: string): ViewType | null => {
@@ -20,36 +20,23 @@ export const useViewRouting = () => {
     return null;
   };
 
-  // Update view state when URL changes
+  // Sync view state from URL on path change (one-way: URL -> state)
   useEffect(() => {
     const viewFromPath = getViewFromPath(location.pathname);
-    if (viewFromPath && viewFromPath !== state.currentView) {
+    if (viewFromPath) {
       setView(viewFromPath);
     }
-  }, [location.pathname, state.currentView, setView]);
-
-  // Update URL when view state changes (but only if we're on a records page)
-  useEffect(() => {
-    if (location.pathname.startsWith('/records')) {
-      const expectedPath = `/records/${state.currentView}`;
-      if (location.pathname !== expectedPath) {
-        // Preserve query parameters when changing view
-        const searchParams = new URLSearchParams(location.search);
-        const newPath = `${expectedPath}${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-        navigate(newPath, { replace: true });
-      }
-    }
-  }, [state.currentView, location.pathname, location.search, navigate]);
+  }, [location.pathname, setView]);
 
   // Navigation helpers
-  const navigateToView = (view: ViewType) => {
+  const navigateToView = useCallback((view: ViewType) => {
     const searchParams = new URLSearchParams(location.search);
     navigate(`/records/${view}${searchParams.toString() ? '?' + searchParams.toString() : ''}`);
-  };
+  }, [location.search, navigate]);
 
-  const navigateToRecords = () => {
+  const navigateToRecords = useCallback(() => {
     navigate('/records');
-  };
+  }, [navigate]);
 
   return {
     navigateToView,

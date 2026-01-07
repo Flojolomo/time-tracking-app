@@ -95,60 +95,6 @@ const loadStateFromStorage = (): ViewState | null => {
   }
 };
 
-// URL state management utilities
-const getStateFromURL = (): Partial<ViewState> => {
-  const params = new URLSearchParams(window.location.search);
-  const state: Partial<ViewState> = {};
-  
-  const view = params.get('view') as ViewType;
-  if (view && ['daily', 'weekly', 'monthly'].includes(view)) {
-    state.currentView = view;
-  }
-  
-  const date = params.get('date');
-  if (date) {
-    const parsedDate = new Date(date);
-    if (!isNaN(parsedDate.getTime())) {
-      state.selectedDate = parsedDate;
-    }
-  }
-  
-  const project = params.get('project');
-  if (project) {
-    state.filters = { ...state.filters, projectName: project };
-  }
-  
-  const tags = params.get('tags');
-  if (tags) {
-    state.filters = { ...state.filters, tags: tags.split(',') };
-  }
-  
-  return state;
-};
-
-const updateURL = (state: ViewState): void => {
-  const params = new URLSearchParams();
-  
-  // Add view type
-  params.set('view', state.currentView);
-  
-  // Add selected date
-  params.set('date', state.selectedDate.toISOString().split('T')[0]);
-  
-  // Add filters
-  if (state.filters.projectName) {
-    params.set('project', state.filters.projectName);
-  }
-  
-  if (state.filters.tags && state.filters.tags.length > 0) {
-    params.set('tags', state.filters.tags.join(','));
-  }
-  
-  // Update URL without triggering navigation
-  const newURL = `${window.location.pathname}?${params.toString()}`;
-  window.history.replaceState(null, '', newURL);
-};
-
 // Provider component
 interface ViewStateProviderProps {
   children: React.ReactNode;
@@ -157,30 +103,17 @@ interface ViewStateProviderProps {
 export const ViewStateProvider: React.FC<ViewStateProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(viewStateReducer, initialState);
 
-  // Initialize state from URL and localStorage on mount
+  // Initialize state from localStorage on mount only
   useEffect(() => {
-    // First try to get state from URL (highest priority)
-    const urlState = getStateFromURL();
-    
-    // Then try to get state from localStorage
     const storedState = loadStateFromStorage();
     
-    // Merge states with URL taking precedence
-    const mergedState: ViewState = {
-      ...initialState,
-      ...storedState,
-      ...urlState
-    };
-    
-    // Only restore if different from initial state
-    if (JSON.stringify(mergedState) !== JSON.stringify(initialState)) {
-      dispatch({ type: 'RESTORE_STATE', payload: mergedState });
+    if (storedState && JSON.stringify(storedState) !== JSON.stringify(initialState)) {
+      dispatch({ type: 'RESTORE_STATE', payload: storedState });
     }
   }, []);
 
-  // Update URL and localStorage when state changes
+  // Save to localStorage when state changes (don't update URL - let router handle that)
   useEffect(() => {
-    updateURL(state);
     saveStateToStorage(state);
   }, [state]);
 
