@@ -150,8 +150,10 @@ const calculateDuration = (startTime: string, endTime: string): number => {
 const validateTimeRecord = (data: any): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
-  if (!data.project || typeof data.project !== 'string' || data.project.trim() === '') {
-    errors.push('Project is required and must be a non-empty string');
+  // Accept both project and projectName for backward compatibility
+  const projectField = data.projectName || data.project;
+  if (!projectField || typeof projectField !== 'string' || projectField.trim() === '') {
+    errors.push('Project name is required and must be a non-empty string');
   }
 
   if (!data.startTime || typeof data.startTime !== 'string') {
@@ -250,7 +252,12 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const command = new QueryCommand(params);
     const result = await docClient.send(command);
 
-    const timeRecords = result.Items || [];
+    // Transform records to match frontend expectations
+    const timeRecords = (result.Items || []).map(item => ({
+      ...item,
+      projectName: item.project, // Map project to projectName for frontend
+      description: item.comment  // Map comment to description for frontend
+    }));
 
     return createSuccessResponse(200, {
       timeRecords,
@@ -285,20 +292,23 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
     const recordId = uuidv4();
     const now = new Date().toISOString();
     const duration = data.duration || calculateDuration(data.startTime, data.endTime);
+    
+    // Use projectName if provided, otherwise fall back to project for backward compatibility
+    const projectName = (data.projectName || data.project).trim();
 
     const timeRecord: TimeRecord = {
       PK: `USER#${userId}`,
       SK: `RECORD#${data.date}#${recordId}`,
-      GSI1PK: `PROJECT#${data.project}`,
+      GSI1PK: `PROJECT#${projectName}`,
       GSI1SK: `DATE#${data.date}`,
       recordId,
       userId,
-      project: data.project.trim(),
+      project: projectName,
       startTime: data.startTime,
       endTime: data.endTime,
       date: data.date,
       duration,
-      comment: data.comment || '',
+      comment: data.description || data.comment || '',
       tags: data.tags || [],
       createdAt: now,
       updatedAt: now
@@ -311,7 +321,14 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     await docClient.send(command);
 
-    return createSuccessResponse(201, timeRecord, event);
+    // Transform response to match frontend expectations
+    const responseRecord = {
+      ...timeRecord,
+      projectName: timeRecord.project,
+      description: timeRecord.comment
+    };
+
+    return createSuccessResponse(201, responseRecord, event);
   } catch (error) {
     console.error('Error creating time record:', error);
     if (error instanceof SyntaxError) {
@@ -366,6 +383,9 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     const now = new Date().toISOString();
     const duration = data.duration || calculateDuration(data.startTime, data.endTime);
+    
+    // Use projectName if provided, otherwise fall back to project for backward compatibility
+    const projectName = (data.projectName || data.project).trim();
 
     // If the date changed, we need to delete the old record and create a new one
     // because the SK includes the date
@@ -384,16 +404,16 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       const newTimeRecord: TimeRecord = {
         PK: `USER#${userId}`,
         SK: `RECORD#${data.date}#${recordId}`,
-        GSI1PK: `PROJECT#${data.project}`,
+        GSI1PK: `PROJECT#${projectName}`,
         GSI1SK: `DATE#${data.date}`,
         recordId,
         userId,
-        project: data.project.trim(),
+        project: projectName,
         startTime: data.startTime,
         endTime: data.endTime,
         date: data.date,
         duration,
-        comment: data.comment || '',
+        comment: data.description || data.comment || '',
         tags: data.tags || [],
         createdAt: existingRecord.createdAt,
         updatedAt: now
@@ -405,7 +425,15 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       });
 
       await docClient.send(putCommand);
-      return createSuccessResponse(200, newTimeRecord, event);
+      
+      // Transform response to match frontend expectations
+      const responseRecord = {
+        ...newTimeRecord,
+        projectName: newTimeRecord.project,
+        description: newTimeRecord.comment
+      };
+      
+      return createSuccessResponse(200, responseRecord, event);
     } else {
       // Update existing record in place
       const updateCommand = new UpdateCommand({
@@ -416,20 +444,28 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
         },
         UpdateExpression: 'SET project = :project, startTime = :startTime, endTime = :endTime, duration = :duration, comment = :comment, tags = :tags, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
         ExpressionAttributeValues: {
-          ':project': data.project.trim(),
+          ':project': projectName,
           ':startTime': data.startTime,
           ':endTime': data.endTime,
           ':duration': duration,
-          ':comment': data.comment || '',
+          ':comment': data.description || data.comment || '',
           ':tags': data.tags || [],
           ':updatedAt': now,
-          ':gsi1pk': `PROJECT#${data.project}`
+          ':gsi1pk': `PROJECT#${projectName}`
         },
         ReturnValues: 'ALL_NEW'
       });
 
       const updateResult = await docClient.send(updateCommand);
-      return createSuccessResponse(200, updateResult.Attributes, event);
+      
+      // Transform response to match frontend expectations
+      const responseRecord = {
+        ...updateResult.Attributes,
+        projectName: updateResult.Attributes?.project,
+        description: updateResult.Attributes?.comment
+      };
+      
+      return createSuccessResponse(200, responseRecord, event);
     }
   } catch (error) {
     console.error('Error updating time record:', error);

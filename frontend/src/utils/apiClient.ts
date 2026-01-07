@@ -56,7 +56,7 @@ export async function apiRequest<T>(
     // Ensure user has valid credentials
     await ensureCredentials();
     
-    const { method = 'GET', body, queryParams } = options || {};
+    const { method = 'GET', body: requestBody, queryParams } = options || {};
     
     // Remove leading slash and API base URL since Amplify handles this
     const cleanPath = path.replace(/^https?:\/\/[^\/]+/, '').replace(/^\//, '');
@@ -65,7 +65,7 @@ export async function apiRequest<T>(
     
     const requestOptions = {
       queryParams: queryParams || {},
-      ...(body && { body })
+      ...(requestBody && { body: requestBody })
     };
     
     switch (method) {
@@ -105,8 +105,9 @@ export async function apiRequest<T>(
         throw new Error(`Unsupported HTTP method: ${method}`);
     }
     
-    const result = await response.response;
-    return result.body as T;
+    const { body } = await response.response;
+    const data = await body.json();
+    return data as T;
   } catch (error: any) {
     console.error('API request failed:', error);
     

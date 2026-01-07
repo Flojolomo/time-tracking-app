@@ -36,43 +36,50 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  // Debounced search function
-  const debouncedSearch = useCallback(async (query: string) => {
+  // Fetch suggestions from API
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.trim().length === 0) {
+      setSuggestions([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setApiError('');
+
+    try {
+      const data = await apiRequest<ProjectSuggestionsResponse>('api/projects/suggestions', {
+        method: 'GET',
+        queryParams: { q: query, limit: '10' }
+      });
+      
+      const projectSuggestions = data.suggestions || [];
+      setSuggestions(projectSuggestions);
+      setSelectedIndex(-1);
+    } catch (error) {
+      console.error('Error fetching project suggestions:', error);
+      setApiError(handleApiError(error));
+      setSuggestions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Debounced search - only handles the delay, not the visibility
+  const debouncedSearch = useCallback((query: string) => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    debounceRef.current = setTimeout(async () => {
-      if (query.trim().length === 0) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
+    if (query.trim().length === 0) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
 
-      setIsLoading(true);
-      setApiError('');
-
-      try {
-        const data = await apiRequest<ProjectSuggestionsResponse>('api/projects/suggestions', {
-          method: 'GET',
-          queryParams: { q: query, limit: '10' }
-        });
-        
-        const projectSuggestions = data.suggestions || [];
-        
-        setSuggestions(projectSuggestions);
-        setShowSuggestions(projectSuggestions.length > 0);
-        setSelectedIndex(-1);
-      } catch (error) {
-        console.error('Error fetching project suggestions:', error);
-        setApiError(handleApiError(error));
-        setSuggestions([]);
-        setShowSuggestions(false);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 300); // 300ms debounce delay
-  }, []);
+    debounceRef.current = setTimeout(() => {
+      fetchSuggestions(query);
+    }, 500); // 500ms debounce delay
+  }, [fetchSuggestions]);
 
   // Effect to trigger search when value changes
   useEffect(() => {
@@ -108,8 +115,15 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
       if (onBlur) {
         onBlur();
       }
-    }, 150);
+    }, 200);
   };
+
+  // Show suggestions when they are loaded and input has value
+  useEffect(() => {
+    if (suggestions.length > 0 && value.trim().length > 0) {
+      setShowSuggestions(true);
+    }
+  }, [suggestions, value]);
 
   // Handle suggestion selection
   const handleSuggestionClick = (suggestion: string) => {
