@@ -67,6 +67,8 @@ A comprehensive time tracking web application that allows authenticated users to
 3. THE Time_Tracker SHALL provide monthly view showing records organized by weeks and days
 4. WHEN switching between views, THE Time_Tracker SHALL maintain user context and selected date ranges
 5. WHEN displaying time records, THE Time_Tracker SHALL show project, duration, tags, and comments for each entry
+6. THE Time_Tracker SHALL provide filtering capabilities by project name across all view screens
+7. THE Time_Tracker SHALL provide filtering capabilities by one or more tags across all view screens
 
 ### Requirement 5: Statistics and Aggregations
 
@@ -116,13 +118,3 @@ A comprehensive time tracking web application that allows authenticated users to
 4. WHEN a record is running, THE Time_Tracker SHALL display the active record prominently on the dashboard
 5. WHEN there is a running record, THE Time_Tracker SHALL provide a stop button to complete and save the record
 6. WHEN a user stops a running record, THE Time_Tracker SHALL prompt for required fields (project, comment, tags) before saving
-
-**User Story:** As an authenticated user, I want my time tracking data to be securely stored and always available, so that I can rely on the system for accurate record keeping.
-
-#### Acceptance Criteria
-
-1. THE Time_Tracker SHALL persist all time records to secure storage immediately upon creation
-2. THE Authentication_System SHALL ensure users can only access their own time records
-3. WHEN a user logs out and back in, THE Time_Tracker SHALL display all previously saved records
-4. THE Time_Tracker SHALL handle network interruptions gracefully and retry failed save operations
-5. THE Time_Tracker SHALL provide data backup and recovery mechanisms for user records

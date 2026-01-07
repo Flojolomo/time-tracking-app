@@ -55,12 +55,12 @@ This implementation plan breaks down the time tracking application into discrete
     - _Requirements: 2.4, 7.1_
 
   - [x] 4.2 Create Lambda functions for time records API
-    - Implement GET /api/time-records with filtering
+    - Implement GET /api/time-records with filtering (including project and tag filters)
     - Implement POST /api/time-records for creation
     - Implement PUT /api/time-records/{id} for updates
     - Implement DELETE /api/time-records/{id} for deletion
     - Update data model to support active records with isActive field
-    - _Requirements: 2.4, 2.5, 2.6, 7.1_
+    - _Requirements: 2.4, 2.5, 2.6, 4.6, 4.7, 7.1_
 
   - [ ]* 4.3 Write basic unit tests for data operations
     - Test CRUD operations for time records
@@ -128,10 +128,18 @@ This implementation plan breaks down the time tracking application into discrete
     - Ensure selected date ranges persist across navigation
     - _Requirements: 4.4_
 
-  - [ ]* 7.3 Write basic unit tests for view components
+  - [ ] 7.3 Implement filtering functionality for project and tags
+    - Create RecordFilters component for project and tag filtering
+    - Add filtering controls to all view screens (daily, weekly, monthly)
+    - Implement backend filtering support in API endpoints
+    - Ensure filters work across all time period views
+    - _Requirements: 4.6, 4.7_
+
+  - [ ]* 7.4 Write basic unit tests for view components and filtering
     - Test view filtering and date range functionality
     - Test record display and navigation
-    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+    - Test project and tag filtering functionality
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
 - [x] 8. Statistics and Analytics Implementation
   - [x] 8.1 Create statistics calculation engine

@@ -75,6 +75,7 @@ graph TB
 - **ProjectAutocomplete**: Smart project suggestions with debounced search
 - **TimerWidget**: Live timer for active time tracking with start/stop functionality
 - **ActiveRecordDisplay**: Shows currently running record on dashboard
+- **RecordFilters**: Filter controls for project and tag-based filtering across all views
 
 #### 4. Statistics Components
 - **StatsDashboard**: Overview of time tracking metrics
@@ -91,7 +92,7 @@ graph TB
 - `POST /auth/logout` - User logout
 
 #### Time Records API
-- `GET /api/time-records` - List user's time records with filtering
+- `GET /api/time-records` - List user's time records with filtering (supports project and tag filters)
 - `POST /api/time-records` - Create new time record
 - `PUT /api/time-records/{id}` - Update existing time record
 - `DELETE /api/time-records/{id}` - Delete time record
@@ -150,6 +151,8 @@ interface Project {
 4. **Get statistics**: Aggregate queries using DynamoDB streams or Lambda
 5. **Get active record**: Query PK = USER#{userId} with filter isActive = true
 6. **Ensure single active record**: Check for existing active records before starting new ones
+7. **Filter records by project**: Query PK = USER#{userId} with GSI1PK filter for specific project
+8. **Filter records by tags**: Query PK = USER#{userId} with filter expression on tags array
 
 ## Error Handling
 
@@ -238,6 +241,10 @@ interface Project {
 **Property 17: Timer Stop Completion**
 *For any* active time record being stopped, the system should prompt for required fields (project, comment, tags) and calculate the final duration before saving
 **Validates: Requirements 8.5, 8.6**
+
+**Property 18: Project and Tag Filtering**
+*For any* filter applied by project name or tag selection, the displayed time records should only include records that match the specified project or contain all specified tags
+**Validates: Requirements 4.6, 4.7**
 
 ## Testing Strategy
 
