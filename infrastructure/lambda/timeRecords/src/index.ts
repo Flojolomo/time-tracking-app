@@ -147,10 +147,13 @@ const calculateDuration = (startTime: string, endTime: string): number => {
 };
 
 // Helper function to validate time record data
+// Accepts both 'project' and 'projectName' for compatibility with frontend
 const validateTimeRecord = (data: any): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
-  if (!data.project || typeof data.project !== 'string' || data.project.trim() === '') {
+  // Accept both 'project' and 'projectName' from client
+  const projectValue = data.project || data.projectName;
+  if (!projectValue || typeof projectValue !== 'string' || projectValue.trim() === '') {
     errors.push('Project is required and must be a non-empty string');
   }
 
@@ -172,9 +175,8 @@ const validateTimeRecord = (data: any): { isValid: boolean; errors: string[] } =
     }
   }
 
-  if (!data.date || typeof data.date !== 'string') {
-    errors.push('Date is required and must be in YYYY-MM-DD format');
-  } else {
+  // Date is optional - will be extracted from startTime if not provided
+  if (data.date && typeof data.date === 'string') {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(data.date)) {
       errors.push('Date must be in YYYY-MM-DD format');
@@ -190,8 +192,9 @@ const validateTimeRecord = (data: any): { isValid: boolean; errors: string[] } =
     }
   }
 
-  // Validate optional fields
-  if (data.comment && typeof data.comment !== 'string') {
+  // Validate optional fields - accept both 'comment' and 'description'
+  const commentValue = data.comment || data.description;
+  if (commentValue && typeof commentValue !== 'string') {
     errors.push('Comment must be a string');
   }
 
@@ -284,21 +287,30 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     const recordId = uuidv4();
     const now = new Date().toISOString();
-    const duration = calculateDuration(data.startTime, data.endTime);
+    const duration = data.duration || calculateDuration(data.startTime, data.endTime);
+    
+    // Accept both 'project' and 'projectName' from client
+    const projectName = (data.project || data.projectName).trim();
+    
+    // Extract date from startTime if not provided
+    const recordDate = data.date || new Date(data.startTime).toISOString().split('T')[0];
+    
+    // Accept both 'comment' and 'description' from client
+    const comment = data.comment || data.description || '';
 
     const timeRecord: TimeRecord = {
       PK: `USER#${userId}`,
-      SK: `RECORD#${data.date}#${recordId}`,
-      GSI1PK: `PROJECT#${data.project}`,
-      GSI1SK: `DATE#${data.date}`,
+      SK: `RECORD#${recordDate}#${recordId}`,
+      GSI1PK: `PROJECT#${projectName}`,
+      GSI1SK: `DATE#${recordDate}`,
       recordId,
       userId,
-      project: data.project.trim(),
+      project: projectName,
       startTime: data.startTime,
       endTime: data.endTime,
-      date: data.date,
+      date: recordDate,
       duration,
-      comment: data.comment || '',
+      comment,
       tags: data.tags || [],
       createdAt: now,
       updatedAt: now
@@ -365,11 +377,20 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
     }
 
     const now = new Date().toISOString();
-    const duration = calculateDuration(data.startTime, data.endTime);
+    const duration = data.duration || calculateDuration(data.startTime, data.endTime);
+    
+    // Accept both 'project' and 'projectName' from client
+    const projectName = (data.project || data.projectName).trim();
+    
+    // Extract date from startTime if not provided
+    const recordDate = data.date || new Date(data.startTime).toISOString().split('T')[0];
+    
+    // Accept both 'comment' and 'description' from client
+    const comment = data.comment || data.description || '';
 
     // If the date changed, we need to delete the old record and create a new one
     // because the SK includes the date
-    if (data.date !== existingRecord.date) {
+    if (recordDate !== existingRecord.date) {
       // Delete old record
       const deleteCommand = new DeleteCommand({
         TableName: TABLE_NAME,
@@ -383,17 +404,17 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       // Create new record with updated date
       const newTimeRecord: TimeRecord = {
         PK: `USER#${userId}`,
-        SK: `RECORD#${data.date}#${recordId}`,
-        GSI1PK: `PROJECT#${data.project}`,
-        GSI1SK: `DATE#${data.date}`,
+        SK: `RECORD#${recordDate}#${recordId}`,
+        GSI1PK: `PROJECT#${projectName}`,
+        GSI1SK: `DATE#${recordDate}`,
         recordId,
         userId,
-        project: data.project.trim(),
+        project: projectName,
         startTime: data.startTime,
         endTime: data.endTime,
-        date: data.date,
+        date: recordDate,
         duration,
-        comment: data.comment || '',
+        comment,
         tags: data.tags || [],
         createdAt: existingRecord.createdAt,
         updatedAt: now
@@ -416,14 +437,14 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
         },
         UpdateExpression: 'SET project = :project, startTime = :startTime, endTime = :endTime, duration = :duration, comment = :comment, tags = :tags, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
         ExpressionAttributeValues: {
-          ':project': data.project.trim(),
+          ':project': projectName,
           ':startTime': data.startTime,
           ':endTime': data.endTime,
           ':duration': duration,
-          ':comment': data.comment || '',
+          ':comment': comment,
           ':tags': data.tags || [],
           ':updatedAt': now,
-          ':gsi1pk': `PROJECT#${data.project}`
+          ':gsi1pk': `PROJECT#${projectName}`
         },
         ReturnValues: 'ALL_NEW'
       });
