@@ -223,6 +223,7 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       ExpressionAttributeValues: {
         ':pk': `USER#${userId}`
       },
+      ExpressionAttributeNames: {}, // Initialize for reserved keywords
       ScanIndexForward: false, // Sort by SK in descending order (newest first)
       Limit: parseInt(limit)
     };
@@ -247,9 +248,10 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     filterExpressions.push('(attribute_not_exists(isActive) OR isActive = :notActive)');
     params.ExpressionAttributeValues[':notActive'] = false;
 
-    // Add project filtering if provided
+    // Add project filtering if provided (project is a reserved keyword)
     if (project) {
-      filterExpressions.push('project = :project');
+      filterExpressions.push('#project = :project');
+      params.ExpressionAttributeNames['#project'] = 'project';
       params.ExpressionAttributeValues[':project'] = project;
     }
 
@@ -604,8 +606,9 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
         ':pk': `USER#${userId}`,
         ':skPrefix': 'RECORD#'
       },
-      ProjectionExpression: 'project, duration, #date, tags',
+      ProjectionExpression: '#project, duration, #date, tags',
       ExpressionAttributeNames: {
+        '#project': 'project',
         '#date': 'date'
       }
     };
