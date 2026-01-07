@@ -7,6 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 export class TimeTrackingStack extends cdk.Stack {
@@ -278,12 +279,50 @@ export class TimeTrackingStack extends cdk.Stack {
     timeRecordsTable.grantReadWriteData(timeRecordsHandler);
     timeRecordsTable.grantReadWriteData(projectsHandler);
 
+    // CloudWatch Log Group for API Gateway
+    const apiLogGroup = new logs.LogGroup(this, 'ApiGatewayLogGroup', {
+      logGroupName: `/aws/apigateway/time-tracking-api`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    // IAM Role for API Gateway CloudWatch Logs
+    const apiGatewayCloudWatchRole = new iam.Role(this, 'ApiGatewayCloudWatchRole', {
+      assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonAPIGatewayPushToCloudWatchLogs'),
+      ],
+    });
+
+    // API Gateway Account configuration for logging
+    new apigateway.CfnAccount(this, 'ApiGatewayAccount', {
+      cloudWatchRoleArn: apiGatewayCloudWatchRole.roleArn,
+    });
+
     // API Gateway
     const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
       restApiName: 'Time Tracking API',
       description: 'API for time tracking application',
       // Explicitly disable caching to prevent authorization issues
       policy: undefined,
+      deployOptions: {
+        stageName: 'prod',
+        loggingLevel: apigateway.MethodLoggingLevel.INFO,
+        dataTraceEnabled: true,
+        metricsEnabled: true,
+        accessLogDestination: new apigateway.LogGroupLogDestination(apiLogGroup),
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields({
+          caller: true,
+          httpMethod: true,
+          ip: true,
+          protocol: true,
+          requestTime: true,
+          resourcePath: true,
+          responseLength: true,
+          status: true,
+          user: true,
+        }),
+      },
       defaultCorsPreflightOptions: {
         allowOrigins: [
           'http://localhost:3001',
@@ -463,6 +502,11 @@ export class TimeTrackingStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'S3BucketName', {
       value: websiteBucket.bucketName,
       description: 'S3 Bucket Name for website hosting',
+    });
+
+    new cdk.CfnOutput(this, 'ApiLogGroupName', {
+      value: apiLogGroup.logGroupName,
+      description: 'CloudWatch Log Group for API Gateway logs',
     });
 
     // Complete Amplify Gen 2 Outputs JSON
