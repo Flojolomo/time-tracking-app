@@ -199,7 +199,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             
             {/* Desktop User Menu */}
             <div className="hidden md:flex md:items-center md:space-x-4">
-              <span className="text-sm text-gray-600 truncate max-w-48">Welcome, {user?.email}</span>
+              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
               <button
                 onClick={logout}
                 className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
