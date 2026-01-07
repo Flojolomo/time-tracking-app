@@ -130,6 +130,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
     onChange(suggestion);
     setShowSuggestions(false);
     setSelectedIndex(-1);
+    setSuggestions([]); // Clear suggestions to ensure dropdown disappears
     inputRef.current?.focus();
   };
 
@@ -157,7 +158,11 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
-          handleSuggestionClick(suggestions[selectedIndex]);
+          const selectedSuggestion = suggestions[selectedIndex];
+          onChange(selectedSuggestion);
+          setShowSuggestions(false);
+          setSelectedIndex(-1);
+          setSuggestions([]); // Clear suggestions to ensure dropdown disappears
         }
         break;
       
