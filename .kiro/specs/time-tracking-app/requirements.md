@@ -35,13 +35,14 @@ A comprehensive time tracking web application that allows authenticated users to
 
 #### Acceptance Criteria
 
-1. WHEN creating a time record, THE Time_Tracker SHALL require project, start time, end time, date
+1. WHEN creating a time record, THE Time_Tracker SHALL require project, start time, end time, and date
 2. WHEN a user enters project information, THE Auto_Suggester SHALL provide suggestions from existing projects
 3. WHEN a user saves a time record, THE Time_Tracker SHALL validate that end time is after start time
 4. WHEN a user saves a time record, THE Time_Tracker SHALL persist the record with all required fields
 5. THE Time_Tracker SHALL allow users to edit existing time records
 6. THE Time_Tracker SHALL allow users to delete time records they own
-7. WHEN creating a time record, THE Time_Tracker SHALL accept comment and tags 
+7. WHEN creating a time record, THE Time_Tracker SHALL accept optional comment and tags fields
+8. WHEN a user creates, updates, or deletes a time record, THE Time_Tracker SHALL refresh the current view to display up-to-date data 
 
 ### Requirement 3: Project Management and Auto-Suggestion
 
@@ -85,13 +86,36 @@ A comprehensive time tracking web application that allows authenticated users to
 
 #### Acceptance Criteria
 
-1. THE Time_Tracker SHALL displaoy properly on desktop browsers with screen widths above 1024px
+1. THE Time_Tracker SHALL display properly on desktop browsers with screen widths above 1024px
 2. THE Time_Tracker SHALL adapt layout for tablet devices with screen widths between 768px and 1024px
 3. THE Time_Tracker SHALL optimize interface for mobile devices with screen widths below 768px
 4. WHEN on mobile devices, THE Time_Tracker SHALL provide touch-friendly interface elements
-5. THE Time_Tracker SHALL maintain full functinality across all supported device sizes
+5. THE Time_Tracker SHALL maintain full functionality across all supported device sizes
 
 ### Requirement 7: Data Persistence and Security
+
+**User Story:** As an authenticated user, I want my time tracking data to be securely stored and always available, so that I can rely on the system for accurate record keeping.
+
+#### Acceptance Criteria
+
+1. THE Time_Tracker SHALL persist all time records to secure storage immediately upon creation
+2. THE Authentication_System SHALL ensure users can only access their own time records
+3. WHEN a user logs out and back in, THE Time_Tracker SHALL display all previously saved records
+4. THE Time_Tracker SHALL handle network interruptions gracefully and retry failed save operations
+5. THE Time_Tracker SHALL provide data backup and recovery mechanisms for user records
+
+### Requirement 8: Live Timer and Active Record Management
+
+**User Story:** As an authenticated user, I want to start and stop time tracking with a simple timer interface, so that I can easily track active work without manual time entry.
+
+#### Acceptance Criteria
+
+1. WHEN a user is on the dashboard, THE Time_Tracker SHALL provide a start button to begin a new time record
+2. WHEN starting a new record, THE Time_Tracker SHALL create an active record without requiring any input fields
+3. THE Time_Tracker SHALL allow only one running record per user at any time
+4. WHEN a record is running, THE Time_Tracker SHALL display the active record prominently on the dashboard
+5. WHEN there is a running record, THE Time_Tracker SHALL provide a stop button to complete and save the record
+6. WHEN a user stops a running record, THE Time_Tracker SHALL prompt for required fields (project, comment, tags) before saving
 
 **User Story:** As an authenticated user, I want my time tracking data to be securely stored and always available, so that I can rely on the system for accurate record keeping.
 

@@ -73,7 +73,8 @@ graph TB
 - **TimeRecordForm**: Create/edit time records with auto-suggestion
 - **TimeRecordList**: Display records in different views (daily/weekly/monthly)
 - **ProjectAutocomplete**: Smart project suggestions with debounced search
-- **TimerWidget**: Optional live timer for active time tracking
+- **TimerWidget**: Live timer for active time tracking with start/stop functionality
+- **ActiveRecordDisplay**: Shows currently running record on dashboard
 
 #### 4. Statistics Components
 - **StatsDashboard**: Overview of time tracking metrics
@@ -95,6 +96,9 @@ graph TB
 - `PUT /api/time-records/{id}` - Update existing time record
 - `DELETE /api/time-records/{id}` - Delete time record
 - `GET /api/time-records/stats` - Get aggregated statistics
+- `POST /api/time-records/start` - Start a new active time record
+- `PUT /api/time-records/stop/{id}` - Stop an active time record
+- `GET /api/time-records/active` - Get user's currently active record
 
 #### Projects API
 - `GET /api/projects` - List user's projects
@@ -113,13 +117,14 @@ interface TimeRecord {
   GSI1SK: string;       // DATE#{date}
   recordId: string;     // UUID
   userId: string;       // Cognito user ID
-  project: string;      // Project name
+  project: string;      // Project name (optional for active records)
   startTime: string;    // ISO 8601 timestamp
-  endTime: string;      // ISO 8601 timestamp
+  endTime: string;      // ISO 8601 timestamp (null for active records)
   date: string;         // YYYY-MM-DD format
-  duration: number;     // Duration in minutes
-  comment: string;      // User comment
-  tags: string[];       // Array of tags
+  duration: number;     // Duration in minutes (calculated when stopped)
+  comment: string;      // User comment (optional)
+  tags: string[];       // Array of tags (optional)
+  isActive: boolean;    // True for currently running records
   createdAt: string;    // ISO 8601 timestamp
   updatedAt: string;    // ISO 8601 timestamp
 }
@@ -143,6 +148,8 @@ interface Project {
 2. **Get records by project**: Query GSI1PK = PROJECT#{projectName}
 3. **Get project suggestions**: Query PK = USER#{userId}, SK begins_with PROJECT#
 4. **Get statistics**: Aggregate queries using DynamoDB streams or Lambda
+5. **Get active record**: Query PK = USER#{userId} with filter isActive = true
+6. **Ensure single active record**: Check for existing active records before starting new ones
 
 ## Error Handling
 
@@ -211,6 +218,26 @@ interface Project {
 **Property 12: Cross-Device Functionality**
 *For any* core time tracking operation (create, read, update, delete records), the functionality should work consistently across different device viewport sizes
 **Validates: Requirements 6.5**
+
+**Property 13: UI Refresh After Data Changes**
+*For any* time record creation, update, or deletion, the current view should refresh to display the updated data immediately
+**Validates: Requirements 2.8**
+
+**Property 14: Single Active Record Constraint**
+*For any* user, there should be at most one active (running) time record at any given time
+**Validates: Requirements 8.3**
+
+**Property 15: Active Record Display**
+*For any* user with a running time record, the dashboard should prominently display the active record with elapsed time
+**Validates: Requirements 8.4**
+
+**Property 16: Timer Start Without Input**
+*For any* user starting a new time record from the dashboard, no input fields should be required to begin tracking
+**Validates: Requirements 8.1, 8.2**
+
+**Property 17: Timer Stop Completion**
+*For any* active time record being stopped, the system should prompt for required fields (project, comment, tags) and calculate the final duration before saving
+**Validates: Requirements 8.5, 8.6**
 
 ## Testing Strategy
 

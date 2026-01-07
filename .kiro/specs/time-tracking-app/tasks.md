@@ -59,6 +59,7 @@ This implementation plan breaks down the time tracking application into discrete
     - Implement POST /api/time-records for creation
     - Implement PUT /api/time-records/{id} for updates
     - Implement DELETE /api/time-records/{id} for deletion
+    - Update data model to support active records with isActive field
     - _Requirements: 2.4, 2.5, 2.6, 7.1_
 
   - [ ]* 4.3 Write basic unit tests for data operations
@@ -86,6 +87,33 @@ This implementation plan breaks down the time tracking application into discrete
 
 - [x] 6. Checkpoint - Core functionality validation
   - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 6.5. Live Timer Implementation
+  - [ ] 6.5.1 Implement timer API endpoints in Lambda
+    - Add POST /api/time-records/start for starting active records
+    - Add PUT /api/time-records/stop/{id} for stopping active records
+    - Add GET /api/time-records/active for retrieving active record
+    - Implement single active record constraint validation
+    - _Requirements: 8.1, 8.2, 8.3, 8.5_
+
+  - [ ] 6.5.2 Create TimerWidget component with live functionality
+    - Implement start button for dashboard
+    - Add real-time elapsed time display for active records
+    - Create stop button with completion form
+    - Ensure UI refreshes after timer operations
+    - _Requirements: 8.1, 8.2, 8.4, 8.5, 8.6, 2.8_
+
+  - [ ] 6.5.3 Integrate timer with dashboard and data layer
+    - Add ActiveRecordDisplay component to dashboard
+    - Connect timer operations to existing data refresh mechanisms
+    - Ensure timer state persists across page refreshes
+    - _Requirements: 8.4, 2.8_
+
+  - [ ]* 6.5.4 Write basic unit tests for timer functionality
+    - Test timer start/stop operations
+    - Test single active record constraint
+    - Test UI refresh after timer operations
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 2.8_
 
 - [x] 7. Time Record Views and Display
   - [x] 7.1 Implement TimeRecordList component with multiple views
