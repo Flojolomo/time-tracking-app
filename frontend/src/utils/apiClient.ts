@@ -4,14 +4,14 @@
  */
 
 import { get, post, put, del } from 'aws-amplify/api';
-import { fetchWithRetry, handleApiResponse } from './networkUtils';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 /**
  * Utility function to handle API errors
  */
 export function handleApiError(error: any): string {
-  if (error?.response?.data?.message) {
-    return error.response.data.message;
+  if (error?.response?.body?.message) {
+    return error.response.body.message;
   }
   
   if (error?.message) {
@@ -19,6 +19,26 @@ export function handleApiError(error: any): string {
   }
   
   return 'An unexpected error occurred';
+}
+
+/**
+ * Ensure user has valid AWS credentials before making API calls
+ */
+async function ensureCredentials(): Promise<void> {
+  try {
+    const session = await fetchAuthSession();
+    
+    if (!session.credentials) {
+      throw new Error('No AWS credentials available. Please ensure you are logged in.');
+    }
+    
+    if (!session.identityId) {
+      throw new Error('No identity ID available. Please check your Cognito Identity Pool configuration.');
+    }
+  } catch (error) {
+    console.error('Credential check failed:', error);
+    throw new Error('Authentication required. Please log in again.');
+  }
 }
 
 /**
@@ -33,6 +53,9 @@ export async function apiRequest<T>(
   }
 ): Promise<T> {
   try {
+    // Ensure user has valid credentials
+    await ensureCredentials();
+    
     const { method = 'GET', body, queryParams } = options || {};
     
     // Remove leading slash and API base URL since Amplify handles this
@@ -40,13 +63,18 @@ export async function apiRequest<T>(
     
     let response;
     
+    const requestOptions = {
+      queryParams: queryParams || {},
+      ...(body && { body })
+    };
+    
     switch (method) {
       case 'GET':
         response = await get({
           apiName: 'Time Tracking API',
           path: cleanPath,
           options: {
-            queryParams,
+            queryParams: queryParams || {},
           },
         });
         break;
@@ -54,20 +82,14 @@ export async function apiRequest<T>(
         response = await post({
           apiName: 'Time Tracking API',
           path: cleanPath,
-          options: {
-            body,
-            queryParams,
-          },
+          options: requestOptions,
         });
         break;
       case 'PUT':
         response = await put({
           apiName: 'Time Tracking API',
           path: cleanPath,
-          options: {
-            body,
-            queryParams,
-          },
+          options: requestOptions,
         });
         break;
       case 'DELETE':
@@ -75,7 +97,7 @@ export async function apiRequest<T>(
           apiName: 'Time Tracking API',
           path: cleanPath,
           options: {
-            queryParams,
+            queryParams: queryParams || {},
           },
         });
         break;
@@ -83,10 +105,17 @@ export async function apiRequest<T>(
         throw new Error(`Unsupported HTTP method: ${method}`);
     }
     
-    return (await response.response).body as T;
+    const result = await response.response;
+    return result.body as T;
   } catch (error: any) {
-    // Add context to network errors
-    if (error.isNetworkError) {
+    console.error('API request failed:', error);
+    
+    // Handle specific AWS/Amplify errors
+    if (error.name === 'NotAuthorizedException' || error.name === 'UnauthorizedException') {
+      throw new Error('Authentication failed. Please log in again.');
+    }
+    
+    if (error.name === 'NetworkError' || error.message?.includes('network')) {
       throw new Error('Network error - please check your internet connection and try again');
     }
     

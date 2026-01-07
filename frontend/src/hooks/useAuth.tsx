@@ -36,6 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const currentUser = await getCurrentUser();
       const session = await fetchAuthSession();
       
+      // Ensure we have both Cognito user and AWS credentials
+      if (!session.credentials || !session.identityId) {
+        console.warn('Missing AWS credentials or identity ID');
+        setUser(null);
+        return;
+      }
+      
       setUser({
         userId: currentUser.userId,
         email: currentUser.signInDetails?.loginId || '',
@@ -71,6 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSignedIn) {
         const currentUser = await getCurrentUser();
         const session = await fetchAuthSession();
+        
+        // Ensure we have both Cognito user and AWS credentials
+        if (!session.credentials || !session.identityId) {
+          throw new Error('Failed to obtain AWS credentials. Please try logging in again.');
+        }
         
         setUser({
           userId: currentUser.userId,

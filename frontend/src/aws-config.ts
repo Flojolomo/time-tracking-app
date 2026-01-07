@@ -14,7 +14,7 @@ async function loadAmplifyConfig() {
     }
     const config = await response.json();
     
-    // Transform the configuration to include REST API settings
+    // Transform the configuration for Amplify Gen 2
     amplifyConfig = {
       Auth: {
         Cognito: {
@@ -49,7 +49,15 @@ async function loadAmplifyConfig() {
         },
       },
       API: {
-        REST: config.custom?.API || {},
+        REST: Object.fromEntries(
+          Object.entries(config.custom?.API || {}).map(([name, apiConfig]: [string, any]) => [
+            name,
+            {
+              endpoint: apiConfig.endpoint,
+              region: apiConfig.region || config.auth?.aws_region || 'us-east-1',
+            }
+          ])
+        ),
       },
     };
     
