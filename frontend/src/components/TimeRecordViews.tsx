@@ -74,7 +74,17 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Time Records</h1>
         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                // Cancel - close form and clear editing state
+                setShowForm(false);
+                setEditingRecord(undefined);
+              } else {
+                // Add new record - clear editing state and show form
+                setEditingRecord(undefined);
+                setShowForm(true);
+              }
+            }}
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
           >
             {showForm ? 'Cancel' : 'Add Time Record'}
