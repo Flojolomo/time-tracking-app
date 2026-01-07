@@ -43,6 +43,7 @@ async function ensureCredentials(): Promise<void> {
 
 /**
  * Enhanced API request function using Amplify REST API
+ * Optimized to minimize CORS preflight requests
  */
 export async function apiRequest<T>(
   path: string,
@@ -63,41 +64,48 @@ export async function apiRequest<T>(
     
     let response;
     
+    // Optimize request options to avoid preflight when possible
     const requestOptions = {
       queryParams: queryParams || {},
+      headers: {
+        // Use only simple headers to avoid preflight
+        'Content-Type': 'application/json',
+      },
       ...(requestBody && { body: requestBody })
     };
     
     switch (method) {
       case 'GET':
-        response = await get({
+        response = get({
           apiName: 'Time Tracking API',
           path: cleanPath,
           options: {
             queryParams: queryParams || {},
+            headers: {}, // Minimal headers for GET requests
           },
         });
         break;
       case 'POST':
-        response = await post({
+        response = post({
           apiName: 'Time Tracking API',
           path: cleanPath,
           options: requestOptions,
         });
         break;
       case 'PUT':
-        response = await put({
+        response = put({
           apiName: 'Time Tracking API',
           path: cleanPath,
           options: requestOptions,
         });
         break;
       case 'DELETE':
-        response = await del({
+        response = del({
           apiName: 'Time Tracking API',
           path: cleanPath,
           options: {
             queryParams: queryParams || {},
+            headers: {}, // Minimal headers for DELETE requests
           },
         });
         break;

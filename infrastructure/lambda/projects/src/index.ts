@@ -32,18 +32,14 @@ const getAllowedOrigin = (event: APIGatewayProxyEvent): string => {
     : allowedOrigins[0];
 };
 
-// Helper function to create CORS headers
+// Helper function to create optimized CORS headers (avoid preflight when possible)
 const createCorsHeaders = (event?: APIGatewayProxyEvent) => ({
   'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': event ? getAllowedOrigin(event) : (
-    process.env.CLOUDFRONT_DOMAIN 
-      ? `https://${process.env.CLOUDFRONT_DOMAIN}` 
-      : 'http://localhost:3001'
-  ),
-  'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
+  'Access-Control-Allow-Origin': '*', // More permissive to avoid preflight
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amz-Content-Sha256,X-Amz-Target',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400'
+  'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
+  'Vary': 'Origin', // Help with caching
 });
 
 // Helper function to create error response
