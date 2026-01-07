@@ -200,4 +200,53 @@ export class TimeRecordService {
       throw new Error(`Failed to fetch time records by date range: ${handleApiError(error)}`);
     }
   }
+
+  /**
+   * Timer-related methods
+   */
+
+  /**
+   * Start a new timer (active time record)
+   */
+  static async startTimer(): Promise<TimeRecord> {
+    try {
+      return await apiRequest<TimeRecord>('api/time-records/start', {
+        method: 'POST',
+        body: {}
+      });
+    } catch (error) {
+      throw new Error(`Failed to start timer: ${handleApiError(error)}`);
+    }
+  }
+
+  /**
+   * Stop an active timer
+   */
+  static async stopTimer(recordId: string, data: {
+    project: string;
+    description?: string;
+    tags?: string[];
+  }): Promise<TimeRecord> {
+    try {
+      return await apiRequest<TimeRecord>(`api/time-records/stop/${recordId}`, {
+        method: 'PUT',
+        body: data
+      });
+    } catch (error) {
+      throw new Error(`Failed to stop timer: ${handleApiError(error)}`);
+    }
+  }
+
+  /**
+   * Get the currently active timer
+   */
+  static async getActiveTimer(): Promise<{ activeRecord: TimeRecord | null }> {
+    try {
+      return await apiRequest<{ activeRecord: TimeRecord | null }>('api/time-records/active', {
+        method: 'GET'
+      });
+    } catch (error) {
+      throw new Error(`Failed to get active timer: ${handleApiError(error)}`);
+    }
+  }
 }

@@ -194,3 +194,40 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     'Content-Type': 'application/json',
   };
 }
+
+/**
+ * Timer API functions
+ */
+
+/**
+ * Start a new active time record
+ */
+export async function startTimer(): Promise<any> {
+  return apiRequest('/api/time-records/start', {
+    method: 'POST',
+    body: {}
+  });
+}
+
+/**
+ * Stop an active time record
+ */
+export async function stopTimer(recordId: string, data: {
+  project: string;
+  description?: string;
+  tags?: string[];
+}): Promise<any> {
+  return apiRequest(`/api/time-records/stop/${recordId}`, {
+    method: 'PUT',
+    body: data
+  });
+}
+
+/**
+ * Get the currently active time record
+ */
+export async function getActiveTimer(): Promise<{ activeRecord: any | null }> {
+  return apiRequest('/api/time-records/active', {
+    method: 'GET'
+  });
+}

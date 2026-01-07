@@ -16,13 +16,14 @@ interface TimeRecord {
   GSI1SK: string;       // DATE#{date}
   recordId: string;     // UUID
   userId: string;       // Cognito user ID
-  project: string;      // Project name
+  project: string;      // Project name (optional for active records)
   startTime: string;    // ISO 8601 timestamp
-  endTime: string;      // ISO 8601 timestamp
+  endTime: string;      // ISO 8601 timestamp (null for active records)
   date: string;         // YYYY-MM-DD format
-  duration: number;     // Duration in minutes
-  comment: string;      // User comment
-  tags: string[];       // Array of tags
+  duration: number;     // Duration in minutes (calculated when stopped)
+  comment: string;      // User comment (optional)
+  tags: string[];       // Array of tags (optional)
+  isActive: boolean;    // True for currently running records
   createdAt: string;    // ISO 8601 timestamp
   updatedAt: string;    // ISO 8601 timestamp
 }
@@ -245,9 +246,21 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Add project filtering if provided
     if (project) {
-      params.FilterExpression = 'project = :project';
+      if (params.FilterExpression) {
+        params.FilterExpression += ' AND project = :project';
+      } else {
+        params.FilterExpression = 'project = :project';
+      }
       params.ExpressionAttributeValues[':project'] = project;
     }
+
+    // Filter out active records from regular listings
+    if (params.FilterExpression) {
+      params.FilterExpression += ' AND (attribute_not_exists(isActive) OR isActive = :notActive)';
+    } else {
+      params.FilterExpression = 'attribute_not_exists(isActive) OR isActive = :notActive';
+    }
+    params.ExpressionAttributeValues[':notActive'] = false;
 
     const command = new QueryCommand(params);
     const result = await docClient.send(command);
@@ -317,6 +330,7 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       duration,
       comment: data.description || data.comment || '',
       tags: data.tags || [],
+      isActive: false, // Regular records are not active
       createdAt: now,
       updatedAt: now
     };
@@ -429,6 +443,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
         duration,
         comment: data.description || data.comment || '',
         tags: data.tags || [],
+        isActive: false, // Regular records are not active
         createdAt: existingRecord.createdAt,
         updatedAt: now
       };
@@ -463,7 +478,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
           PK: existingRecord.PK,
           SK: existingRecord.SK
         },
-        UpdateExpression: 'SET #project = :project, startTime = :startTime, endTime = :endTime, #duration = :duration, #comment = :comment, tags = :tags, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
+        UpdateExpression: 'SET #project = :project, startTime = :startTime, endTime = :endTime, #duration = :duration, #comment = :comment, tags = :tags, isActive = :isActive, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
         ExpressionAttributeNames: {
           '#project': 'project',
           '#comment': 'comment',
@@ -476,6 +491,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
           ':duration': duration,
           ':comment': data.description || data.comment || '',
           ':tags': data.tags || [],
+          ':isActive': false, // Regular records are not active
           ':updatedAt': now,
           ':gsi1pk': `PROJECT#${projectName}`
         },
@@ -662,6 +678,234 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
     return createErrorResponse(500, 'Internal server error', event);
   }
 };
+
+// POST /api/time-records/start - Start a new active time record
+const startTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = extractUserIdFromToken(event);
+    if (!userId) {
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
+    }
+
+    // Check if user already has an active record
+    const activeRecordQuery = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+      FilterExpression: 'isActive = :isActive',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${userId}`,
+        ':skPrefix': 'RECORD#',
+        ':isActive': true
+      }
+    });
+
+    const activeResult = await docClient.send(activeRecordQuery);
+    
+    if (activeResult.Items && activeResult.Items.length > 0) {
+      return createErrorResponse(400, 'User already has an active time record. Stop the current record before starting a new one.', event);
+    }
+
+    const recordId = uuidv4();
+    const now = new Date().toISOString();
+    const today = now.split('T')[0]; // YYYY-MM-DD format
+
+    const activeRecord: TimeRecord = {
+      PK: `USER#${userId}`,
+      SK: `RECORD#${today}#${recordId}`,
+      GSI1PK: `PROJECT#ACTIVE`, // Temporary project for active records
+      GSI1SK: `DATE#${today}`,
+      recordId,
+      userId,
+      project: '', // Will be filled when stopped
+      startTime: now,
+      endTime: '', // Will be filled when stopped
+      date: today,
+      duration: 0, // Will be calculated when stopped
+      comment: '', // Will be filled when stopped
+      tags: [], // Will be filled when stopped
+      isActive: true,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const command = new PutCommand({
+      TableName: TABLE_NAME,
+      Item: activeRecord
+    });
+
+    await docClient.send(command);
+
+    // Transform response to match frontend expectations
+    const responseRecord = {
+      id: activeRecord.recordId,
+      userId: activeRecord.userId,
+      projectName: activeRecord.project,
+      description: activeRecord.comment,
+      startTime: activeRecord.startTime,
+      endTime: activeRecord.endTime,
+      duration: activeRecord.duration,
+      tags: activeRecord.tags,
+      isActive: activeRecord.isActive,
+      createdAt: activeRecord.createdAt,
+      updatedAt: activeRecord.updatedAt
+    };
+
+    return createSuccessResponse(201, responseRecord, event);
+  } catch (error) {
+    console.error('Error starting time record:', error);
+    return createErrorResponse(500, 'Internal server error', event);
+  }
+};
+
+// PUT /api/time-records/stop/{id} - Stop an active time record
+const stopTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = extractUserIdFromToken(event);
+    if (!userId) {
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
+    }
+
+    const recordId = event.pathParameters?.id;
+    if (!recordId) {
+      return createErrorResponse(400, 'Record ID is required', event);
+    }
+
+    if (!event.body) {
+      return createErrorResponse(400, 'Request body is required', event);
+    }
+
+    const data = JSON.parse(event.body);
+    
+    // Validate required fields for stopping
+    if (!data.project || typeof data.project !== 'string' || data.project.trim() === '') {
+      return createErrorResponse(400, 'Project name is required when stopping a time record', event);
+    }
+
+    // Get the existing active record
+    const getCommand = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+      FilterExpression: 'recordId = :recordId AND isActive = :isActive',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${userId}`,
+        ':skPrefix': 'RECORD#',
+        ':recordId': recordId,
+        ':isActive': true
+      }
+    });
+
+    const getResult = await docClient.send(getCommand);
+    const existingRecord = getResult.Items?.[0];
+
+    if (!existingRecord) {
+      return createErrorResponse(404, 'Active time record not found', event);
+    }
+
+    const now = new Date().toISOString();
+    const duration = calculateDuration(existingRecord.startTime, now);
+    const projectName = data.project.trim();
+
+    // Update the record to stop it
+    const updateCommand = new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: existingRecord.PK,
+        SK: existingRecord.SK
+      },
+      UpdateExpression: 'SET #project = :project, endTime = :endTime, #duration = :duration, #comment = :comment, tags = :tags, isActive = :isActive, updatedAt = :updatedAt, GSI1PK = :gsi1pk',
+      ExpressionAttributeNames: {
+        '#project': 'project',
+        '#comment': 'comment',
+        '#duration': 'duration'
+      },
+      ExpressionAttributeValues: {
+        ':project': projectName,
+        ':endTime': now,
+        ':duration': duration,
+        ':comment': data.description || data.comment || '',
+        ':tags': data.tags || [],
+        ':isActive': false,
+        ':updatedAt': now,
+        ':gsi1pk': `PROJECT#${projectName}`
+      },
+      ReturnValues: 'ALL_NEW'
+    });
+
+    const updateResult = await docClient.send(updateCommand);
+
+    // Transform response to match frontend expectations
+    const responseRecord = {
+      id: updateResult.Attributes?.recordId,
+      userId: updateResult.Attributes?.userId,
+      projectName: updateResult.Attributes?.project,
+      description: updateResult.Attributes?.comment || '',
+      startTime: updateResult.Attributes?.startTime,
+      endTime: updateResult.Attributes?.endTime,
+      duration: updateResult.Attributes?.duration,
+      tags: updateResult.Attributes?.tags || [],
+      isActive: updateResult.Attributes?.isActive,
+      createdAt: updateResult.Attributes?.createdAt,
+      updatedAt: updateResult.Attributes?.updatedAt
+    };
+
+    return createSuccessResponse(200, responseRecord, event);
+  } catch (error) {
+    console.error('Error stopping time record:', error);
+    if (error instanceof SyntaxError) {
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
+    }
+    return createErrorResponse(500, 'Internal server error', event);
+  }
+};
+
+// GET /api/time-records/active - Get user's currently active record
+const getActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = extractUserIdFromToken(event);
+    if (!userId) {
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
+    }
+
+    const activeRecordQuery = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+      FilterExpression: 'isActive = :isActive',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${userId}`,
+        ':skPrefix': 'RECORD#',
+        ':isActive': true
+      }
+    });
+
+    const result = await docClient.send(activeRecordQuery);
+    
+    if (!result.Items || result.Items.length === 0) {
+      return createSuccessResponse(200, { activeRecord: null }, event);
+    }
+
+    const activeRecord = result.Items[0];
+
+    // Transform response to match frontend expectations
+    const responseRecord = {
+      id: activeRecord.recordId,
+      userId: activeRecord.userId,
+      projectName: activeRecord.project,
+      description: activeRecord.comment || '',
+      startTime: activeRecord.startTime,
+      endTime: activeRecord.endTime,
+      duration: activeRecord.duration,
+      tags: activeRecord.tags || [],
+      isActive: activeRecord.isActive,
+      createdAt: activeRecord.createdAt,
+      updatedAt: activeRecord.updatedAt
+    };
+
+    return createSuccessResponse(200, { activeRecord: responseRecord }, event);
+  } catch (error) {
+    console.error('Error getting active time record:', error);
+    return createErrorResponse(500, 'Internal server error', event);
+  }
+};
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
@@ -683,6 +927,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return await getTimeRecords(event);
     } else if (path === '/api/time-records' && method === 'POST') {
       return await createTimeRecord(event);
+    } else if (path === '/api/time-records/start' && method === 'POST') {
+      return await startTimeRecord(event);
+    } else if (path === '/api/time-records/active' && method === 'GET') {
+      return await getActiveTimeRecord(event);
+    } else if (path.match(/^\/api\/time-records\/stop\/[^/]+$/) && method === 'PUT') {
+      return await stopTimeRecord(event);
     } else if (path.match(/^\/api\/time-records\/[^/]+$/) && method === 'PUT') {
       return await updateTimeRecord(event);
     } else if (path.match(/^\/api\/time-records\/[^/]+$/) && method === 'DELETE') {

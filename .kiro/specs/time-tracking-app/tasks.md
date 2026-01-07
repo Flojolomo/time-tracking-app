@@ -88,22 +88,22 @@ This implementation plan breaks down the time tracking application into discrete
 - [x] 6. Checkpoint - Core functionality validation
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6.5. Live Timer Implementation
-  - [ ] 6.5.1 Implement timer API endpoints in Lambda
+- [x] 6.5. Live Timer Implementation
+  - [x] 6.5.1 Implement timer API endpoints in Lambda
     - Add POST /api/time-records/start for starting active records
     - Add PUT /api/time-records/stop/{id} for stopping active records
     - Add GET /api/time-records/active for retrieving active record
     - Implement single active record constraint validation
     - _Requirements: 8.1, 8.2, 8.3, 8.5_
 
-  - [ ] 6.5.2 Create TimerWidget component with live functionality
+  - [x] 6.5.2 Create TimerWidget component with live functionality
     - Implement start button for dashboard
     - Add real-time elapsed time display for active records
     - Create stop button with completion form
     - Ensure UI refreshes after timer operations
     - _Requirements: 8.1, 8.2, 8.4, 8.5, 8.6, 2.8_
 
-  - [ ] 6.5.3 Integrate timer with dashboard and data layer
+  - [x] 6.5.3 Integrate timer with dashboard and data layer
     - Add ActiveRecordDisplay component to dashboard
     - Connect timer operations to existing data refresh mechanisms
     - Ensure timer state persists across page refreshes

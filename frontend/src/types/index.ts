@@ -9,6 +9,7 @@ export interface TimeRecord {
   endTime?: string; // ISO 8601 timestamp
   duration?: number; // Duration in minutes
   tags?: string[];
+  isActive?: boolean; // True for currently running records
   createdAt?: string; // ISO 8601 timestamp
   updatedAt?: string; // ISO 8601 timestamp
 }

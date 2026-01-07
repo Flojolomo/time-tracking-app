@@ -14,6 +14,8 @@ export { StatsDashboard } from './StatsDashboard';
 export { ProjectChart } from './ProjectChart';
 export { TimelineChart } from './TimelineChart';
 export { MetricsCards } from './MetricsCards';
+export { TimerWidget } from './TimerWidget';
+export { ActiveRecordDisplay } from './ActiveRecordDisplay';
 
 // Error handling and UI components
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';

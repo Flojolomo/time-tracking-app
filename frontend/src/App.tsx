@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard } from './components';
+import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ActiveRecordDisplay } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -285,41 +285,58 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
 // Dashboard component for authenticated users
 function Dashboard() {
+  const [refreshTrigger, setRefreshTrigger] = React.useState(0);
+
+  const handleTimerUpdate = () => {
+    // Trigger refresh of active record display and any other data
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <DashboardLayout>
-      <div className="text-center">
-        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-          <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h2 className="mt-2 text-xl sm:text-2xl font-bold text-gray-900">Welcome to TimeTracker!</h2>
-        <p className="mt-1 text-sm sm:text-base text-gray-600 px-4">
-          You are successfully logged in. Navigate to Time Records to start tracking your time.
-        </p>
-        <div className="mt-6">
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mx-4 sm:mx-0">
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Available Features</h3>
-            <ul className="text-left space-y-2 text-sm sm:text-base text-gray-600">
-              <li>• Time record creation and management</li>
-              <li>• Project organization and auto-suggestions</li>
-              <li>• Multiple view formats (daily, weekly, monthly)</li>
-              <li>• Statistics and analytics dashboard</li>
-              <li>• Data visualization with charts</li>
-            </ul>
-            <div className="mt-4 flex flex-col sm:flex-row sm:justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <a
-                href="/records"
-                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                View Time Records
-              </a>
-              <a
-                href="/analytics"
-                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                View Analytics
-              </a>
+      <div className="space-y-6">
+        {/* Active Record Display */}
+        <ActiveRecordDisplay refreshTrigger={refreshTrigger} />
+        
+        {/* Timer Widget */}
+        <TimerWidget onTimerUpdate={handleTimerUpdate} />
+        
+        {/* Welcome Section */}
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+            <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="mt-2 text-xl sm:text-2xl font-bold text-gray-900">Welcome to TimeTracker!</h2>
+          <p className="mt-1 text-sm sm:text-base text-gray-600 px-4">
+            Start tracking your time with the timer above, or navigate to Time Records to manage your entries.
+          </p>
+          <div className="mt-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 mx-4 sm:mx-0">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Available Features</h3>
+              <ul className="text-left space-y-2 text-sm sm:text-base text-gray-600">
+                <li>• Live timer with start/stop functionality</li>
+                <li>• Time record creation and management</li>
+                <li>• Project organization and auto-suggestions</li>
+                <li>• Multiple view formats (daily, weekly, monthly)</li>
+                <li>• Statistics and analytics dashboard</li>
+                <li>• Data visualization with charts</li>
+              </ul>
+              <div className="mt-4 flex flex-col sm:flex-row sm:justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <a
+                  href="/records"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  View Time Records
+                </a>
+                <a
+                  href="/analytics"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  View Analytics
+                </a>
+              </div>
             </div>
           </div>
         </div>
