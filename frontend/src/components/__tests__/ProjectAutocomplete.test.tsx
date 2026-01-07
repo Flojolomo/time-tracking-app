@@ -5,9 +5,11 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProjectAutocomplete } from '../ProjectAutocomplete';
+import { apiRequest } from '../../utils/apiClient';
 
 // Mock the API client utilities
 jest.mock('../../utils/apiClient', () => ({
+  apiRequest: jest.fn(),
   getApiBaseUrl: jest.fn().mockResolvedValue('https://api.example.com'),
   getAuthHeaders: jest.fn().mockResolvedValue({
     'Content-Type': 'application/json',
@@ -22,10 +24,12 @@ global.fetch = jest.fn();
 describe('ProjectAutocomplete', () => {
   const mockOnChange = jest.fn();
   const mockOnBlur = jest.fn();
+  const mockApiRequest = apiRequest as jest.MockedFunction<typeof apiRequest>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
+    mockApiRequest.mockClear();
   });
 
   describe('Component Rendering', () => {
@@ -115,10 +119,7 @@ describe('ProjectAutocomplete', () => {
         count: 3
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockSuggestions)
-      });
+      mockApiRequest.mockResolvedValueOnce(mockSuggestions);
 
       render(
         <ProjectAutocomplete
@@ -129,14 +130,11 @@ describe('ProjectAutocomplete', () => {
 
       // Wait for debounced API call
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          'https://api.example.com/api/projects/suggestions?q=Project&limit=10',
+        expect(mockApiRequest).toHaveBeenCalledWith(
+          'api/projects/suggestions',
           expect.objectContaining({
             method: 'GET',
-            headers: expect.objectContaining({
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer mock-token'
-            })
+            queryParams: { q: 'Project', limit: '10' }
           })
         );
       }, { timeout: 500 });
@@ -148,10 +146,7 @@ describe('ProjectAutocomplete', () => {
         count: 2
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockSuggestions)
-      });
+      mockApiRequest.mockResolvedValueOnce(mockSuggestions);
 
       render(
         <ProjectAutocomplete
@@ -168,7 +163,7 @@ describe('ProjectAutocomplete', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      mockApiRequest.mockRejectedValueOnce(new Error('Network error'));
 
       render(
         <ProjectAutocomplete
@@ -189,10 +184,7 @@ describe('ProjectAutocomplete', () => {
         count: 2
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue(mockSuggestions)
-      });
+      mockApiRequest.mockResolvedValueOnce(mockSuggestions);
 
       render(
         <ProjectAutocomplete

@@ -6,6 +6,7 @@
 import { render, screen } from '@testing-library/react';
 import { TimeRecordForm } from '../TimeRecordForm';
 import { TimeRecord } from '../../types';
+import { NotificationProvider } from '../../contexts/NotificationContext';
 
 // Mock the API client utilities
 jest.mock('../../utils/apiClient', () => ({
@@ -29,6 +30,15 @@ describe('TimeRecordForm', () => {
   const mockOnSubmit = jest.fn();
   const mockOnCancel = jest.fn();
 
+  // Helper function to render with providers
+  const renderWithProviders = (component: React.ReactElement) => {
+    return render(
+      <NotificationProvider>
+        {component}
+      </NotificationProvider>
+    );
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
@@ -36,7 +46,7 @@ describe('TimeRecordForm', () => {
 
   describe('Component Rendering', () => {
     it('should render form with all required fields', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} />);
 
       expect(screen.getByLabelText(/project name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
@@ -47,7 +57,7 @@ describe('TimeRecordForm', () => {
     });
 
     it('should render create form title when no initial data', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} />);
       
       expect(screen.getByText('New Time Record')).toBeInTheDocument();
       expect(screen.getByText('Create Record')).toBeInTheDocument();
@@ -64,14 +74,14 @@ describe('TimeRecordForm', () => {
         tags: ['test', 'work']
       };
 
-      render(<TimeRecordForm onSubmit={mockOnSubmit} initialData={initialData} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} initialData={initialData} />);
       
       expect(screen.getByText('Edit Time Record')).toBeInTheDocument();
       expect(screen.getByText('Update Record')).toBeInTheDocument();
     });
 
     it('should show cancel button when onCancel provided', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
       
       expect(screen.getByText('Cancel')).toBeInTheDocument();
     });
@@ -89,7 +99,7 @@ describe('TimeRecordForm', () => {
         tags: ['test', 'work']
       };
 
-      render(<TimeRecordForm onSubmit={mockOnSubmit} initialData={initialData} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} initialData={initialData} />);
 
       expect(screen.getByDisplayValue('Test Project')).toBeInTheDocument();
       expect(screen.getByDisplayValue('2024-01-01')).toBeInTheDocument();
@@ -100,7 +110,7 @@ describe('TimeRecordForm', () => {
 
   describe('Loading States', () => {
     it('should disable form when loading', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} isLoading={true} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} isLoading={true} />);
 
       expect(screen.getByLabelText(/project name/i)).toBeDisabled();
       expect(screen.getByLabelText(/date/i)).toBeDisabled();
@@ -112,7 +122,7 @@ describe('TimeRecordForm', () => {
 
   describe('Form Structure', () => {
     it('should have proper form structure with required field indicators', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} />);
 
       // Check for required field indicators (*)
       expect(screen.getByText('Project Name *')).toBeInTheDocument();
@@ -126,7 +136,7 @@ describe('TimeRecordForm', () => {
     });
 
     it('should have proper input types for each field', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} />);
 
       expect(screen.getByLabelText(/project name/i)).toHaveAttribute('type', 'text');
       expect(screen.getByLabelText(/date/i)).toHaveAttribute('type', 'date');
@@ -136,7 +146,7 @@ describe('TimeRecordForm', () => {
     });
 
     it('should use ProjectAutocomplete for project name field', () => {
-      render(<TimeRecordForm onSubmit={mockOnSubmit} />);
+      renderWithProviders(<TimeRecordForm onSubmit={mockOnSubmit} />);
 
       const projectInput = screen.getByLabelText(/project name/i);
       expect(projectInput).toBeInTheDocument();
