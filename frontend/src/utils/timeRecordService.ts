@@ -2,7 +2,7 @@
  * Time Record data access layer with CRUD operations using REST API
  */
 
-import { handleApiError, calculateDuration, validateTimeRecord, formatDateForAPI, getApiBaseUrl, getAuthHeaders, apiRequest } from './apiClient';
+import { handleApiError, calculateDuration, validateTimeRecord, formatDateForAPI, apiRequest } from './apiClient';
 import type { 
   TimeRecord, 
   CreateTimeRecordInput, 
@@ -35,11 +35,15 @@ export class TimeRecordService {
 
       const now = formatDateForAPI(new Date());
       
+      // Extract date from startTime for the API
+      const recordDate = new Date(input.startTime).toISOString().split('T')[0];
+      
       const requestBody = {
-        projectName: input.projectName,
-        description: input.description || '',
+        project: input.projectName,
+        comment: input.description || '',
         startTime: input.startTime,
         endTime: input.endTime,
+        date: recordDate,
         duration: duration,
         tags: input.tags || [],
         createdAt: now,
@@ -135,10 +139,14 @@ export class TimeRecordService {
         updatedAt: formatDateForAPI(new Date())
       };
 
-      // Only include fields that are being updated
-      if (input.projectName !== undefined) updateData.projectName = input.projectName;
-      if (input.description !== undefined) updateData.description = input.description;
-      if (input.startTime !== undefined) updateData.startTime = input.startTime;
+      // Only include fields that are being updated - use server field names
+      if (input.projectName !== undefined) updateData.project = input.projectName;
+      if (input.description !== undefined) updateData.comment = input.description;
+      if (input.startTime !== undefined) {
+        updateData.startTime = input.startTime;
+        // Extract date from startTime
+        updateData.date = new Date(input.startTime).toISOString().split('T')[0];
+      }
       if (input.endTime !== undefined) updateData.endTime = input.endTime;
       if (duration !== undefined) updateData.duration = duration;
       if (input.tags !== undefined) updateData.tags = input.tags;
