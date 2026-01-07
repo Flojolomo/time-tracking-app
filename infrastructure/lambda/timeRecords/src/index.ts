@@ -79,88 +79,59 @@ const createSuccessResponse = (statusCode: number, data: any, event?: APIGateway
   body: JSON.stringify(data)
 });
 
-// Helper function to extract user ID from request context (set by API Gateway Cognito Authorizer)
+// Helper function to extract user ID from request context (IAM authorization)
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
   try {
-    console.log('=== DEBUG: Extracting User ID ===');
+    console.log('=== DEBUG: Extracting User ID (IAM Authorization) ===');
     console.log('Request context:', JSON.stringify(event.requestContext, null, 2));
     
-    // When using Cognito User Pool Authorizer, API Gateway adds user info to requestContext.authorizer
-    if (event.requestContext.authorizer && event.requestContext.authorizer.claims) {
-      const claims = event.requestContext.authorizer.claims;
-      console.log('Cognito claims from authorizer:', JSON.stringify(claims, null, 2));
+    // With IAM authorization, user info comes from the identity context
+    const identity = event.requestContext.identity;
+    
+    if (identity) {
+      console.log('Identity context:', JSON.stringify(identity, null, 2));
       
-      const userId = claims.sub || claims['cognito:username'] || claims.username;
-      if (userId) {
-        console.log('SUCCESS: User ID extracted from authorizer context:', userId);
-        return userId;
+      // For Cognito Identity Pool, the user ID is in the cognitoIdentityId field
+      if (identity.cognitoIdentityId) {
+        console.log('SUCCESS: User ID extracted from cognitoIdentityId:', identity.cognitoIdentityId);
+        return identity.cognitoIdentityId;
+      }
+      
+      // Alternative: check userArn for Cognito Identity Pool format
+      if (identity.userArn) {
+        console.log('User ARN:', identity.userArn);
+        // ARN format: arn:aws:sts::account:assumed-role/Cognito_IdentityPoolAuth_Role/CognitoIdentityCredentials
+        // Extract the identity ID from the ARN if it contains Cognito info
+        const arnMatch = identity.userArn.match(/CognitoIdentityCredentials/);
+        if (arnMatch && identity.cognitoIdentityId) {
+          return identity.cognitoIdentityId;
+        }
+      }
+      
+      // Fallback: use user ID if available
+      if (identity.user) {
+        console.log('SUCCESS: User ID extracted from identity.user:', identity.user);
+        return identity.user;
       }
     }
     
-    // Fallback: try to extract from Authorization header (for manual JWT decoding)
-    console.log('No authorizer context found, trying manual JWT extraction...');
-    console.log('Headers:', JSON.stringify(event.headers, null, 2));
-    
-    // Get the Authorization header
-    const authHeader = event.headers.Authorization || event.headers.authorization;
-    if (!authHeader) {
-      console.error('No Authorization header found');
-      return null;
-    }
-    
-    console.log('Authorization header:', authHeader);
-    
-    if (!authHeader.startsWith('Bearer ')) {
-      console.error('Authorization header does not start with Bearer');
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
-    
-    try {
-      // Decode JWT payload (without verification for now)
-      // JWT structure: header.payload.signature
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        console.error('Invalid JWT token format - expected 3 parts, got:', parts.length);
-        return null;
+    // Additional fallback: check for Cognito authentication ID in request context
+    const requestContext = event.requestContext as any;
+    if (requestContext.cognitoAuthenticationProvider) {
+      console.log('Cognito auth provider:', requestContext.cognitoAuthenticationProvider);
+      // Extract user ID from the authentication provider string
+      const match = requestContext.cognitoAuthenticationProvider.match(/CognitoSignIn:([^,]+)/);
+      if (match && match[1]) {
+        console.log('SUCCESS: User ID extracted from cognitoAuthenticationProvider:', match[1]);
+        return match[1];
       }
-
-      console.log('JWT parts lengths:', parts.map(p => p.length));
-      
-      // Decode the payload (second part)
-      const base64Payload = parts[1];
-      // Add padding if needed
-      const paddedPayload = base64Payload + '='.repeat((4 - base64Payload.length % 4) % 4);
-      
-      const payloadJson = Buffer.from(paddedPayload, 'base64').toString();
-      console.log('Decoded payload JSON:', payloadJson);
-      
-      const payload = JSON.parse(payloadJson);
-      console.log('Parsed payload:', JSON.stringify(payload, null, 2));
-      
-      // Extract user ID from different possible fields
-      const userId = payload.sub || 
-                    payload['cognito:username'] || 
-                    payload.username ||
-                    payload.user_id;
-      
-      console.log('Available fields in payload:', Object.keys(payload));
-      console.log('Extracted userId:', userId);
-      
-      if (userId) {
-        console.log('SUCCESS: User ID extracted from JWT:', userId);
-        return userId;
-      } else {
-        console.error('ERROR: No user ID found in JWT payload');
-        return null;
-      }
-    } catch (jwtError) {
-      console.error('Error decoding JWT:', jwtError);
-      console.error('JWT Error stack:', jwtError instanceof Error ? jwtError.stack : 'No stack trace');
-      return null;
     }
+    
+    console.error('ERROR: No user ID found in IAM authorization context');
+    console.log('Available identity fields:', identity ? Object.keys(identity) : 'No identity object');
+    console.log('Available requestContext fields:', Object.keys(event.requestContext));
+    
+    return null;
   } catch (error) {
     console.error('Error extracting user ID:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');

@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getApiBaseUrl, getAuthHeaders, handleApiError } from '../utils/apiClient';
+import { apiRequest, handleApiError } from '../utils/apiClient';
+
+interface ProjectSuggestionsResponse {
+  suggestions: string[];
+}
 
 interface ProjectAutocompleteProps {
   value: string;
@@ -49,23 +53,11 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
       setApiError('');
 
       try {
-        const apiBaseUrl = await getApiBaseUrl();
-        const headers = await getAuthHeaders();
+        const data = await apiRequest<ProjectSuggestionsResponse>('api/projects/suggestions', {
+          method: 'GET',
+          queryParams: { q: query, limit: '10' }
+        });
         
-        const response = await fetch(
-          `${apiBaseUrl}/api/projects/suggestions?q=${encodeURIComponent(query)}&limit=10`,
-          {
-            method: 'GET',
-            headers
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
         const projectSuggestions = data.suggestions || [];
         
         setSuggestions(projectSuggestions);

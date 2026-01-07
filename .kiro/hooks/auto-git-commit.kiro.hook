@@ -4,7 +4,7 @@
   "description": "Automatically adds new files to git and commits any changes to existing files, while respecting .gitignore rules",
   "version": "1",
   "when": {
-    "type": "agentStop"
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",
