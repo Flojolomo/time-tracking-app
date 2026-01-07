@@ -282,6 +282,8 @@ export class TimeTrackingStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
       restApiName: 'Time Tracking API',
       description: 'API for time tracking application',
+      // Explicitly disable caching to prevent authorization issues
+      policy: undefined,
       defaultCorsPreflightOptions: {
         allowOrigins: [
           'http://localhost:3001',
@@ -308,42 +310,65 @@ export class TimeTrackingStack extends cdk.Stack {
     // Time records endpoints
     const timeRecordsResource = apiResource.addResource('time-records');
     timeRecordsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
-      // authorizer: cognitoAuthorizer,
-      // authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizer: cognitoAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      // Disable caching for this method
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
     timeRecordsResource.addMethod('POST', new apigateway.LambdaIntegration(timeRecordsHandler), {
       authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      // Disable caching for this method
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
     
     const timeRecordResource = timeRecordsResource.addResource('{id}');
     timeRecordResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler), {
       authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
     timeRecordResource.addMethod('DELETE', new apigateway.LambdaIntegration(timeRecordsHandler), {
       authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
     
     // Statistics endpoint
     const statsResource = apiResource.addResource('stats');
     statsResource.addMethod('GET', new apigateway.LambdaIntegration(timeRecordsHandler), {
       authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
     
     // Projects endpoints
     const projectsResource = apiResource.addResource('projects');
     projectsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler), {
       authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
     
     const projectSuggestionsResource = projectsResource.addResource('suggestions');
     projectSuggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(projectsHandler), {
       authorizer: cognitoAuthorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      requestParameters: {
+        'method.request.header.Authorization': true
+      }
     });
 
     // Update OAuth URLs to use CloudFront domain
