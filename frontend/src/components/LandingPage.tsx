@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export const LandingPage: React.FC = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Hero Section */}
@@ -23,8 +25,30 @@ export const LandingPage: React.FC = () => {
                 <div className="flex items-center flex-grow flex-shrink-0 lg:flex-grow-0">
                   <div className="flex items-center justify-between w-full md:w-auto">
                     <h1 className="text-2xl font-bold text-indigo-600">TimeTracker</h1>
+                    
+                    {/* Mobile menu button */}
+                    <div className="md:hidden">
+                      <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                        aria-expanded="false"
+                      >
+                        <span className="sr-only">Open main menu</span>
+                        {!isMobileMenuOpen ? (
+                          <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                          </svg>
+                        ) : (
+                          <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Desktop Navigation */}
                 <div className="hidden md:block md:ml-10 md:pr-4 md:space-x-8">
                   <Link
                     to="/login"
@@ -40,6 +64,28 @@ export const LandingPage: React.FC = () => {
                   </Link>
                 </div>
               </nav>
+
+              {/* Mobile menu */}
+              {isMobileMenuOpen && (
+                <div className="md:hidden mt-4">
+                  <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg border border-gray-200">
+                    <Link
+                      to="/login"
+                      className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="text-indigo-600 hover:text-indigo-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
 
             <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
