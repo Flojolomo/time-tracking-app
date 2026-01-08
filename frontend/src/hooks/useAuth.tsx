@@ -224,7 +224,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Delete user from Cognito
       await deleteUser();
-      // TODO on user deletion delete all records
       
       // Clear local state
       setUser(null);
