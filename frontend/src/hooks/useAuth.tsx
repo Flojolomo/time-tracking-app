@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, fetchUserAttributes, updatePassword, updateUserAttributes, deleteUser, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, fetchUserAttributes, updatePassword, updateUserAttributes, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
 import { getAmplifyConfig, isDevelopmentMode } from '../aws-config';
 
@@ -247,8 +247,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
       }
       
-      // Delete user from Cognito
-      await deleteUser();
+      if (!user?.userId) {
+        throw new Error('User ID not available. Please log in again.');
+      }
+      
+      // Import apiRequest dynamically to avoid circular dependencies
+      const { apiRequest } = await import('../utils/apiClient');
+      
+      // Call the API Gateway endpoint to delete profile and all associated data
+      // Send the user ID as a query parameter
+      await apiRequest('/api/profile', {
+        method: 'DELETE',
+        queryParams: {
+          userId: user.userId
+        }
+      });
+      
+      // Sign out from Amplify to clear all local session data
+      try {
+        await signOut();
+      } catch (signOutError) {
+        console.warn('Error during sign out after profile deletion:', signOutError);
+        // Continue even if sign out fails
+      }
       
       // Clear local state
       setUser(null);

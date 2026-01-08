@@ -381,32 +381,44 @@ const resetPassword = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
 // DELETE /api/profile - Delete user profile and all associated data
 const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    const userId = extractUserIdFromToken(event);
+    // Get user ID from query parameters
+    const userId = event.queryStringParameters?.userId;
+
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
+      return createErrorResponse(400, 'User ID is required as query parameter', event);
     }
 
-    const accessToken = extractAccessToken(event);
-    if (!accessToken) {
-      return createErrorResponse(401, 'Unauthorized: Access token not found', event);
+    if (typeof userId !== 'string') {
+      return createErrorResponse(400, 'User ID must be a string', event);
     }
 
-    // First, get the user's username from Cognito to ensure we have the right user
-    const getUserCommand = new GetUserCommand({
-      AccessToken: accessToken
-    });
+    console.log(`Starting profile deletion for user: ${userId}`);
 
-    let username: string;
+    // The userId from the frontend is the Cognito User Pool user ID
+    // We'll use this directly for admin operations
+    let username = userId;
+
+    // Verify the user exists in Cognito User Pool
     try {
-      const userResult = await cognitoClient.send(getUserCommand);
-      username = userResult.Username!;
-    } catch (error) {
-      console.error('Error getting user info for deletion:', error);
-      return createErrorResponse(401, 'Invalid or expired access token', event);
+      const adminGetUserCommand = new AdminGetUserCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: username
+      });
+
+      const userResult = await cognitoClient.send(adminGetUserCommand);
+      console.log(`Verified user exists in Cognito: ${userResult.Username}`);
+    } catch (error: any) {
+      console.error('Error verifying user in Cognito:', error);
+      if (error.name === 'UserNotFoundException') {
+        return createErrorResponse(404, 'User not found in Cognito User Pool', event);
+      }
+      return createErrorResponse(500, 'Error verifying user', event);
     }
 
     // Delete all user's time records from DynamoDB
     try {
+      console.log(`Querying time records for user: ${userId}`);
+      
       // Query all user's records
       const queryCommand = new QueryCommand({
         TableName: TABLE_NAME,
@@ -420,6 +432,8 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
       
       // Delete each record
       if (queryResult.Items && queryResult.Items.length > 0) {
+        console.log(`Found ${queryResult.Items.length} records to delete`);
+        
         const deletePromises = queryResult.Items.map(item => {
           const deleteCommand = new DeleteCommand({
             TableName: TABLE_NAME,
@@ -432,35 +446,29 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
         });
 
         await Promise.all(deletePromises);
-        console.log(`Deleted ${queryResult.Items.length} time records for user ${userId}`);
+        console.log(`Successfully deleted ${queryResult.Items.length} time records for user ${userId}`);
+      } else {
+        console.log('No time records found for user');
       }
     } catch (error) {
       console.error('Error deleting user time records:', error);
       // Continue with user deletion even if time record deletion fails
     }
 
-    // Delete the user from Cognito
+    // Delete the user from Cognito User Pool
     try {
-      const deleteUserCommand = new DeleteUserCommand({
-        AccessToken: accessToken
+      console.log(`Attempting to delete Cognito user: ${username}`);
+      
+      const adminDeleteCommand = new AdminDeleteUserCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: username
       });
 
-      await cognitoClient.send(deleteUserCommand);
+      await cognitoClient.send(adminDeleteCommand);
+      console.log(`Successfully deleted Cognito user: ${username}`);
     } catch (error) {
       console.error('Error deleting user from Cognito:', error);
-      
-      // If self-deletion fails, try admin deletion as fallback
-      try {
-        const adminDeleteCommand = new AdminDeleteUserCommand({
-          UserPoolId: USER_POOL_ID,
-          Username: username
-        });
-
-        await cognitoClient.send(adminDeleteCommand);
-      } catch (adminError) {
-        console.error('Error with admin user deletion:', adminError);
-        return createErrorResponse(500, 'Failed to delete user account', event);
-      }
+      return createErrorResponse(500, 'Failed to delete user account from Cognito', event);
     }
 
     return createSuccessResponse(200, { 
