@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, updatePassword, updateUserAttributes, deleteUser, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, fetchUserAttributes, updatePassword, updateUserAttributes, deleteUser, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
 import { getAmplifyConfig, isDevelopmentMode } from '../aws-config';
 
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const currentUser = await getCurrentUser();
       const session = await fetchAuthSession();
+      const userAttributes = await fetchUserAttributes();
       
       // Ensure we have both Cognito user and AWS credentials
       if (!session.credentials || !session.identityId) {
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({
         userId: currentUser.userId,
         email: currentUser.signInDetails?.loginId || '',
-        name: currentUser.signInDetails?.loginId || '',
+        name: userAttributes.given_name || userAttributes.name || currentUser.signInDetails?.loginId || '',
         accessToken: session.tokens?.accessToken?.toString() || ''
       });
     } catch (error) {
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSignedIn) {
         const currentUser = await getCurrentUser();
         const session = await fetchAuthSession();
+        const userAttributes = await fetchUserAttributes();
         
         // Ensure we have both Cognito user and AWS credentials
         if (!session.credentials || !session.identityId) {
@@ -87,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           userId: currentUser.userId,
           email: currentUser.signInDetails?.loginId || '',
-          name: currentUser.signInDetails?.loginId || '',
+          name: userAttributes.given_name || userAttributes.name || currentUser.signInDetails?.loginId || '',
           accessToken: session.tokens?.accessToken?.toString() || ''
         });
       }
@@ -163,11 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       
+      // Fetch updated user attributes to get the latest data
+      const userAttributes = await fetchUserAttributes();
+      
       // Update local user state
       if (user) {
         setUser({
           ...user,
-          name: data.name || user.name,
+          name: userAttributes.given_name || userAttributes.name || user.email,
         });
       }
     } catch (error: any) {
