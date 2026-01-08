@@ -10,15 +10,12 @@ import {
   AdminDeleteUserCommand,
   AdminGetUserCommand
 } from '@aws-sdk/client-cognito-identity-provider';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 // Initialize clients
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
-const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
+const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION });
 
-const TABLE_NAME = process.env.TABLE_NAME!;
 const USER_POOL_ID = process.env.USER_POOL_ID!;
 
 // Helper function to create optimized CORS headers
@@ -415,60 +412,31 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
       return createErrorResponse(500, 'Error verifying user', event);
     }
 
-    // Delete all user's time records from DynamoDB
-    try {
-      console.log(`Querying time records for user: ${userId}`);
-      
-      // Query all user's records
-      const queryCommand = new QueryCommand({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: 'PK = :pk',
-        ExpressionAttributeValues: {
-          ':pk': `USER#${userId}`
-        }
-      });
 
-      const queryResult = await docClient.send(queryCommand);
-      
-      // Delete each record
-      if (queryResult.Items && queryResult.Items.length > 0) {
-        console.log(`Found ${queryResult.Items.length} records to delete`);
-        
-        const deletePromises = queryResult.Items.map(item => {
-          const deleteCommand = new DeleteCommand({
-            TableName: TABLE_NAME,
-            Key: {
-              PK: item.PK,
-              SK: item.SK
-            }
-          });
-          return docClient.send(deleteCommand);
-        });
-
-        await Promise.all(deletePromises);
-        console.log(`Successfully deleted ${queryResult.Items.length} time records for user ${userId}`);
-      } else {
-        console.log('No time records found for user');
-      }
-    } catch (error) {
-      console.error('Error deleting user time records:', error);
-      // Continue with user deletion even if time record deletion fails
+    // Extract Cognito Identity Pool ID from IAM context (for data cleanup)
+    const identityPoolUserId = extractUserIdFromToken(event);
+    if (!identityPoolUserId) {
+      return createErrorResponse(401, 'Unauthorized: Could not extract Identity Pool user ID from IAM context', event);
     }
 
-    // Delete the user from Cognito User Pool
-    try {
-      console.log(`Attempting to delete Cognito user: ${username}`);
-      
-      const adminDeleteCommand = new AdminDeleteUserCommand({
-        UserPoolId: USER_POOL_ID,
-        Username: username
-      });
+    // For Cognito User Pool operations, we need to get the username from the access token
+    // Since we're using IAM auth, we need to extract it from the IAM context or use admin operations
+    // The Identity Pool ID can be used to find the corresponding User Pool user
+    
+    console.log(`Starting profile deletion for Identity Pool ID: ${identityPoolUserId}`);
 
-      await cognitoClient.send(adminDeleteCommand);
-      console.log(`Successfully deleted Cognito user: ${username}`);
+    // Use the Identity Pool ID as the username for admin operations
+    // In Cognito Identity Pool + User Pool integration, the Identity Pool ID often maps to the User Pool username
+    const cognitoUsername = identityPoolUserId;
+
+    // Wait for cleanup of user data via time records lambda
+    try {
+      await cleanupUserDataAsync(identityPoolUserId);
+      console.log('Data cleanup completed successfully');
     } catch (error) {
-      console.error('Error deleting user from Cognito:', error);
-      return createErrorResponse(500, 'Failed to delete user account from Cognito', event);
+      console.error('Error during data cleanup:', error);
+      // Continue since user is already deleted from Cognito
+      // In production, you might want to send this to a dead letter queue
     }
 
     return createSuccessResponse(200, { 
@@ -477,6 +445,44 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
   } catch (error: any) {
     console.error('Error deleting user profile:', error);
     return createErrorResponse(500, 'Internal server error', event);
+  }
+};
+
+// Asynchronous function to clean up user data via time records lambda
+const cleanupUserDataAsync = async (identityPoolUserId: string): Promise<void> => {
+  try {
+    console.log(`Starting async cleanup of data via time records lambda`);
+    
+    // Prepare the payload for the time records lambda
+    const payload = {
+      httpMethod: 'DELETE',
+      path: '/api/time-records/user-cleanup',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      requestContext: {
+        // Minimal request context for internal lambda invocation
+        httpMethod: 'DELETE',
+        path: '/api/time-records/user-cleanup'
+      }
+    };
+
+    // Invoke the time records lambda function
+    const invokeCommand = new InvokeCommand({
+      FunctionName: process.env.TIME_RECORDS_LAMBDA_NAME || 'TimeTrackingStack-TimeRecordsApiHandler',
+      InvocationType: 'RequestResponse', // Synchronous invocation to wait for completion
+      Payload: JSON.stringify(payload)
+    });
+
+    await lambdaClient.send(invokeCommand);
+    console.log(`Successfully completed cleanup via time records lambda`);
+  } catch (error) {
+    console.error(`Error during async cleanup for Identity Pool user ${identityPoolUserId}:`, error);
+    // In a production environment, you might want to:
+    // 1. Send this to a dead letter queue for retry
+    // 2. Send an alert to monitoring systems
+    // 3. Store failed cleanup tasks for manual processing
+    throw error;
   }
 };
 

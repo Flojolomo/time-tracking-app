@@ -327,7 +327,17 @@ export class TimeTrackingStack extends cdk.Stack {
     // Grant DynamoDB permissions to Lambda functions
     timeRecordsTable.grantReadWriteData(timeRecordsHandler);
     timeRecordsTable.grantReadWriteData(projectsHandler);
-    timeRecordsTable.grantReadWriteData(profileHandler);
+    // Note: profileHandler no longer needs DynamoDB access - it delegates to timeRecordsHandler
+
+    // Grant Lambda invocation permissions to profile handler
+    profileHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['lambda:InvokeFunction'],
+      resources: [timeRecordsHandler.functionArn]
+    }));
+
+    // Add time records lambda name to profile handler environment
+    profileHandler.addEnvironment('TIME_RECORDS_LAMBDA_NAME', timeRecordsHandler.functionName);
 
     // Grant Cognito permissions to profile handler
     profileHandler.addToRolePolicy(new iam.PolicyStatement({
