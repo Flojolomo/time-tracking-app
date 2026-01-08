@@ -28,30 +28,6 @@ interface TimeRecord {
   updatedAt: string;    // ISO 8601 timestamp
 }
 
-// Helper function to get allowed origin based on request
-const getAllowedOrigin = (event: APIGatewayProxyEvent): string => {
-  const origin = event.headers.origin || event.headers.Origin;
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-    'http://localhost:3001',
-    'http://localhost:3000',
-    'http://localhost:5173'
-  ];
-  
-  // Add CloudFront domain if available
-  if (process.env.CLOUDFRONT_DOMAIN) {
-    allowedOrigins.push(`https://${process.env.CLOUDFRONT_DOMAIN}`);
-  }
-  
-  if (origin && allowedOrigins.includes(origin)) {
-    return origin;
-  }
-  
-  // Default to CloudFront domain or first allowed origin
-  return process.env.CLOUDFRONT_DOMAIN 
-    ? `https://${process.env.CLOUDFRONT_DOMAIN}` 
-    : allowedOrigins[0];
-};
-
 // Helper function to create optimized CORS headers (avoid preflight when possible)
 const createCorsHeaders = (event?: APIGatewayProxyEvent) => ({
   'Content-Type': 'application/json',
@@ -1069,6 +1045,88 @@ const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIG
   }
 };
 
+// User cleanup function - deletes all records for a specific user
+const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Get Identity Pool user ID from query parameters (sent by profile lambda)
+    const identityPoolUserId = event.queryStringParameters?.identityPoolUserId;
+
+    if (!identityPoolUserId) {
+      return createErrorResponse(400, 'Identity Pool User ID is required as query parameter', event);
+    }
+
+    if (typeof identityPoolUserId !== 'string') {
+      return createErrorResponse(400, 'Identity Pool User ID must be a string', event);
+    }
+
+    console.log(`Starting cleanup of all records for Identity Pool user: ${identityPoolUserId}`);
+    
+    // Query all user's records using the Identity Pool user ID
+    const queryCommand = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${identityPoolUserId}`
+      }
+    });
+
+    const queryResult = await docClient.send(queryCommand);
+    
+    // TODO probably need pagination
+    // Delete each record
+    if (queryResult.Items && queryResult.Items.length > 0) {
+      console.log(`Found ${queryResult.Items.length} records to delete for Identity Pool user ${identityPoolUserId}`);
+      
+      // Process deletions in batches to avoid overwhelming DynamoDB
+      const batchSize = 25; // DynamoDB batch write limit
+      const batches = [];
+      
+      for (let i = 0; i < queryResult.Items.length; i += batchSize) {
+        const batch = queryResult.Items.slice(i, i + batchSize);
+        batches.push(batch);
+      }
+      
+      // Process each batch
+      for (const batch of batches) {
+        const deletePromises = batch.map(item => {
+          const deleteCommand = new DeleteCommand({
+            TableName: TABLE_NAME,
+            Key: {
+              PK: item.PK,
+              SK: item.SK
+            }
+          });
+          return docClient.send(deleteCommand);
+        });
+
+        await Promise.all(deletePromises);
+        console.log(`Deleted batch of ${batch.length} records for Identity Pool user ${identityPoolUserId}`);
+        
+        // Small delay between batches to be gentle on DynamoDB
+        if (batches.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      console.log(`Successfully completed cleanup of ${queryResult.Items.length} records for Identity Pool user ${identityPoolUserId}`);
+      
+      return createSuccessResponse(200, { 
+        message: `Successfully deleted ${queryResult.Items.length} records for Identity Pool user ${identityPoolUserId}`,
+        deletedCount: queryResult.Items.length
+      }, event);
+    } else {
+      console.log(`No time records found for Identity Pool user ${identityPoolUserId}`);
+      return createSuccessResponse(200, { 
+        message: `No records found for Identity Pool user ${identityPoolUserId}`,
+        deletedCount: 0
+      }, event);
+    }
+  } catch (error) {
+    console.error(`Error during cleanup for Identity Pool user:`, error);
+    return createErrorResponse(500, 'Internal server error during user cleanup', event);
+  }
+};
+
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
@@ -1090,6 +1148,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return await getTimeRecords(event);
     } else if (path === '/api/time-records' && method === 'POST') {
       return await createTimeRecord(event);
+    } else if (path === '/api/time-records/user-cleanup' && method === 'DELETE') {
+      return await cleanupUserRecords(event);
     } else if (path === '/api/time-records/start' && method === 'POST') {
       return await startTimeRecord(event);
     } else if (path === '/api/time-records/active' && method === 'GET') {

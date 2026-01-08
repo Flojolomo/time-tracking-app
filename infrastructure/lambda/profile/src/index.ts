@@ -451,12 +451,15 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
 // Asynchronous function to clean up user data via time records lambda
 const cleanupUserDataAsync = async (identityPoolUserId: string): Promise<void> => {
   try {
-    console.log(`Starting async cleanup of data via time records lambda`);
+    console.log(`Starting cleanup of data for Identity Pool user: ${identityPoolUserId} via time records lambda`);
     
     // Prepare the payload for the time records lambda
     const payload = {
       httpMethod: 'DELETE',
       path: '/api/time-records/user-cleanup',
+      queryStringParameters: {
+        identityPoolUserId: identityPoolUserId
+      },
       headers: {
         'Content-Type': 'application/json'
       },
@@ -470,12 +473,12 @@ const cleanupUserDataAsync = async (identityPoolUserId: string): Promise<void> =
     // Invoke the time records lambda function
     const invokeCommand = new InvokeCommand({
       FunctionName: process.env.TIME_RECORDS_LAMBDA_NAME || 'TimeTrackingStack-TimeRecordsApiHandler',
-      InvocationType: 'RequestResponse', // Synchronous invocation to wait for completion
+      InvocationType: 'Event', // Asynchronous invocation
       Payload: JSON.stringify(payload)
     });
 
     await lambdaClient.send(invokeCommand);
-    console.log(`Successfully completed cleanup via time records lambda`);
+    console.log(`Successfully completed cleanup for Identity Pool user ${identityPoolUserId} via time records lambda`);
   } catch (error) {
     console.error(`Error during async cleanup for Identity Pool user ${identityPoolUserId}:`, error);
     // In a production environment, you might want to:
