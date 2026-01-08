@@ -8,12 +8,6 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useNetworkAwareOperation } from '../hooks/useNetworkStatus';
 import { TimeRecord } from '../types';
 
-interface StopTimerFormData {
-  project: string;
-  description: string;
-  tags: string;
-}
-
 interface ActiveTimerFormData {
   project: string;
   description: string;
@@ -28,32 +22,18 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
   const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [showStopForm, setShowStopForm] = useState(false);
   const [error, setError] = useState<string>('');
   
   const { showSuccess, showError } = useNotifications();
   const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
 
-  // Form for stopping timer
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting }
-  } = useForm<StopTimerFormData>({
-    defaultValues: {
-      project: '',
-      description: '',
-      tags: ''
-    }
-  });
-
   // Form for editing active timer fields
   const {
     control: activeControl,
-    handleSubmit: handleActiveSubmit,
     reset: resetActive,
-    formState: { errors: activeErrors }
+    getValues: getActiveValues,
+    setError: setActiveError,
+    formState: { errors: activeErrors, isSubmitting }
   } = useForm<ActiveTimerFormData>({
     defaultValues: {
       project: '',
@@ -148,42 +128,39 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
     }
   };
 
-  const handleShowStopForm = () => {
-    if (activeRecord) {
-      // Pre-populate stop form with current active timer values
-      reset({
-        project: activeRecord.projectName || '',
-        description: activeRecord.description || '',
-        tags: (activeRecord.tags || []).join(', ')
-      });
-    }
-    setShowStopForm(true);
-    setError('');
-  };
-
-  const handleCancelStop = () => {
-    setShowStopForm(false);
-    reset();
-    setError('');
-  };
-
-  const handleStopTimer = async (data: StopTimerFormData) => {
+  const handleStopTimer = async () => {
     if (!activeRecord) return;
 
     try {
       setError('');
 
+      // Get current values from the active timer form
+      const currentValues = getActiveValues();
+      
+      // Validate required fields
+      if (!currentValues.project || currentValues.project.trim() === '') {
+        setError('Project name is required to stop the timer');
+        // Trigger validation on the project field
+        setActiveError('project', {
+          type: 'required',
+          message: 'Project name is required to stop the timer'
+        });
+        return;
+      }
+
       // Parse tags from comma-separated string
-      const tags = data.tags
+      const tags = currentValues.tags
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
       const stopData = {
-        project: data.project.trim(),
-        description: data.description.trim() || undefined,
+        project: currentValues.project.trim(),
+        description: currentValues.description?.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined
       };
+
+      setIsLoading(true);
 
       await executeWithRetry(async () => {
         await TimeRecordService.stopTimer(activeRecord.id, stopData);
@@ -191,65 +168,14 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
 
       // Reset state
       setActiveRecord(null);
-      setShowStopForm(false);
-      reset();
 
       showSuccess('Timer Stopped', 'Your time record has been saved successfully!');
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to stop timer';
       setError(errorMessage);
       showError('Stop Failed', errorMessage);
-    }
-  };
-
-  const handleUpdateActiveTimer = async (data: ActiveTimerFormData) => {
-    if (!activeRecord) return;
-
-    try {
-      setError('');
-
-      // Parse tags from comma-separated string
-      const tags = data.tags
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-
-      const updateData: any = {};
-      
-      // Only include fields that have changed
-      if (data.project.trim() !== (activeRecord.projectName || '')) {
-        updateData.project = data.project.trim();
-      }
-      
-      if (data.description !== (activeRecord.description || '')) {
-        updateData.description = data.description;
-      }
-      
-      const currentTags = (activeRecord.tags || []).join(', ');
-      if (data.tags !== currentTags) {
-        updateData.tags = tags;
-      }
-      
-      if (data.startTime !== activeRecord.startTime) {
-        updateData.startTime = data.startTime;
-      }
-
-      // Only make API call if there are changes
-      if (Object.keys(updateData).length > 0) {
-        await executeWithRetry(async () => {
-          const updatedRecord = await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
-          setActiveRecord(updatedRecord);
-        });
-
-        // Show success message only for manual saves, not auto-saves
-        if (Object.keys(updateData).length > 1 || updateData.startTime) {
-          showSuccess('Timer Updated', 'Your active timer has been updated successfully!');
-        }
-      }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to update active timer';
-      setError(errorMessage);
-      showError('Update Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -292,314 +218,258 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
 
   return (
     <LoadingOverlay isLoading={isLoading} text="Loading timer...">
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-          Timer
-        </h2>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-white">
+              Time Tracker
+            </h2>
+          </div>
+        </div>
 
-        {/* Error Display */}
-        {error && (
-          <ErrorMessage 
-            error={error} 
-            onDismiss={() => setError('')}
-            className="mb-4"
-          />
-        )}
+        <div className="p-6">
+          {/* Error Display */}
+          {error && (
+            <ErrorMessage 
+              error={error} 
+              onDismiss={() => setError('')}
+              className="mb-6"
+            />
+          )}
 
-        {/* Timer Display */}
-        {activeRecord ? (
-          <div className="space-y-4">
-            {/* Active Timer Display */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <h3 className="text-sm font-medium text-green-800">Active Timer</h3>
-                  </div>
-                  
-                  <div className="mb-2">
-                    <p className="text-2xl sm:text-3xl font-mono font-bold text-green-900">
-                      {formatElapsedTime(elapsedTime)}
-                    </p>
-                  </div>
-                  
-                  {/* Always Show Editable Fields When Timer is Active */}
-                  <form onSubmit={handleActiveSubmit(handleUpdateActiveTimer)} className="space-y-3">
-                    {/* Editable Start Time */}
-                    <div>
-                      <label className="block text-xs font-medium text-green-700 mb-1">
-                        Started at
-                      </label>
-                      <Controller
-                        name="startTime"
-                        control={activeControl}
-                        rules={{
-                          required: 'Start time is required',
-                          validate: (value) => {
-                            const startTime = new Date(value);
-                            const now = new Date();
-                            if (startTime > now) {
-                              return 'Start time cannot be in the future';
-                            }
-                            return true;
-                          }
-                        }}
-                        render={({ field }) => (
-                          <input
-                            {...field}
-                            type="datetime-local"
-                            className="w-full px-2 py-1 text-xs border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                            value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
-                            onChange={(e) => {
-                              const localDateTime = e.target.value;
-                              if (localDateTime) {
-                                // Convert local datetime to ISO string
-                                const isoString = new Date(localDateTime).toISOString();
-                                field.onChange(isoString);
-                                // Auto-save on change
-                                handleFieldUpdate('startTime', isoString);
+          {/* Timer Display */}
+          {activeRecord ? (
+            <div className="space-y-6">
+              {/* Active Timer Display */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 relative overflow-hidden">
+                {/* Background decoration */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-100 rounded-full translate-y-12 -translate-x-12 opacity-30"></div>
+                
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse shadow-lg"></div>
+                          <span className="text-sm font-semibold text-green-800 uppercase tracking-wide">
+                            Recording
+                          </span>
+                        </div>
+                        <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                          Active Session
+                        </div>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <div className="text-4xl sm:text-5xl font-mono font-bold text-green-900 tracking-tight">
+                          {formatElapsedTime(elapsedTime)}
+                        </div>
+                        <p className="text-sm text-green-600 mt-1">
+                          Started at {new Date(activeRecord.startTime).toLocaleTimeString()}
+                        </p>
+                      </div>
+
+                      {/* Editable Fields in Compact Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        {/* Editable Start Time */}
+                        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-green-200/50">
+                          <label className="block text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">
+                            Started At
+                          </label>
+                          <Controller
+                            name="startTime"
+                            control={activeControl}
+                            rules={{
+                              required: 'Start time is required',
+                              validate: (value) => {
+                                const startTime = new Date(value);
+                                const now = new Date();
+                                if (startTime > now) {
+                                  return 'Start time cannot be in the future';
+                                }
+                                return true;
                               }
                             }}
-                            disabled={isLoading || isSubmitting || isRetrying}
+                            render={({ field }) => (
+                              <input
+                                {...field}
+                                type="datetime-local"
+                                className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 transition-all"
+                                value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
+                                onChange={(e) => {
+                                  const localDateTime = e.target.value;
+                                  if (localDateTime) {
+                                    const isoString = new Date(localDateTime).toISOString();
+                                    field.onChange(isoString);
+                                    handleFieldUpdate('startTime', isoString);
+                                  }
+                                }}
+                                disabled={isLoading || isSubmitting || isRetrying}
+                              />
+                            )}
                           />
-                        )}
-                      />
-                      {activeErrors.startTime && (
-                        <p className="mt-1 text-xs text-red-600">{activeErrors.startTime.message}</p>
-                      )}
-                    </div>
+                          {activeErrors.startTime && (
+                            <p className="mt-1 text-xs text-red-600">{activeErrors.startTime.message}</p>
+                          )}
+                        </div>
 
-                    {/* Editable Project */}
-                    <div>
-                      <label className="block text-xs font-medium text-green-700 mb-1">
-                        Project
-                      </label>
-                      <Controller
-                        name="project"
-                        control={activeControl}
-                        render={({ field }) => (
-                          <ProjectAutocomplete
-                            value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-                              // Auto-save on change
-                              handleFieldUpdate('project', value);
+                        {/* Editable Project */}
+                        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-green-200/50">
+                          <label className="block text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">
+                            Project *
+                          </label>
+                          <Controller
+                            name="project"
+                            control={activeControl}
+                            rules={{
+                              required: 'Project name is required to stop the timer'
                             }}
-                            onBlur={field.onBlur}
-                            placeholder="Enter project name"
-                            className="text-xs"
-                            disabled={isLoading || isSubmitting || isRetrying}
+                            render={({ field }) => (
+                              <ProjectAutocomplete
+                                value={field.value}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  handleFieldUpdate('project', value);
+                                  // Clear error when user starts typing
+                                  if (value.trim()) {
+                                    setError('');
+                                  }
+                                }}
+                                onBlur={field.onBlur}
+                                placeholder="Enter project name"
+                                className="text-sm"
+                                disabled={isLoading || isSubmitting || isRetrying}
+                              />
+                            )}
                           />
-                        )}
-                      />
-                    </div>
+                          {activeErrors.project && (
+                            <p className="mt-1 text-xs text-red-600">{activeErrors.project.message}</p>
+                          )}
+                        </div>
+                      </div>
 
-                    {/* Editable Description */}
-                    <div>
-                      <label className="block text-xs font-medium text-green-700 mb-1">
-                        Description
-                      </label>
-                      <Controller
-                        name="description"
-                        control={activeControl}
-                        render={({ field }) => (
-                          <input
-                            {...field}
-                            type="text"
-                            className="w-full px-2 py-1 text-xs border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                            placeholder="Add description (optional)"
-                            onBlur={() => {
-                              field.onBlur();
-                              // Auto-save on blur
-                              handleFieldUpdate('description', field.value);
-                            }}
-                            disabled={isLoading || isSubmitting || isRetrying}
+                      {/* Description and Tags in Full Width */}
+                      <div className="space-y-4">
+                        {/* Editable Description */}
+                        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-green-200/50">
+                          <label className="block text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">
+                            Description
+                          </label>
+                          <Controller
+                            name="description"
+                            control={activeControl}
+                            render={({ field }) => (
+                              <textarea
+                                {...field}
+                                rows={2}
+                                className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 transition-all resize-none"
+                                placeholder="What are you working on?"
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldUpdate('description', field.value);
+                                }}
+                                disabled={isLoading || isSubmitting || isRetrying}
+                              />
+                            )}
                           />
-                        )}
-                      />
-                    </div>
+                        </div>
 
-                    {/* Editable Tags */}
-                    <div>
-                      <label className="block text-xs font-medium text-green-700 mb-1">
-                        Tags
-                      </label>
-                      <Controller
-                        name="tags"
-                        control={activeControl}
-                        render={({ field }) => (
-                          <input
-                            {...field}
-                            type="text"
-                            className="w-full px-2 py-1 text-xs border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                            placeholder="Enter tags separated by commas"
-                            onBlur={() => {
-                              field.onBlur();
-                              // Auto-save on blur
-                              handleFieldUpdate('tags', field.value);
-                            }}
-                            disabled={isLoading || isSubmitting || isRetrying}
+                        {/* Editable Tags */}
+                        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-green-200/50">
+                          <label className="block text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">
+                            Tags
+                          </label>
+                          <Controller
+                            name="tags"
+                            control={activeControl}
+                            render={({ field }) => (
+                              <input
+                                {...field}
+                                type="text"
+                                className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 transition-all"
+                                placeholder="meeting, development, client"
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldUpdate('tags', field.value);
+                                }}
+                                disabled={isLoading || isSubmitting || isRetrying}
+                              />
+                            )}
                           />
+                          <p className="mt-1 text-xs text-green-600">
+                            Separate tags with commas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Timer Icon and Stop Button */}
+                    <div className="flex-shrink-0 ml-6 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <button
+                        onClick={handleStopTimer}
+                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50"
+                        disabled={isLoading || isSubmitting || isRetrying}
+                      >
+                        {(isSubmitting || isRetrying) ? (
+                          <ButtonLoading text={isRetrying ? 'Retrying...' : 'Stopping...'} />
+                        ) : (
+                          'Stop & Save'
                         )}
-                      />
+                      </button>
                     </div>
-                  </form>
-                </div>
-                
-                <div className="flex-shrink-0 ml-4">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-xs text-green-600 font-medium">Running</p>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Stop Timer Section */}
-            {!showStopForm ? (
-              <div className="flex justify-center">
+          ) : (
+            /* Start Timer Section */
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-12 h-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Ready to Track Time?
+                </h3>
+                <p className="text-gray-600 mb-8">
+                  Start your timer to begin tracking your work session. You can add project details and descriptions while the timer is running.
+                </p>
+                
                 <button
-                  onClick={handleShowStopForm}
-                  className="px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                  disabled={isLoading || isSubmitting || isRetrying}
+                  onClick={handleStartTimer}
+                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  disabled={isLoading || isRetrying}
                 >
-                  Stop Timer
+                  {(isLoading || isRetrying) ? (
+                    <ButtonLoading text={isRetrying ? 'Retrying...' : 'Starting...'} />
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m-9-4V8a3 3 0 016 0v2M7 16a3 3 0 006 0v-2" />
+                      </svg>
+                      <span>Start Timer</span>
+                    </div>
+                  )}
                 </button>
               </div>
-            ) : (
-              <div className="border-t pt-4">
-                <h3 className="text-md font-medium text-gray-900 mb-4">
-                  Complete Time Record
-                </h3>
-                
-                <form onSubmit={handleSubmit(handleStopTimer)} className="space-y-4">
-                  {/* Project Name Field - Pre-populated from active timer */}
-                  <div>
-                    <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-2">
-                      Project Name *
-                    </label>
-                    <Controller
-                      name="project"
-                      control={control}
-                      rules={{
-                        required: 'Project name is required',
-                        validate: (value) => value.trim().length > 0 || 'Project name cannot be empty'
-                      }}
-                      render={({ field }) => (
-                        <ProjectAutocomplete
-                          id="project"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          placeholder="Enter project name"
-                          disabled={isLoading || isSubmitting}
-                          error={!!errors.project}
-                          className={errors.project ? 'border-red-500' : ''}
-                        />
-                      )}
-                    />
-                    {errors.project && (
-                      <p className="mt-1 text-sm text-red-600">{errors.project.message}</p>
-                    )}
-                  </div>
-
-                  {/* Description Field - Pre-populated from active timer */}
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                      Comment
-                    </label>
-                    <Controller
-                      name="description"
-                      control={control}
-                      render={({ field }) => (
-                        <textarea
-                          {...field}
-                          id="description"
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base resize-none"
-                          placeholder="Add a comment about this time record (optional)"
-                          disabled={isLoading || isSubmitting}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {/* Tags Field - Pre-populated from active timer */}
-                  <div>
-                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                      Tags
-                    </label>
-                    <Controller
-                      name="tags"
-                      control={control}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          type="text"
-                          id="tags"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                          placeholder="Enter tags separated by commas (optional)"
-                          disabled={isLoading || isSubmitting}
-                        />
-                      )}
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      Separate multiple tags with commas (e.g., "meeting, client, urgent")
-                    </p>
-                  </div>
-
-                  {/* Form Actions */}
-                  <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={handleCancelStop}
-                      className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-                      disabled={isLoading || isSubmitting || isRetrying}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-colors"
-                      disabled={isLoading || isSubmitting || isRetrying}
-                    >
-                      {(isSubmitting || isRetrying) ? (
-                        <ButtonLoading text={isRetrying ? 'Retrying...' : 'Stopping...'} />
-                      ) : (
-                        'Stop & Save'
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Start Timer Section */
-          <div className="text-center space-y-4">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <p className="text-gray-600 mb-4">
-                No active timer. Click the button below to start tracking your time.
-              </p>
-              <button
-                onClick={handleStartTimer}
-                className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50"
-                disabled={isLoading || isRetrying}
-              >
-                {(isLoading || isRetrying) ? (
-                  <ButtonLoading text={isRetrying ? 'Retrying...' : 'Starting...'} />
-                ) : (
-                  'Start Timer'
-                )}
-              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </LoadingOverlay>
   );

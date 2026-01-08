@@ -392,6 +392,12 @@ export class TimeTrackingStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.IAM,
     });
     
+    // Active timer update endpoint
+    const activeTimerIdResource = activeTimerResource.addResource('{id}');
+    activeTimerIdResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler), {
+      authorizationType: apigateway.AuthorizationType.IAM,
+    });
+    
     const stopTimerResource = timeRecordsResource.addResource('stop');
     const stopTimerIdResource = stopTimerResource.addResource('{id}');
     stopTimerIdResource.addMethod('PUT', new apigateway.LambdaIntegration(timeRecordsHandler), {
@@ -509,6 +515,7 @@ export class TimeTrackingStack extends cdk.Stack {
             `${api.arnForExecuteApi('*', '/api/time-records/*', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/time-records/start', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/time-records/active', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/time-records/active/*', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/time-records/stop/*', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/projects', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/projects/*', 'prod')}`,
