@@ -423,7 +423,7 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     // Since we're using IAM auth, we need to extract it from the IAM context or use admin operations
     // The Identity Pool ID can be used to find the corresponding User Pool user
     
-    console.log(`Starting profile deletion for Identity Pool ID: ${identityPoolUserId}`);
+    console.log('Starting profile deletion process');
 
     // Use the Identity Pool ID as the username for admin operations
     // In Cognito Identity Pool + User Pool integration, the Identity Pool ID often maps to the User Pool username
@@ -451,7 +451,7 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
 // Asynchronous function to clean up user data via time records lambda
 const cleanupUserDataAsync = async (identityPoolUserId: string): Promise<void> => {
   try {
-    console.log(`Starting cleanup of data for Identity Pool user: ${identityPoolUserId} via time records lambda`);
+    console.log('Starting data cleanup via time records lambda');
     
     // Prepare the payload for the time records lambda
     const payload = {
@@ -478,9 +478,9 @@ const cleanupUserDataAsync = async (identityPoolUserId: string): Promise<void> =
     });
 
     await lambdaClient.send(invokeCommand);
-    console.log(`Successfully completed cleanup for Identity Pool user ${identityPoolUserId} via time records lambda`);
+    console.log('Successfully completed data cleanup via time records lambda');
   } catch (error) {
-    console.error(`Error during async cleanup for Identity Pool user ${identityPoolUserId}:`, error);
+    console.error('Error during data cleanup:', error);
     // In a production environment, you might want to:
     // 1. Send this to a dead letter queue for retry
     // 2. Send an alert to monitoring systems
@@ -491,7 +491,7 @@ const cleanupUserDataAsync = async (identityPoolUserId: string): Promise<void> =
 
 // Main handler function
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('Event:', JSON.stringify(event, null, 2));
+  console.log('Profile API request received');
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {

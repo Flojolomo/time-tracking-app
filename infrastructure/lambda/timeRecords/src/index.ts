@@ -55,26 +55,17 @@ const createSuccessResponse = (statusCode: number, data: any, event?: APIGateway
 // Helper function to extract user ID from request context (IAM authorization)
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
   try {
-    console.log('=== DEBUG: Extracting User ID (IAM Authorization) ===');
-    console.log('Request context:', JSON.stringify(event.requestContext, null, 2));
-    
     // With IAM authorization, user info comes from the identity context
     const identity = event.requestContext.identity;
     
     if (identity) {
-      console.log('Identity context:', JSON.stringify(identity, null, 2));
-      
       // For Cognito Identity Pool, the user ID is in the cognitoIdentityId field
       if (identity.cognitoIdentityId) {
-        console.log('SUCCESS: User ID extracted from cognitoIdentityId:', identity.cognitoIdentityId);
         return identity.cognitoIdentityId;
       }
       
       // Alternative: check userArn for Cognito Identity Pool format
       if (identity.userArn) {
-        console.log('User ARN:', identity.userArn);
-        // ARN format: arn:aws:sts::account:assumed-role/Cognito_IdentityPoolAuth_Role/CognitoIdentityCredentials
-        // Extract the identity ID from the ARN if it contains Cognito info
         const arnMatch = identity.userArn.match(/CognitoIdentityCredentials/);
         if (arnMatch && identity.cognitoIdentityId) {
           return identity.cognitoIdentityId;
@@ -83,7 +74,6 @@ const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
       
       // Fallback: use user ID if available
       if (identity.user) {
-        console.log('SUCCESS: User ID extracted from identity.user:', identity.user);
         return identity.user;
       }
     }
@@ -1059,7 +1049,7 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
       return createErrorResponse(400, 'Identity Pool User ID must be a string', event);
     }
 
-    console.log(`Starting cleanup of all records for Identity Pool user: ${identityPoolUserId}`);
+    console.log('Starting cleanup of user records');
     
     // Query all user's records using the Identity Pool user ID
     const queryCommand = new QueryCommand({
@@ -1075,7 +1065,7 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
     // TODO probably need pagination
     // Delete each record
     if (queryResult.Items && queryResult.Items.length > 0) {
-      console.log(`Found ${queryResult.Items.length} records to delete for Identity Pool user ${identityPoolUserId}`);
+      console.log(`Found ${queryResult.Items.length} records to delete`);
       
       // Process deletions in batches to avoid overwhelming DynamoDB
       const batchSize = 25; // DynamoDB batch write limit
@@ -1100,7 +1090,7 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
         });
 
         await Promise.all(deletePromises);
-        console.log(`Deleted batch of ${batch.length} records for Identity Pool user ${identityPoolUserId}`);
+        console.log(`Deleted batch of ${batch.length} records`);
         
         // Small delay between batches to be gentle on DynamoDB
         if (batches.length > 1) {
@@ -1108,14 +1098,14 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
         }
       }
       
-      console.log(`Successfully completed cleanup of ${queryResult.Items.length} records for Identity Pool user ${identityPoolUserId}`);
+      console.log(`Successfully completed cleanup of ${queryResult.Items.length} records`);
       
       return createSuccessResponse(200, { 
         message: `Successfully deleted ${queryResult.Items.length} records for Identity Pool user ${identityPoolUserId}`,
         deletedCount: queryResult.Items.length
       }, event);
     } else {
-      console.log(`No time records found for Identity Pool user ${identityPoolUserId}`);
+      console.log('No time records found for cleanup');
       return createSuccessResponse(200, { 
         message: `No records found for Identity Pool user ${identityPoolUserId}`,
         deletedCount: 0
@@ -1128,7 +1118,7 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
 };
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('Event:', JSON.stringify(event, null, 2));
+  console.log('Time records API request received');
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {

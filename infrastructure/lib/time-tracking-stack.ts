@@ -7,6 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 export class TimeTrackingStack extends cdk.Stack {
@@ -218,6 +219,7 @@ export class TimeTrackingStack extends cdk.Stack {
       }),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         TABLE_NAME: timeRecordsTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
@@ -263,6 +265,7 @@ export class TimeTrackingStack extends cdk.Stack {
       }),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         TABLE_NAME: timeRecordsTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
@@ -308,6 +311,7 @@ export class TimeTrackingStack extends cdk.Stack {
       }),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         TABLE_NAME: timeRecordsTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
@@ -355,12 +359,34 @@ export class TimeTrackingStack extends cdk.Stack {
       resources: [userPool.userPoolArn]
     }));
 
+    // Create CloudWatch Log Group for API Gateway access logs
+    const apiLogGroup = new logs.LogGroup(this, 'ApiGatewayAccessLogs', {
+      logGroupName: '/aws/apigateway/time-tracking-api',
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // API Gateway with optimized CORS to minimize preflight requests
     const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
       restApiName: 'Time Tracking API',
       description: 'API for time tracking application',
       // Explicitly disable caching to prevent authorization issues
       policy: undefined,
+      deployOptions: {
+        accessLogDestination: new apigateway.LogGroupLogDestination(apiLogGroup),
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields({
+          caller: false,
+          httpMethod: true,
+          ip: false, // Don't log IP addresses for privacy
+          protocol: true,
+          requestTime: true,
+          resourcePath: true,
+          responseLength: true,
+          status: true,
+          user: false, // Don't log user info for privacy
+        }),
+        loggingLevel: apigateway.MethodLoggingLevel.ERROR,
+      },
       defaultCorsPreflightOptions: {
         allowOrigins: ['*'], // More permissive to avoid preflight
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
