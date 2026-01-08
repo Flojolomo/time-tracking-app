@@ -923,6 +923,152 @@ const getActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGate
     return createErrorResponse(500, 'Internal server error', event);
   }
 };
+
+// PUT /api/time-records/active/{id} - Update active time record fields
+const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = extractUserIdFromToken(event);
+    if (!userId) {
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
+    }
+
+    const recordId = event.pathParameters?.id;
+    if (!recordId) {
+      return createErrorResponse(400, 'Record ID is required', event);
+    }
+
+    if (!event.body) {
+      return createErrorResponse(400, 'Request body is required', event);
+    }
+
+    const data = JSON.parse(event.body);
+
+    // Get the existing active record
+    const getCommand = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+      FilterExpression: 'recordId = :recordId AND isActive = :isActive',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${userId}`,
+        ':skPrefix': 'RECORD#',
+        ':recordId': recordId,
+        ':isActive': true
+      }
+    });
+
+    const getResult = await docClient.send(getCommand);
+    const existingRecord = getResult.Items?.[0];
+
+    if (!existingRecord) {
+      return createErrorResponse(404, 'Active time record not found', event);
+    }
+
+    const now = new Date().toISOString();
+    
+    // Build update expression dynamically based on provided fields
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, any> = {
+      ':updatedAt': now
+    };
+
+    // Always update the updatedAt timestamp
+    updateExpressions.push('updatedAt = :updatedAt');
+
+    // Update project if provided
+    if (data.project !== undefined && typeof data.project === 'string') {
+      updateExpressions.push('#project = :project');
+      updateExpressions.push('GSI1PK = :gsi1pk');
+      expressionAttributeNames['#project'] = 'project';
+      expressionAttributeValues[':project'] = data.project.trim();
+      expressionAttributeValues[':gsi1pk'] = `PROJECT#${data.project.trim()}`;
+    }
+
+    // Update description/comment if provided
+    if (data.description !== undefined) {
+      updateExpressions.push('#comment = :comment');
+      expressionAttributeNames['#comment'] = 'comment';
+      expressionAttributeValues[':comment'] = typeof data.description === 'string' ? data.description : '';
+    }
+
+    // Update tags if provided
+    if (data.tags !== undefined) {
+      if (!Array.isArray(data.tags)) {
+        return createErrorResponse(400, 'Tags must be an array', event);
+      }
+      if (!data.tags.every((tag: any) => typeof tag === 'string')) {
+        return createErrorResponse(400, 'All tags must be strings', event);
+      }
+      updateExpressions.push('tags = :tags');
+      expressionAttributeValues[':tags'] = data.tags;
+    }
+
+    // Update start time if provided (Requirement 8.6)
+    if (data.startTime !== undefined) {
+      if (typeof data.startTime !== 'string') {
+        return createErrorResponse(400, 'Start time must be a valid ISO 8601 string', event);
+      }
+      
+      const newStartTime = new Date(data.startTime);
+      if (isNaN(newStartTime.getTime())) {
+        return createErrorResponse(400, 'Start time must be a valid ISO 8601 timestamp', event);
+      }
+
+      // Validate that new start time is not in the future
+      const now = new Date();
+      if (newStartTime > now) {
+        return createErrorResponse(400, 'Start time cannot be in the future', event);
+      }
+
+      updateExpressions.push('startTime = :startTime');
+      expressionAttributeValues[':startTime'] = data.startTime;
+    }
+
+    // If no fields to update besides timestamp, return error
+    if (updateExpressions.length === 1) {
+      return createErrorResponse(400, 'No valid fields provided for update', event);
+    }
+
+    // Update the record
+    const updateCommand = new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        PK: existingRecord.PK,
+        SK: existingRecord.SK
+      },
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: 'ALL_NEW'
+    });
+
+    const updateResult = await docClient.send(updateCommand);
+
+    // Transform response to match frontend expectations
+    const responseRecord = {
+      id: updateResult.Attributes?.recordId,
+      userId: updateResult.Attributes?.userId,
+      projectName: updateResult.Attributes?.project,
+      description: updateResult.Attributes?.comment || '',
+      startTime: updateResult.Attributes?.startTime,
+      endTime: updateResult.Attributes?.endTime,
+      duration: updateResult.Attributes?.duration,
+      tags: updateResult.Attributes?.tags || [],
+      isActive: updateResult.Attributes?.isActive,
+      createdAt: updateResult.Attributes?.createdAt,
+      updatedAt: updateResult.Attributes?.updatedAt
+    };
+
+    return createSuccessResponse(200, responseRecord, event);
+  } catch (error) {
+    console.error('Error updating active time record:', error);
+    if (error instanceof SyntaxError) {
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
+    }
+    return createErrorResponse(500, 'Internal server error', event);
+  }
+};
+
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
@@ -948,6 +1094,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return await startTimeRecord(event);
     } else if (path === '/api/time-records/active' && method === 'GET') {
       return await getActiveTimeRecord(event);
+    } else if (path.match(/^\/api\/time-records\/active\/[^/]+$/) && method === 'PUT') {
+      return await updateActiveTimeRecord(event);
     } else if (path.match(/^\/api\/time-records\/stop\/[^/]+$/) && method === 'PUT') {
       return await stopTimeRecord(event);
     } else if (path.match(/^\/api\/time-records\/[^/]+$/) && method === 'PUT') {

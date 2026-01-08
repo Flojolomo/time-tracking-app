@@ -14,6 +14,13 @@ interface StopTimerFormData {
   tags: string;
 }
 
+interface ActiveTimerFormData {
+  project: string;
+  description: string;
+  tags: string;
+  startTime: string;
+}
+
 interface TimerWidgetProps {
 }
 
@@ -41,10 +48,37 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
     }
   });
 
+  // Form for editing active timer fields
+  const {
+    control: activeControl,
+    handleSubmit: handleActiveSubmit,
+    reset: resetActive,
+    formState: { errors: activeErrors }
+  } = useForm<ActiveTimerFormData>({
+    defaultValues: {
+      project: '',
+      description: '',
+      tags: '',
+      startTime: ''
+    }
+  });
+
   // Load active record on component mount
   useEffect(() => {
     loadActiveRecord();
   }, []);
+
+  // Update active timer form when active record changes
+  useEffect(() => {
+    if (activeRecord) {
+      resetActive({
+        project: activeRecord.projectName || '',
+        description: activeRecord.description || '',
+        tags: (activeRecord.tags || []).join(', '),
+        startTime: activeRecord.startTime
+      });
+    }
+  }, [activeRecord, resetActive]);
 
   // Update elapsed time every second when timer is active
   useEffect(() => {
@@ -115,6 +149,14 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
   };
 
   const handleShowStopForm = () => {
+    if (activeRecord) {
+      // Pre-populate stop form with current active timer values
+      reset({
+        project: activeRecord.projectName || '',
+        description: activeRecord.description || '',
+        tags: (activeRecord.tags || []).join(', ')
+      });
+    }
     setShowStopForm(true);
     setError('');
   };
@@ -160,6 +202,94 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
     }
   };
 
+  const handleUpdateActiveTimer = async (data: ActiveTimerFormData) => {
+    if (!activeRecord) return;
+
+    try {
+      setError('');
+
+      // Parse tags from comma-separated string
+      const tags = data.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+      const updateData: any = {};
+      
+      // Only include fields that have changed
+      if (data.project.trim() !== (activeRecord.projectName || '')) {
+        updateData.project = data.project.trim();
+      }
+      
+      if (data.description !== (activeRecord.description || '')) {
+        updateData.description = data.description;
+      }
+      
+      const currentTags = (activeRecord.tags || []).join(', ');
+      if (data.tags !== currentTags) {
+        updateData.tags = tags;
+      }
+      
+      if (data.startTime !== activeRecord.startTime) {
+        updateData.startTime = data.startTime;
+      }
+
+      // Only make API call if there are changes
+      if (Object.keys(updateData).length > 0) {
+        await executeWithRetry(async () => {
+          const updatedRecord = await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
+          setActiveRecord(updatedRecord);
+        });
+
+        // Show success message only for manual saves, not auto-saves
+        if (Object.keys(updateData).length > 1 || updateData.startTime) {
+          showSuccess('Timer Updated', 'Your active timer has been updated successfully!');
+        }
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to update active timer';
+      setError(errorMessage);
+      showError('Update Failed', errorMessage);
+    }
+  };
+
+  // Auto-save function for individual field changes
+  const handleFieldUpdate = async (fieldName: string, value: any) => {
+    if (!activeRecord) return;
+
+    try {
+      const updateData: any = {};
+      
+      if (fieldName === 'project') {
+        updateData.project = value.trim();
+      } else if (fieldName === 'description') {
+        updateData.description = value;
+      } else if (fieldName === 'tags') {
+        const tags = value.split(',').map((tag: string) => tag.trim()).filter(Boolean);
+        updateData.tags = tags;
+      } else if (fieldName === 'startTime') {
+        updateData.startTime = value;
+      }
+
+      // Only update if there's actually a change
+      const currentValue = fieldName === 'project' ? activeRecord.projectName :
+                          fieldName === 'description' ? activeRecord.description :
+                          fieldName === 'tags' ? (activeRecord.tags || []).join(', ') :
+                          fieldName === 'startTime' ? activeRecord.startTime : '';
+
+      if (updateData[fieldName] !== currentValue) {
+        await executeWithRetry(async () => {
+          const updatedRecord = await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
+          setActiveRecord(updatedRecord);
+        });
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to update active timer';
+      setError(errorMessage);
+      showError('Update Failed', errorMessage);
+    }
+  };
+
   return (
     <LoadingOverlay isLoading={isLoading} text="Loading timer...">
       <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
@@ -194,15 +324,127 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
                     </p>
                   </div>
                   
-                  <div className="text-sm text-green-700 space-y-1">
-                    <p>Started at {new Date(activeRecord.startTime).toLocaleTimeString()}</p>
-                    {activeRecord.projectName && (
-                      <p>Project: {activeRecord.projectName}</p>
-                    )}
-                    {activeRecord.description && (
-                      <p>Description: {activeRecord.description}</p>
-                    )}
-                  </div>
+                  {/* Always Show Editable Fields When Timer is Active */}
+                  <form onSubmit={handleActiveSubmit(handleUpdateActiveTimer)} className="space-y-3">
+                    {/* Editable Start Time */}
+                    <div>
+                      <label className="block text-xs font-medium text-green-700 mb-1">
+                        Started at
+                      </label>
+                      <Controller
+                        name="startTime"
+                        control={activeControl}
+                        rules={{
+                          required: 'Start time is required',
+                          validate: (value) => {
+                            const startTime = new Date(value);
+                            const now = new Date();
+                            if (startTime > now) {
+                              return 'Start time cannot be in the future';
+                            }
+                            return true;
+                          }
+                        }}
+                        render={({ field }) => (
+                          <input
+                            {...field}
+                            type="datetime-local"
+                            className="w-full px-2 py-1 text-xs border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                            value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
+                            onChange={(e) => {
+                              const localDateTime = e.target.value;
+                              if (localDateTime) {
+                                // Convert local datetime to ISO string
+                                const isoString = new Date(localDateTime).toISOString();
+                                field.onChange(isoString);
+                                // Auto-save on change
+                                handleFieldUpdate('startTime', isoString);
+                              }
+                            }}
+                            disabled={isLoading || isSubmitting || isRetrying}
+                          />
+                        )}
+                      />
+                      {activeErrors.startTime && (
+                        <p className="mt-1 text-xs text-red-600">{activeErrors.startTime.message}</p>
+                      )}
+                    </div>
+
+                    {/* Editable Project */}
+                    <div>
+                      <label className="block text-xs font-medium text-green-700 mb-1">
+                        Project
+                      </label>
+                      <Controller
+                        name="project"
+                        control={activeControl}
+                        render={({ field }) => (
+                          <ProjectAutocomplete
+                            value={field.value}
+                            onChange={(value) => {
+                              field.onChange(value);
+                              // Auto-save on change
+                              handleFieldUpdate('project', value);
+                            }}
+                            onBlur={field.onBlur}
+                            placeholder="Enter project name"
+                            className="text-xs"
+                            disabled={isLoading || isSubmitting || isRetrying}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    {/* Editable Description */}
+                    <div>
+                      <label className="block text-xs font-medium text-green-700 mb-1">
+                        Description
+                      </label>
+                      <Controller
+                        name="description"
+                        control={activeControl}
+                        render={({ field }) => (
+                          <input
+                            {...field}
+                            type="text"
+                            className="w-full px-2 py-1 text-xs border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                            placeholder="Add description (optional)"
+                            onBlur={() => {
+                              field.onBlur();
+                              // Auto-save on blur
+                              handleFieldUpdate('description', field.value);
+                            }}
+                            disabled={isLoading || isSubmitting || isRetrying}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    {/* Editable Tags */}
+                    <div>
+                      <label className="block text-xs font-medium text-green-700 mb-1">
+                        Tags
+                      </label>
+                      <Controller
+                        name="tags"
+                        control={activeControl}
+                        render={({ field }) => (
+                          <input
+                            {...field}
+                            type="text"
+                            className="w-full px-2 py-1 text-xs border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                            placeholder="Enter tags separated by commas"
+                            onBlur={() => {
+                              field.onBlur();
+                              // Auto-save on blur
+                              handleFieldUpdate('tags', field.value);
+                            }}
+                            disabled={isLoading || isSubmitting || isRetrying}
+                          />
+                        )}
+                      />
+                    </div>
+                  </form>
                 </div>
                 
                 <div className="flex-shrink-0 ml-4">
@@ -236,7 +478,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
                 </h3>
                 
                 <form onSubmit={handleSubmit(handleStopTimer)} className="space-y-4">
-                  {/* Project Name Field */}
+                  {/* Project Name Field - Pre-populated from active timer */}
                   <div>
                     <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-2">
                       Project Name *
@@ -266,7 +508,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
                     )}
                   </div>
 
-                  {/* Description Field */}
+                  {/* Description Field - Pre-populated from active timer */}
                   <div>
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                       Comment
@@ -287,7 +529,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
                     />
                   </div>
 
-                  {/* Tags Field */}
+                  {/* Tags Field - Pre-populated from active timer */}
                   <div>
                     <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
                       Tags

@@ -251,4 +251,23 @@ export class TimeRecordService {
       throw new Error(`Failed to get active timer: ${handleApiError(error)}`);
     }
   }
+
+  /**
+   * Update an active timer record (for editing fields while timer is running)
+   */
+  static async updateActiveTimer(recordId: string, data: {
+    project?: string;
+    description?: string;
+    tags?: string[];
+    startTime?: string;
+  }): Promise<TimeRecord> {
+    try {
+      return await apiRequest<TimeRecord>(`api/time-records/active/${recordId}`, {
+        method: 'PUT',
+        body: data
+      });
+    } catch (error) {
+      throw new Error(`Failed to update active timer: ${handleApiError(error)}`);
+    }
+  }
 }
