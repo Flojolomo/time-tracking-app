@@ -53,7 +53,13 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
       });
       
       const projectSuggestions = data.suggestions || [];
-      setSuggestions(projectSuggestions);
+      
+      // Filter out suggestions that exactly match the current input value
+      const filteredSuggestions = projectSuggestions.filter(
+        suggestion => suggestion.toLowerCase() !== query.toLowerCase().trim()
+      );
+      
+      setSuggestions(filteredSuggestions);
       setSelectedIndex(-1);
     } catch (error) {
       console.error('Error fetching project suggestions:', error);
@@ -78,7 +84,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
 
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(query);
-    }, 500); // 500ms debounce delay
+    }, 300); // Reduced debounce delay to 300ms for better responsiveness
   }, [fetchSuggestions]);
 
   // Effect to trigger search when value changes
@@ -115,7 +121,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
       if (onBlur) {
         onBlur();
       }
-    }, 200);
+    }, 150); // Reduced delay to make it more responsive
   };
 
   // Show suggestions when they are loaded and input has value
@@ -130,7 +136,8 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
     onChange(suggestion);
     setShowSuggestions(false);
     setSelectedIndex(-1);
-    setSuggestions([]); // Clear suggestions to ensure dropdown disappears
+    // Don't clear suggestions immediately to avoid flickering
+    setTimeout(() => setSuggestions([]), 100);
     inputRef.current?.focus();
   };
 
@@ -162,7 +169,8 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
           onChange(selectedSuggestion);
           setShowSuggestions(false);
           setSelectedIndex(-1);
-          setSuggestions([]); // Clear suggestions to ensure dropdown disappears
+          // Don't clear suggestions immediately to avoid flickering
+          setTimeout(() => setSuggestions([]), 100);
         }
         break;
       
