@@ -1,0 +1,20 @@
+{
+  "name": "profile-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for profile management API",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.490.0",
+    "@aws-sdk/client-dynamodb": "^3.490.0",
+    "@aws-sdk/lib-dynamodb": "^3.490.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.131",
+    "typescript": "^5.3.3"
+  }
+}

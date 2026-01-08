@@ -279,9 +279,71 @@ export class TimeTrackingStack extends cdk.Stack {
       },
     });
 
+    // Lambda function for profile management API
+    const profileHandler = new lambda.Function(this, 'ProfileApiHandler', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/profile/src', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          local: {
+            tryBundle(outputDir: string) {
+              try {
+                const { execSync } = require('child_process');
+                execSync('npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=' + outputDir + '/index.js', {
+                  cwd: 'lambda/profile/src',
+                  stdio: 'inherit'
+                });
+                return true;
+              } catch {
+                return false;
+              }
+            }
+          },
+          command: [
+            'bash', '-c',
+            'npm ci && npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=/asset-output/index.js'
+          ],
+        },
+      }),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        TABLE_NAME: timeRecordsTable.tableName,
+        USER_POOL_ID: userPool.userPoolId,
+        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
+        USER_POOL_DOMAIN: userPoolDomain.domainName,
+        REGION: this.region,
+        CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
+        ALLOWED_ORIGINS: [
+          'http://localhost:3001',
+          'http://localhost:3000',
+          'http://localhost:5173',
+          `https://${distribution.distributionDomainName}`
+        ].join(',')
+      },
+    });
+
     // Grant DynamoDB permissions to Lambda functions
     timeRecordsTable.grantReadWriteData(timeRecordsHandler);
     timeRecordsTable.grantReadWriteData(projectsHandler);
+    timeRecordsTable.grantReadWriteData(profileHandler);
+
+    // Grant Cognito permissions to profile handler
+    profileHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'cognito-idp:GetUser',
+        'cognito-idp:UpdateUserAttributes',
+        'cognito-idp:ChangePassword',
+        'cognito-idp:ForgotPassword',
+        'cognito-idp:ConfirmForgotPassword',
+        'cognito-idp:DeleteUser',
+        'cognito-idp:AdminDeleteUser',
+        'cognito-idp:AdminGetUser'
+      ],
+      resources: [userPool.userPoolArn]
+    }));
 
     // API Gateway with optimized CORS to minimize preflight requests
     const api = new apigateway.RestApi(this, 'TimeTrackingApi', {
@@ -362,6 +424,35 @@ export class TimeTrackingStack extends cdk.Stack {
       authorizationType: apigateway.AuthorizationType.IAM,
     });
 
+    // Profile management endpoints
+    const profileResource = apiResource.addResource('profile');
+    profileResource.addMethod('GET', new apigateway.LambdaIntegration(profileHandler), {
+      authorizationType: apigateway.AuthorizationType.IAM,
+    });
+    profileResource.addMethod('PUT', new apigateway.LambdaIntegration(profileHandler), {
+      authorizationType: apigateway.AuthorizationType.IAM,
+    });
+    profileResource.addMethod('DELETE', new apigateway.LambdaIntegration(profileHandler), {
+      authorizationType: apigateway.AuthorizationType.IAM,
+    });
+
+    // Profile password management
+    const profilePasswordResource = profileResource.addResource('password');
+    profilePasswordResource.addMethod('PUT', new apigateway.LambdaIntegration(profileHandler), {
+      authorizationType: apigateway.AuthorizationType.IAM,
+    });
+
+    // Profile password reset endpoints (no auth required for forgot password)
+    const forgotPasswordResource = profileResource.addResource('forgot-password');
+    forgotPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(profileHandler), {
+      authorizationType: apigateway.AuthorizationType.NONE, // No auth required for forgot password
+    });
+
+    const resetPasswordResource = profileResource.addResource('reset-password');
+    resetPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(profileHandler), {
+      authorizationType: apigateway.AuthorizationType.NONE, // No auth required for reset password
+    });
+
     // Update OAuth URLs to use CloudFront domain
     const cloudfrontUrl = `https://${distribution.distributionDomainName}`;
     
@@ -422,6 +513,8 @@ export class TimeTrackingStack extends cdk.Stack {
             `${api.arnForExecuteApi('*', '/api/projects', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/projects/*', 'prod')}`,
             `${api.arnForExecuteApi('*', '/api/stats', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/profile', 'prod')}`,
+            `${api.arnForExecuteApi('*', '/api/profile/*', 'prod')}`,
           ],
         }),
       ],
