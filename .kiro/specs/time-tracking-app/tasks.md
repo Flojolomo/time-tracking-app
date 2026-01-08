@@ -29,25 +29,29 @@ This implementation plan breaks down the time tracking application into discrete
     - Create LoginForm and SignupForm components
     - Implement useAuth hook with Cognito integration
     - Create ProtectedRoute component for route protection
-    - _Requirements: 1.3, 1.4, 1.5_
+    - Add email verification error handling to login flow
+    - _Requirements: 1.3, 1.4, 1.5, 1.6_
 
   - [x] 2.3 Implement profile management functionality
     - Create ProfilePage component for user account management
     - Implement password reset functionality with email verification
+    - Add secure password reset with email link and token validation
     - Add password update capability on profile page
     - Add personal information update functionality
     - Implement profile deletion with cascading record deletion
-    - _Requirements: 1.6, 1.7, 1.8, 1.9, 1.10, 1.11_
+    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14_
 
   - [ ]* 2.4 Write basic unit test for authentication flow
     - Test login/signup form validation and user flow
-    - _Requirements: 1.3, 1.4, 1.5_
+    - Test email verification error handling
+    - _Requirements: 1.3, 1.4, 1.5, 1.6_
 
   - [ ]* 2.5 Write basic unit tests for profile management
     - Test profile page functionality and validation
     - Test password reset and update flows
+    - Test secure password reset with email verification
     - Test profile deletion with data cleanup
-    - _Requirements: 1.6, 1.7, 1.8, 1.9, 1.10, 1.11_
+    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14_
 
 - [x] 3. Landing Page and Public Interface
   - [x] 3.1 Create responsive landing page component
@@ -82,7 +86,8 @@ This implementation plan breaks down the time tracking application into discrete
     - Implement PUT /api/profile/password for password updates
     - Implement DELETE /api/profile for profile deletion with cascading record cleanup
     - Integrate with Cognito for password reset functionality
-    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11_
+    - Add forgot-password and reset-password endpoints
+    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14_
 
   - [ ]* 4.4 Write basic unit tests for data operations
     - Test CRUD operations for time records
@@ -92,7 +97,8 @@ This implementation plan breaks down the time tracking application into discrete
   - [ ]* 4.5 Write basic unit tests for profile API operations
     - Test profile management API endpoints
     - Test cascading deletion functionality
-    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11_
+    - Test password reset API endpoints
+    - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14_
 
 - [x] 5. Time Record Form and Validation
   - [x] 5.1 Create TimeRecordForm component with validation
@@ -120,27 +126,32 @@ This implementation plan breaks down the time tracking application into discrete
     - Add POST /api/time-records/start for starting active records
     - Add PUT /api/time-records/stop/{id} for stopping active records
     - Add GET /api/time-records/active for retrieving active record
+    - Add PUT /api/time-records/active/{id} for updating active record fields
     - Implement single active record constraint validation
-    - _Requirements: 8.1, 8.2, 8.3, 8.5_
+    - _Requirements: 8.1, 8.2, 8.3, 8.5, 8.7_
 
   - [x] 6.5.2 Create TimerWidget component with live functionality
     - Implement start button for dashboard
     - Add real-time elapsed time display for active records
     - Create stop button with completion form
     - Ensure UI refreshes after timer operations
-    - _Requirements: 8.1, 8.2, 8.4, 8.5, 8.6, 2.8_
+    - _Requirements: 8.1, 8.2, 8.4, 8.7, 8.8, 2.8_
 
   - [x] 6.5.3 Integrate timer with dashboard and data layer
-    - Add ActiveRecordDisplay component to dashboard
+    - Add ActiveRecordDisplay component to dashboard in "Complete Time Record" view
+    - Enable editing of all fields except end time while timer is running
+    - Allow updating start time to past timestamps while active
     - Connect timer operations to existing data refresh mechanisms
     - Ensure timer state persists across page refreshes
-    - _Requirements: 8.4, 2.8_
+    - _Requirements: 8.4, 8.5, 8.6, 2.8_
 
   - [ ]* 6.5.4 Write basic unit tests for timer functionality
     - Test timer start/stop operations
     - Test single active record constraint
+    - Test active record field editing functionality
+    - Test start time modification while timer is running
     - Test UI refresh after timer operations
-    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 2.8_
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 2.8_
 
 - [x] 7. Time Record Views and Display
   - [x] 7.1 Implement TimeRecordList component with multiple views

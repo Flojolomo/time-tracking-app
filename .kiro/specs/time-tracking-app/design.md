@@ -65,16 +65,17 @@ graph TB
 - **Responsive**: Mobile-first design with Tailwind breakpoints
 
 #### 2. Authentication Components
-- **LoginForm**: Integrates with AWS Cognito
+- **LoginForm**: Integrates with AWS Cognito with email verification error handling
 - **SignupForm**: User registration with email verification
 - **ProtectedRoute**: HOC for authenticated route protection
+- **PasswordResetForm**: Secure password reset with email verification
 
 #### 3. Time Tracking Components
 - **TimeRecordForm**: Create/edit time records with auto-suggestion
 - **TimeRecordList**: Display records in different views (daily/weekly/monthly)
 - **ProjectAutocomplete**: Smart project suggestions with debounced search
 - **TimerWidget**: Live timer for active time tracking with start/stop functionality
-- **ActiveRecordDisplay**: Shows currently running record on dashboard
+- **ActiveRecordDisplay**: Shows currently running record on dashboard in "Complete Time Record" view with editable fields
 - **RecordFilters**: Filter controls for project and tag-based filtering across all views
 
 #### 4. Statistics Components
@@ -86,20 +87,23 @@ graph TB
 ### Backend API Endpoints
 
 #### Authentication (AWS Cognito Integration)
-- `POST /auth/login` - User authentication
+- `POST /auth/login` - User authentication with email verification error handling
 - `POST /auth/signup` - User registration
 - `POST /auth/refresh` - Token refresh
 - `POST /auth/logout` - User logout
+- `POST /auth/forgot-password` - Initiate password reset
+- `POST /auth/reset-password` - Complete password reset with token
 
 #### Time Records API
 - `GET /api/time-records` - List user's time records with filtering (supports project and tag filters)
 - `POST /api/time-records` - Create new time record
-- `PUT /api/time-records/{id}` - Update existing time record
+- `PUT /api/time-records/{id}` - Update existing time record (including active records)
 - `DELETE /api/time-records/{id}` - Delete time record
 - `GET /api/time-records/stats` - Get aggregated statistics
 - `POST /api/time-records/start` - Start a new active time record
 - `PUT /api/time-records/stop/{id}` - Stop an active time record
 - `GET /api/time-records/active` - Get user's currently active record
+- `PUT /api/time-records/active/{id}` - Update active record fields while running
 
 #### Projects API
 - `GET /api/projects` - List user's projects
@@ -158,7 +162,7 @@ interface Project {
 
 ### Frontend Error Handling
 - **Network Errors**: Retry logic with exponential backoff
-- **Authentication Errors**: Automatic token refresh, redirect to login
+- **Authentication Errors**: Automatic token refresh, redirect to login, email verification error messages
 - **Validation Errors**: Real-time form validation with user-friendly messages
 - **Loading States**: Skeleton screens and loading indicators
 
@@ -176,7 +180,7 @@ interface Project {
 
 **Property 1: Data Isolation and Access Control**
 *For any* authenticated user, they should only be able to access, view, and modify their own time records and never see data belonging to other users
-**Validates: Requirements 1.5, 7.2**
+**Validates: Requirements 1.6, 7.2**
 
 **Property 2: Time Record Validation**
 *For any* time record creation or update attempt, the system should validate that all required fields (project, start time, end time, date, comment, tags) are present and that end time is after start time
@@ -230,19 +234,27 @@ interface Project {
 *For any* user, there should be at most one active (running) time record at any given time
 **Validates: Requirements 8.3**
 
-**Property 15: Active Record Display**
-*For any* user with a running time record, the dashboard should prominently display the active record with elapsed time
-**Validates: Requirements 8.4**
+**Property 15: Active Record Display and Editing**
+*For any* user with a running time record, the dashboard should prominently display the active record in a "Complete Time Record" view with all fields editable except end time
+**Validates: Requirements 8.4, 8.5**
 
 **Property 16: Timer Start Without Input**
 *For any* user starting a new time record from the dashboard, no input fields should be required to begin tracking
 **Validates: Requirements 8.1, 8.2**
 
-**Property 17: Timer Stop Completion**
-*For any* active time record being stopped, the system should prompt for required fields (project, comment, tags) and calculate the final duration before saving
-**Validates: Requirements 8.5, 8.6**
+**Property 17: Active Record Start Time Modification**
+*For any* active time record, the user should be able to update the start time to any past timestamp while the timer is running
+**Validates: Requirements 8.6**
 
-**Property 18: Project and Tag Filtering**
+**Property 18: Timer Stop Completion**
+*For any* active time record being stopped, the system should save the record with all field values that were provided during the active session
+**Validates: Requirements 8.7, 8.8**
+
+**Property 19: Email Verification Error Display**
+*For any* login attempt with an unverified email address, the system should display a clear error message indicating email verification is required
+**Validates: Requirements 1.5**
+
+**Property 20: Project and Tag Filtering**
 *For any* filter applied by project name or tag selection, the displayed time records should only include records that match the specified project or contain all specified tags
 **Validates: Requirements 4.6, 4.7**
 
