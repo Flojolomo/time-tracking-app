@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { LoginCredentials } from '../types';
+import { useLocation, Link } from 'react-router-dom';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -10,7 +11,18 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const { login, isLoading, error } = useAuth();
+  const location = useLocation();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Check for success message from password reset redirect
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message from location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   const {
     register,
@@ -35,6 +47,12 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
         Sign In
       </h2>
+      
+      {successMessage && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-sm text-green-600">{successMessage}</p>
+        </div>
+      )}
       
       {displayError && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -95,6 +113,15 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
           {isSubmitting || isLoading ? 'Signing In...' : 'Sign In'}
         </button>
       </form>
+
+      <div className="mt-4 text-center">
+        <Link
+          to="/forgot-password"
+          className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+        >
+          Forgot your password?
+        </Link>
+      </div>
 
       {onSwitchToSignup && (
         <div className="mt-6 text-center">

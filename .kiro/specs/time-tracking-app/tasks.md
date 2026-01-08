@@ -131,7 +131,7 @@ This implementation plan breaks down the time tracking application into discrete
 - [x] 6. Checkpoint - Core functionality validation
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6.5. Live Timer Implementation
+- [x] 6.5. Live Timer Implementation
   - [x] 6.5.1 Implement timer API endpoints in Lambda
     - Add POST /api/time-records/start for starting active records ✅
     - Add PUT /api/time-records/stop/{id} for stopping active records ✅
@@ -171,14 +171,14 @@ This implementation plan breaks down the time tracking application into discrete
     - Test UI refresh after timer operations
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 2.8_
 
-- [ ] 15. Complete Password Reset Implementation
-  - [ ] 15.1 Implement email link validation for password reset
+- [x] 15. Complete Password Reset Implementation
+  - [x] 15.1 Implement email link validation for password reset
     - Create password reset page component that handles email links
     - Add route for password reset confirmation (e.g., /reset-password?token=...)
     - Validate reset tokens and handle expired/invalid tokens
     - _Requirements: 1.8, 1.9_
 
-  - [ ] 15.2 Complete password reset flow
+  - [x] 15.2 Complete password reset flow
     - Integrate reset-password API endpoint with frontend
     - Add form for setting new password after email verification
     - Handle successful password reset and redirect to login

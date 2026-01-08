@@ -101,6 +101,7 @@ export interface AuthContextType {
   updateProfile: (data: { name?: string }) => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
+  confirmPasswordReset: (email: string, confirmationCode: string, newPassword: string) => Promise<void>;
   deleteProfile: () => Promise<void>;
   error: string | null;
 }

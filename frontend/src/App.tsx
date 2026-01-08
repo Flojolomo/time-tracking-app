@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ProfilePage } from './components';
+import { LandingPage, AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimeRecordViews, StatsDashboard, TimerWidget, ProfilePage, PasswordResetPage, ForgotPasswordPage } from './components';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -75,6 +75,10 @@ function App() {
                 </AuthLayout>
               </AuthenticatedRoute>
             } />
+            
+            {/* Password reset routes */}
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<PasswordResetPage />} />
             
             {/* Development/Demo route */}
             <Route path="/demo" element={

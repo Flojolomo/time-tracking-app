@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, updatePassword, updateUserAttributes, deleteUser, resetPassword } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, updatePassword, updateUserAttributes, deleteUser, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
 import { getAmplifyConfig, isDevelopmentMode } from '../aws-config';
 
@@ -214,6 +214,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const confirmPasswordReset = async (email: string, confirmationCode: string, newPassword: string) => {
+    try {
+      setError(null);
+      
+      if (!config || isDevelopmentMode(config)) {
+        throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
+      }
+      
+      await confirmResetPassword({
+        username: email,
+        confirmationCode,
+        newPassword,
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Password reset confirmation failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const deleteProfile = async () => {
     try {
       setError(null);
@@ -244,6 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateProfile,
     changePassword,
     requestPasswordReset,
+    confirmPasswordReset,
     deleteProfile,
     error
   };

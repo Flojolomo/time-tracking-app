@@ -17,6 +17,8 @@ export { TimelineChart } from './TimelineChart';
 export { MetricsCards } from './MetricsCards';
 export { TimerWidget } from './TimerWidget';
 export { ProfilePage } from './ProfilePage';
+export { PasswordResetPage } from './PasswordResetPage';
+export { ForgotPasswordPage } from './ForgotPasswordPage';
 
 // Error handling and UI components
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';
