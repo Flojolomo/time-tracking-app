@@ -66,6 +66,11 @@ start-dev.bat
 - `npm run destroy` - Destroy AWS resources
 - `npm run diff` - Show differences with deployed stack
 
+### CI/CD Setup (GitHub Actions)
+- `npm run deploy:oidc` - Deploy GitHub OIDC authentication infrastructure
+- `npm run synth:oidc` - Preview OIDC stack changes
+- `npm run destroy:oidc` - Remove OIDC authentication infrastructure
+
 ## Architecture
 
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
@@ -99,5 +104,20 @@ After running the setup, you can:
 2. Create time record management features
 3. Deploy infrastructure to AWS
 4. Build and deploy the frontend
+
+### Setting up CI/CD (Optional)
+
+For automated deployments with GitHub Actions:
+
+1. **Deploy OIDC Authentication Infrastructure:**
+   ```bash
+   cd infrastructure
+   ./deploy-oidc.sh your-github-org your-repo-name
+   ```
+
+2. **Configure GitHub Repository:**
+   - Copy the output values to your GitHub repository secrets/variables
+   - Copy `.github-workflows-example/deploy.yml` to `.github/workflows/deploy.yml`
+   - See `infrastructure/GITHUB_OIDC_SETUP.md` for detailed instructions
 
 For detailed implementation, refer to the tasks in `.kiro/specs/time-tracking-app/tasks.md`.

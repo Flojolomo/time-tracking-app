@@ -9,15 +9,24 @@ The GitHub OIDC stack creates:
 - IAM roles for production and development deployments
 - Proper permissions for CDK deployments and application management
 
+**Location**: This OIDC infrastructure is part of the Time Tracking App project and should be deployed from the `infrastructure/` directory.
+
 ## Prerequisites
 
 1. AWS CLI configured with appropriate permissions
 2. CDK bootstrapped in your target AWS account/region
 3. GitHub repository set up for the time tracking application
+4. You should be in the `infrastructure/` directory when running these commands
 
 ## Deployment Steps
 
-### 1. Configure Repository Information
+### 1. Navigate to Infrastructure Directory
+
+```bash
+cd infrastructure
+```
+
+### 2. Configure Repository Information
 
 Set your GitHub repository information using one of these methods:
 
