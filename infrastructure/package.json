@@ -2,7 +2,8 @@
   "name": "time-tracking-infrastructure",
   "version": "0.1.0",
   "bin": {
-    "infrastructure": "dist/bin/infrastructure.js"
+    "infrastructure": "dist/bin/infrastructure.js",
+    "github-oidc": "dist/bin/github-oidc.js"
   },
   "scripts": {
     "build": "tsc",
@@ -19,9 +20,13 @@
     "test": "jest",
     "cdk": "cdk",
     "deploy": "npm run build:all && cdk deploy",
+    "deploy:oidc": "npm run build && cdk deploy --app 'node dist/bin/github-oidc.js'",
     "destroy": "cdk destroy",
+    "destroy:oidc": "cdk destroy --app 'node dist/bin/github-oidc.js'",
     "synth": "npm run build:all && cdk synth",
-    "diff": "npm run build:all && cdk diff"
+    "synth:oidc": "npm run build && cdk synth --app 'node dist/bin/github-oidc.js'",
+    "diff": "npm run build:all && cdk diff",
+    "diff:oidc": "npm run build && cdk diff --app 'node dist/bin/github-oidc.js'"
   },
   "devDependencies": {
     "@types/jest": "^29.4.0",
