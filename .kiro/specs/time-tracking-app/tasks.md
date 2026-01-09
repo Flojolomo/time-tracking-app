@@ -6,7 +6,7 @@ This implementation plan breaks down the time tracking application into discrete
 
 ## Implementation Status
 
-🚧 **CORE APPLICATION IN PROGRESS** - Most primary features have been implemented, but some critical timer functionality remains incomplete. The application has a solid foundation but needs additional work to meet all requirements.
+🚧 **CORE APPLICATION IN PROGRESS** - Most primary features have been implemented, but some critical functionality remains incomplete. The application has a solid foundation but needs additional work to meet all requirements including CI/CD pipeline setup.
 
 ## Tasks
 
@@ -241,9 +241,21 @@ This implementation plan breaks down the time tracking application into discrete
     - Test and refine responsive breakpoints
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [x] 9.2 Write basic unit tests for responsive functionality
+  - [ ] 9.2 Implement Progressive Web App (PWA) functionality
+    - Configure PWA manifest and service worker for app-like experience
+    - Add PWA installation prompts and offline capabilities
+    - Ensure UI layout adapts automatically when opened as PWA on smartphones
+    - Test PWA functionality across different mobile devices
+    - _Requirements: 6.6_
+
+  - [x] 9.3 Write basic unit tests for responsive functionality
     - Test key components across different viewport sizes
     - _Requirements: 6.5_
+
+  - [ ]* 9.4 Write unit tests for PWA functionality
+    - Test PWA manifest configuration and service worker registration
+    - Test mobile layout adaptation for PWA mode
+    - _Requirements: 6.6_
 
 - [x] 10. Integration and Error Handling
   - [x] 10.1 Implement comprehensive error handling
@@ -281,6 +293,45 @@ This implementation plan breaks down the time tracking application into discrete
     - Test core user journeys from signup to basic functionality
     - Focus on critical paths only
     - _Requirements: Essential end-to-end validation_
+
+- [ ] 12. CI/CD Pipeline Implementation
+  - [ ] 12.1 Set up OIDC authentication infrastructure
+    - Create dedicated CDK stack for GitHub OIDC provider
+    - Configure IAM roles and policies for GitHub Actions authentication
+    - Set up OIDC identity provider for secure AWS access without long-lived credentials
+    - Deploy OIDC stack independently from main application infrastructure
+    - _Requirements: 9.1, 9.2, 9.3, 9.4 (Security foundation)_
+
+  - [ ] 12.2 Set up GitHub Actions workflow for automated deployment
+    - Create workflow file for main branch deployment to production
+    - Configure OIDC authentication with AWS (no access keys)
+    - Implement automated deployment trigger on main branch commits
+    - Add proper IAM role assumption for secure deployments
+    - _Requirements: 9.1_
+
+  - [ ] 12.3 Implement deployment order and dependency management
+    - Configure backend/infrastructure deployment to run first
+    - Set up frontend deployment to wait for infrastructure completion
+    - Add deployment validation and rollback mechanisms
+    - Ensure proper deployment sequencing (infrastructure → frontend)
+    - _Requirements: 9.2, 9.3_
+
+  - [ ] 12.4 Set up development environment deployment
+    - Create workflow for pull request deployments to development environment
+    - Configure separate AWS environment for development/staging
+    - Add environment-specific configuration and variables
+    - Implement cleanup for closed pull requests
+    - Use OIDC authentication for development deployments
+    - _Requirements: 9.4_
+
+  - [ ]* 12.5 Write tests for deployment pipeline
+    - Test deployment workflow validation
+    - Test OIDC authentication and IAM role assumption
+    - Test environment configuration and variable management
+    - Test deployment order and dependency handling
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
+    - Test deployment order and dependency handling
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
 - [x] 13. Additional Testing Implementation
   - [x] 13.1 Write unit tests for TimeRecordForm component
@@ -368,10 +419,14 @@ npm run synth
 
 **❌ MISSING CRITICAL FUNCTIONALITY:**
 - **Requirements 1.7-1.9**: Complete password reset flow with email link validation
+- **Requirements 6.6**: Progressive Web App (PWA) functionality for mobile optimization
+- **Requirements 9.1-9.4**: CI/CD pipeline implementation with GitHub Actions
 
 **📋 REMAINING WORK:**
 - **CRITICAL**: Complete password reset email link validation and flow (Requirements 1.7-1.9)
+- **NEW**: Implement PWA functionality with mobile layout adaptation (Requirements 6.6)
+- **NEW**: Implement CI/CD pipeline with GitHub Actions for automated deployment (Requirements 9.1-9.4)
 - Additional unit tests for enhanced test coverage (all marked with `*`)
 - End-to-end integration tests for comprehensive validation
 
-The application now has complete timer functionality and only needs the password reset email flow to meet all requirements.
+The application now has complete timer functionality and needs password reset email flow, PWA functionality, and CI/CD pipeline implementation to meet all requirements.

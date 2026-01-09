@@ -16,19 +16,34 @@ graph TB
         C --> D[Time Records View]
         C --> E[Statistics View]
         C --> F[Project Management]
+        B --> G[Profile Management]
+        G --> H[Password Reset]
     end
     
     subgraph "AWS Serverless Backend"
-        G[CloudFront CDN] --> H[S3 Static Hosting]
-        I[API Gateway] --> J[Lambda Functions]
-        J --> K[DynamoDB]
-        L[Cognito User Pool] --> B
+        I[CloudFront CDN] --> J[S3 Static Hosting]
+        K[API Gateway] --> L[Lambda Functions]
+        L --> M[DynamoDB]
+        N[Cognito User Pool] --> B
     end
     
-    A --> G
-    C --> I
-    B --> L
+    A --> I
+    C --> K
+    B --> N
+    H --> O
 ```
+
+### Key Design Decisions
+
+**Serverless-First Architecture**: Chosen for cost efficiency, automatic scaling, and reduced operational overhead. AWS Lambda functions scale automatically based on demand, and DynamoDB provides consistent performance without server management.
+
+**Single-Page Application (SPA)**: React SPA provides a responsive user experience with client-side routing, reducing server requests and enabling offline functionality through service workers.
+
+**Single-Table DynamoDB Design**: All data stored in one DynamoDB table with different partition/sort key patterns for efficient queries and cost optimization. This approach reduces complexity and improves performance for time-series data.
+
+**AWS Cognito Integration**: Provides secure authentication with built-in email verification, password reset, and JWT token management, reducing custom authentication code and security risks.
+
+**Independent Deployment Strategy**: Infrastructure and frontend can be deployed separately, allowing for faster iterations and reduced deployment risks.
 
 ### Technology Stack
 
@@ -40,6 +55,7 @@ graph TB
 - **React Query (TanStack Query)** for server state management
 - **React Hook Form** for form handling
 - **Chart.js** with react-chartjs-2 for statistics visualization
+- **PWA Configuration** with service worker for progressive web app functionality
 
 **Backend:**
 - **AWS Lambda** (Node.js 20) for serverless compute
@@ -62,13 +78,16 @@ graph TB
 #### 1. Landing Page Component
 - **Purpose**: Public-facing page with app description and demo
 - **Features**: Hero section, feature highlights, demo video/screenshots
+- **Demo Functionality**: Interactive sample time tracking interface that shows functionality without allowing data modification
 - **Responsive**: Mobile-first design with Tailwind breakpoints
 
 #### 2. Authentication Components
 - **LoginForm**: Integrates with AWS Cognito with email verification error handling
 - **SignupForm**: User registration with email verification
 - **ProtectedRoute**: HOC for authenticated route protection
-- **PasswordResetForm**: Secure password reset with email verification
+- **ForgotPasswordPage**: Initiate password reset process with email input
+- **PasswordResetPage**: Complete password reset with token validation from email links
+- **ProfilePage**: User account management interface for personal information, password updates, and account deletion
 
 #### 3. Time Tracking Components
 - **TimeRecordForm**: Create/edit time records with auto-suggestion
@@ -93,6 +112,12 @@ graph TB
 - `POST /auth/logout` - User logout
 - `POST /auth/forgot-password` - Initiate password reset
 - `POST /auth/reset-password` - Complete password reset with token
+
+#### Profile Management API
+- `GET /api/profile` - Get user profile information
+- `PUT /api/profile` - Update user personal information
+- `PUT /api/profile/password` - Update user password
+- `DELETE /api/profile` - Delete user profile and all associated data
 
 #### Time Records API
 - `GET /api/time-records` - List user's time records with filtering (supports project and tag filters)
@@ -157,6 +182,7 @@ interface Project {
 6. **Ensure single active record**: Check for existing active records before starting new ones
 7. **Filter records by project**: Query PK = USER#{userId} with GSI1PK filter for specific project
 8. **Filter records by tags**: Query PK = USER#{userId} with filter expression on tags array
+9. **Profile deletion cascade**: Delete all records with PK = USER#{userId} when user deletes profile
 
 ## Error Handling
 
@@ -254,9 +280,25 @@ interface Project {
 *For any* login attempt with an unverified email address, the system should display a clear error message indicating email verification is required
 **Validates: Requirements 1.5**
 
-**Property 20: Project and Tag Filtering**
-*For any* filter applied by project name or tag selection, the displayed time records should only include records that match the specified project or contain all specified tags
-**Validates: Requirements 4.6, 4.7**
+**Property 21: Profile Management Functionality**
+*For any* authenticated user on the profile page, they should be able to view and update their personal information, change their password, and delete their profile
+**Validates: Requirements 1.10, 1.11, 1.12, 1.13**
+
+**Property 22: Password Reset Email Flow**
+*For any* user requesting password reset, the system should send a secure reset link to their email and allow password change only with valid token
+**Validates: Requirements 1.7, 1.8, 1.9**
+
+**Property 23: Profile Deletion Data Cleanup**
+*For any* user deleting their profile, all associated time records should be permanently removed from the system
+**Validates: Requirements 1.14**
+
+**Property 24: Landing Page Demo Functionality**
+*For any* unauthenticated user viewing the landing page, they should see sample time tracking functionality without the ability to modify data
+**Validates: Requirements 1.1, 1.2**
+
+**Property 25: Progressive Web App Mobile Adaptation**
+*For any* user opening the application on a smartphone as a progressive web app, the UI layout should adapt automatically for mobile optimization
+**Validates: Requirements 6.6**
 
 ## Testing Strategy
 
@@ -321,6 +363,20 @@ Following the project's simplicity-first principle, the application will use a f
 2. **Testing**: Focused unit tests for critical business logic
 3. **Staging**: Deploy infrastructure and frontend independently to AWS staging environment
 4. **Production**: Blue/green deployment with CloudFormation via CDK
+
+### CI/CD Pipeline Design
+
+**Automated Deployment Strategy:**
+- **GitHub Actions** for continuous integration and deployment
+- **Branch-based Deployments**: Main branch deploys to production, pull requests deploy to development environment
+- **Deployment Order**: Infrastructure and backend deployed first, followed by frontend deployment
+- **Independent Deployments**: Infrastructure changes can be deployed separately from frontend changes
+- **Environment Isolation**: Separate AWS environments for development and production
+
+**Deployment Sequence:**
+1. **Infrastructure First**: Deploy AWS CDK stack with Lambda functions, DynamoDB, API Gateway
+2. **Frontend Second**: Deploy React application to S3 and invalidate CloudFront cache
+3. **Validation**: Automated health checks to ensure successful deployment
 
 ## Performance Considerations
 

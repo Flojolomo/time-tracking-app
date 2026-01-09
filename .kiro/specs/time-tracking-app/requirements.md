@@ -15,6 +15,7 @@ A comprehensive time tracking web application that allows authenticated users to
 - **Authentication_System**: Component managing user login/logout and access control
 - **Statistics_Engine**: Component calculating aggregations and analytics
 - **Auto_Suggester**: Component providing project name suggestions during typing
+- **Deployment_System**: Component managing automated deployment processes and CI/CD workflows
 
 ## Requirements
 
@@ -49,10 +50,10 @@ A comprehensive time tracking web application that allows authenticated users to
 2. WHEN a user enters project information, THE Auto_Suggester SHALL provide suggestions from existing projects
 3. WHEN a user saves a time record, THE Time_Tracker SHALL validate that end time is after start time
 4. WHEN a user saves a time record, THE Time_Tracker SHALL persist the record with all required fields
-5. THE Time_Tracker SHALL allow users to edit existing time records
+5. THE Time_Tracker SHALL allow users to edit existing time records that they own
 6. THE Time_Tracker SHALL allow users to delete time records they own
-7. WHEN creating a time record, THE Time_Tracker SHALL accept optional comment and tags fields
-8. WHEN a user creates, updates, or deletes a time record, THE Time_Tracker SHALL refresh the current view to display updated data immediately 
+7. WHEN creating a time record, THE Time_Tracker SHALL accept optional comment and tags fields for additional context
+8. WHEN a user creates, updates, or deletes a time record, THE Time_Tracker SHALL refresh the current view to display updated data immediately
 
 ### Requirement 3: Project Management and Auto-Suggestion
 
@@ -103,6 +104,7 @@ A comprehensive time tracking web application that allows authenticated users to
 3. THE Time_Tracker SHALL optimize interface for mobile devices with screen widths below 768 pixels
 4. WHEN on mobile devices, THE Time_Tracker SHALL provide touch-friendly interface elements
 5. THE Time_Tracker SHALL maintain full functionality across all supported device sizes
+6. WHEN a user opens the application on a smartphone as a progressive web app, THE Time_Tracker SHALL adapt the UI layout for mobile optimization
 
 ### Requirement 7: Data Persistence and Security
 
@@ -113,7 +115,7 @@ A comprehensive time tracking web application that allows authenticated users to
 1. THE Time_Tracker SHALL persist all time records to secure storage immediately upon creation
 2. THE Authentication_System SHALL ensure users can only access their own time records
 3. WHEN a user logs out and back in, THE Time_Tracker SHALL display all previously saved records
-4. WHEN network interruptions occur, THE Time_Tracker SHALL handle them gracefully and automatically retry failed save operations
+4. WHEN network interruptions occur, THE Time_Tracker SHALL handle them gracefully and retry failed save operations automatically
 5. THE Time_Tracker SHALL provide data backup and recovery mechanisms for user records
 
 ### Requirement 8: Live Timer and Active Record Management
@@ -127,6 +129,17 @@ A comprehensive time tracking web application that allows authenticated users to
 3. THE Time_Tracker SHALL allow only one running record per user at any time
 4. WHEN a record is running, THE Time_Tracker SHALL display the active record prominently on the dashboard in a "Complete Time Record" view
 5. WHEN a record is running, THE Time_Tracker SHALL allow users to edit all fields except the end time
-6. WHEN a record is running, THE Time_Tracker SHALL allow users to update the start time to any past timestamp
+6. WHEN a record is running, THE Time_Tracker SHALL allow users to update the start time to any valid past timestamp
 7. WHEN there is a running record, THE Time_Tracker SHALL provide a stop button to complete and save the record
 8. WHEN a user stops a running record, THE Time_Tracker SHALL save the record with all provided field values
+
+### Requirement 9: Deployment and CI/CD
+
+**User Story:** As a development team, I want automated deployment processes, so that changes are deployed reliably and in the correct order.
+
+#### Acceptance Criteria
+
+1. WHEN a new change is committed to main branch, THE Deployment_System SHALL deploy the application to production
+2. WHEN backend and infrastructure have been updated, THE Deployment_System SHALL deploy backend and infrastructure first
+3. WHEN frontend has been updated, THE Deployment_System SHALL deploy the frontend after infrastructure is ready
+4. WHEN a pull request has been updated, THE Deployment_System SHALL deploy to the development environment
