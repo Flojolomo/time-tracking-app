@@ -4,21 +4,15 @@ export { SignupForm } from './SignupForm';
 export { ProtectedRoute, withProtectedRoute } from './ProtectedRoute';
 export { AuthDemo } from './AuthDemo';
 export { ConfigurationStatus } from './ConfigurationStatus';
-export { LandingPage } from './LandingPage';
 export { TimeRecordForm } from './TimeRecordForm';
 export { ProjectAutocomplete } from './ProjectAutocomplete';
 export { TimeRecordList } from './TimeRecordList';
 export { ViewSelector } from './ViewSelector';
-export { TimeRecordViews } from './TimeRecordViews';
 export { RecordFilters } from './RecordFilters';
-export { StatsDashboard } from './StatsDashboard';
 export { ProjectChart } from './ProjectChart';
 export { TimelineChart } from './TimelineChart';
 export { MetricsCards } from './MetricsCards';
 export { TimerWidget } from './TimerWidget';
-export { ProfilePage } from './ProfilePage';
-export { PasswordResetPage } from './PasswordResetPage';
-export { ForgotPasswordPage } from './ForgotPasswordPage';
 
 // Error handling and UI components
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';

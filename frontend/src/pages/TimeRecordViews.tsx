@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { TimeRecordList } from './TimeRecordList';
-import { TimeRecordForm } from './TimeRecordForm';
-import { ViewSelector } from './ViewSelector';
-import { RecordFilters } from './RecordFilters';
+import { TimeRecordList } from '../components/TimeRecordList';
+import { TimeRecordForm } from '../components/TimeRecordForm';
+import { ViewSelector } from '../components/ViewSelector';
+import { RecordFilters } from '../components/RecordFilters';
 import { TimeRecordFilters, TimeRecord } from '../types';
 import { useViewState } from '../contexts/ViewStateContext';
 import { useViewRouting } from '../hooks/useViewRouting';

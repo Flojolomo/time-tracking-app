@@ -1,159 +1,56 @@
-# Authentication Components
+# Components
 
-This directory contains the authentication components and hooks for the Time Tracking App.
+This directory contains reusable UI components for the Time Tracking App.
 
-## Components
+## Component Categories
 
-### LoginForm
-A form component for user authentication with email and password.
+### Authentication Components
+- `LoginForm` - User login form with validation
+- `SignupForm` - User registration form with email verification
+- `AuthDemo` - Demo component showcasing authentication flow
+- `ConfigurationStatus` - Shows AWS configuration status
+- `ProtectedRoute` - Route wrapper for authenticated access
 
-**Props:**
-- `onSuccess?: () => void` - Callback called after successful login
-- `onSwitchToSignup?: () => void` - Callback to switch to signup form
+### Time Tracking Components
+- `TimeRecordForm` - Form for creating/editing time records
+- `TimeRecordList` - List view for time records with different view types
+- `TimerWidget` - Active timer component for real-time tracking
+- `ViewSelector` - Component for switching between daily/weekly/monthly views
+- `RecordFilters` - Filtering interface for time records
 
-**Features:**
-- Form validation with react-hook-form
-- Error handling and display
-- Loading states
-- Responsive design
+### Data Visualization Components
+- `ProjectChart` - Charts for project time distribution
+- `TimelineChart` - Timeline visualization for daily patterns
+- `MetricsCards` - Key performance indicator cards
 
-### SignupForm
-A form component for user registration with email, password, and optional name.
+### Utility Components
+- `ProjectAutocomplete` - Autocomplete input for project names
+- `LoadingSpinner` - Loading indicators and overlays
+- `ErrorMessage` - Error display components
+- `ErrorBoundary` - Error boundary for component error handling
 
-**Props:**
-- `onSuccess?: () => void` - Callback called after successful signup
-- `onSwitchToLogin?: () => void` - Callback to switch to login form
+### Status Components
+- `NetworkStatusBanner` - Network connectivity status
+- `OfflineStatusBar` - Offline mode and sync status
+- `NotificationContainer` - Toast notifications display
 
-**Features:**
-- Form validation including password confirmation
-- Email verification flow
-- Error handling and display
-- Loading states
-- Responsive design
+## Pages
 
-### ProtectedRoute
-A wrapper component that protects routes from unauthenticated access.
+Page-level components have been moved to the `src/pages/` directory:
+- `LandingPage` - Application landing page
+- `ProfilePage` - User profile management
+- `StatsDashboard` - Analytics dashboard
+- `TimeRecordViews` - Main time records interface
+- `ForgotPasswordPage` - Password reset request
+- `PasswordResetPage` - Password reset confirmation
 
-**Props:**
-- `children: ReactNode` - The content to protect
-- `redirectTo?: string` - Where to redirect unauthenticated users (default: '/login')
-
-**Features:**
-- Automatic redirection for unauthenticated users
-- Loading state while checking authentication
-- Preserves intended destination for post-login redirect
-
-### AuthDemo
-A demo component that showcases the authentication flow.
-
-**Features:**
-- Switches between login and signup forms
-- Shows authenticated user information
-- Provides logout functionality
-
-## Hooks
-
-### useAuth
-A custom hook that provides authentication state and methods.
-
-**Returns:**
-- `user: AuthUser | null` - Current authenticated user
-- `isLoading: boolean` - Loading state
-- `isAuthenticated: boolean` - Authentication status
-- `login: (credentials: LoginCredentials) => Promise<void>` - Login method
-- `signup: (credentials: SignupCredentials) => Promise<void>` - Signup method
-- `logout: () => Promise<void>` - Logout method
-- `error: string | null` - Current error message
-
-### AuthProvider
-A context provider that wraps the application to provide authentication state.
-
-**Usage:**
-```tsx
-import { AuthProvider } from './hooks/useAuth';
-
-function App() {
-  return (
-    <AuthProvider>
-      {/* Your app components */}
-    </AuthProvider>
-  );
-}
-```
-
-## Configuration
-
-The authentication system requires AWS Cognito configuration using AWS Amplify Gen 2 structure. Update `amplify_outputs.json` with your AWS resources:
-
-```json
-{
-  "version": "1",
-  "auth": {
-    "aws_region": "us-east-1",
-    "user_pool_id": "your-user-pool-id",
-    "user_pool_client_id": "your-user-pool-client-id",
-    "identity_pool_id": "your-identity-pool-id",
-    "oauth": {
-      "domain": "your-app.auth.us-east-1.amazoncognito.com",
-      "redirect_sign_in_uri": ["http://localhost:3001/"],
-      "redirect_sign_out_uri": ["http://localhost:3001/"]
-    }
-  }
-}
-```
-
-## Troubleshooting
-
-### ReferenceError: global is not defined
-
-This error has been resolved with polyfills and Vite configuration updates. If you still encounter this issue:
-
-1. Ensure `src/polyfills.ts` is imported in `main.tsx`
-2. Check that `vite.config.ts` includes the global polyfill
-3. Verify the script tag in `index.html` is present
-
-For more troubleshooting information, see `TROUBLESHOOTING.md`.
-
-## Usage Example
+## Usage
 
 ```tsx
-import { AuthProvider, useAuth } from './hooks/useAuth';
-import { LoginForm, SignupForm, ProtectedRoute } from './components';
-
-function App() {
-  return (
-    <AuthProvider>
-      <div className="app">
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      </div>
-    </AuthProvider>
-  );
-}
-
-function LoginPage() {
-  return (
-    <LoginForm
-      onSuccess={() => {
-        // Handle successful login
-        window.location.href = '/dashboard';
-      }}
-      onSwitchToSignup={() => {
-        // Handle switch to signup
-        setCurrentView('signup');
-      }}
-    />
-  );
-}
+import { LoginForm, TimeRecordForm, TimerWidget } from '../components';
+import { LandingPage, ProfilePage } from '../pages';
 ```
 
-## Requirements Validation
+## Testing
 
-This implementation satisfies the following requirements:
-
-- **1.3**: Authentication system provides login and registration functionality
-- **1.4**: Users are redirected to main application interface after successful authentication
-- **1.5**: Authenticated users can access their personal time records and functionality
-
-The components are fully responsive, include proper error handling, and integrate with AWS Cognito for secure authentication.
+Component tests are located in `__tests__/` subdirectories. Page tests are in `src/pages/__tests__/`.

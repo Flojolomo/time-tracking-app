@@ -12,7 +12,7 @@ import type {
   TimeStatistics,
   DailyStatistics 
 } from '../types';
-import { ProjectChart, TimelineChart, MetricsCards } from './index';
+import { ProjectChart, TimelineChart, MetricsCards } from '../components';
 
 interface StatsDashboardProps {
   className?: string;

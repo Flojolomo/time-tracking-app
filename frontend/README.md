@@ -2,6 +2,24 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+├── pages/              # Page-level route components
+├── hooks/              # Custom React hooks
+├── contexts/           # React context providers
+├── utils/              # Utility functions and services
+├── types/              # TypeScript type definitions
+└── assets/             # Static assets
+```
+
+### Components vs Pages
+
+- **Components** (`src/components/`): Reusable UI components like forms, buttons, charts, etc.
+- **Pages** (`src/pages/`): Top-level route components that represent complete application screens
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

@@ -1,13 +1,10 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Auto Git Commit",
   "description": "Automatically adds new files to git and commits any changes to existing files, while respecting .gitignore rules",
   "version": "1",
   "when": {
-    "type": "fileEdited",
-    "patterns": [
-      "*"
-    ]
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",
