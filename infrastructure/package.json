@@ -6,6 +6,10 @@
     "github-oidc": "dist/bin/github-oidc.js"
   },
   "scripts": {
+    "postinstall": "npm run install:lambdas",
+    "install:lambdas": "npm run install:lambda:timeRecords && npm run install:lambda:projects",
+    "install:lambda:timeRecords": "cd lambda/timeRecords && npm install",
+    "install:lambda:projects": "cd lambda/projects && npm install",
     "build": "tsc",
     "build:lambdas": "npm run build:lambda:timeRecords && npm run build:lambda:projects",
     "build:lambda:timeRecords": "cd lambda/timeRecords && npm run build",
