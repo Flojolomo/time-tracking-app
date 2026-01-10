@@ -43,20 +43,23 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
     setFilters(newFilters);
   };
 
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const handleFormSuccess = () => {
     // Refresh cached data after saving a record
     refreshData();
-    // The TimeRecordList will automatically refresh due to React Query
+    // Force TimeRecordList to refresh
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleFormSubmit = async (data: any) => {
     try {
       await TimeRecordService.createTimeRecord(data);
       handleFormSuccess();
+      setShowForm(false);
     } catch (error) {
       console.error('Error saving record:', error);
-      // You might want to show a notification here
-      throw error; // Re-throw to let the form handle the error
+      throw error;
     }
   };
 
@@ -84,6 +87,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
       {/* Time Record Form */}
       {showForm && (
         <TimeRecordForm
+            backgroundStyle="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200"
             onSubmit={handleFormSubmit}
             onCancel={() => setShowForm(false)}
             title={
@@ -91,6 +95,23 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
                 {"New Time Record"}
               </h2>
             }
+            actions={
+              <div className="flex justify-end space-x-3 mt-4">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  Create
+                </button>
+              </div>
+            }
+
           />
       )}
 
@@ -102,6 +123,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
 
       {/* Time Record List */}
       <TimeRecordList
+        key={refreshKey}
         viewType={state.currentView}
         selectedDate={state.selectedDate}
         onDateChange={setDate}

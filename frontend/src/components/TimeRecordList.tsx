@@ -422,7 +422,7 @@ const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate, onDeleteRe
       
       <div className="divide-y divide-gray-200">
         {records
-          .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+          .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
           .map((record) => (
             <TimeRecordItem 
               key={record.id} 
@@ -531,16 +531,33 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onDelete }) => 
         { isEditing ? (
             <TimeRecordForm
               initialData={record}
+              backgroundStyle="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200"
               onSubmit={async (data) => {
-              await TimeRecordService.updateTimeRecord({ id: record.id, ...data });
-              setIsEditing(false);
-              window.location.reload();
-            }}
+                await TimeRecordService.updateTimeRecord({ id: record.id, ...data });
+                setIsEditing(false);
+                window.location.reload();
+              }}
               onCancel={() => setIsEditing(false)}
               title={
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                   {"Edit Time Record"}
                 </h2>
+              }
+              actions={
+                <div className="flex justify-end space-x-3 mt-4">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
               }
             />
         ) : (null) }

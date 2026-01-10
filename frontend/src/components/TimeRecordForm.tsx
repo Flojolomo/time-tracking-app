@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { CreateTimeRecordInput, UpdateTimeRecordInput, TimeRecord } from '../types';
 import { calculateDuration } from '../utils/apiClient';
 import { ProjectAutocomplete } from './ProjectAutocomplete';
 import { TagAutocomplete } from './TagAutocomplete';
-import { LoadingOverlay, ButtonLoading } from './LoadingSpinner';
+import { LoadingOverlay } from './LoadingSpinner';
 import { ErrorMessage, ValidationError } from './ErrorMessage';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useNetworkAwareOperation } from '../hooks/useNetworkStatus';
@@ -16,6 +16,13 @@ interface TimeRecordFormProps {
   onCancel?: () => void;
   isLoading?: boolean;
   title?: React.ReactNode;
+  onFieldUpdate?: (fieldName: string, value: string) => void;
+  actions?: React.ReactNode;
+  backgroundStyle?: string;
+}
+
+export interface TimeRecordFormRef {
+  submit: () => void;
 }
 
 interface FormData {
@@ -27,17 +34,21 @@ interface FormData {
   tags: string;
 }
 
-export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
-  initialData,
-  onSubmit,
-  onCancel,
-  isLoading = false,
-  title
-}) => {
+export const TimeRecordForm = forwardRef<TimeRecordFormRef, TimeRecordFormProps>((
+  {
+    initialData,
+    onSubmit,
+    isLoading = false,
+    title,
+    actions,
+    backgroundStyle = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200'
+  },
+  ref
+) => {
   const [submitError, setSubmitError] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const { showSuccess, showError } = useNotifications();
-  const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
+  const { executeWithRetry } = useNetworkAwareOperation();
   
   // Initialize form with default values
   const {
@@ -62,7 +73,12 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   
   // Auto-save form data
   const formId = initialData ? `edit-record-${initialData.id}` : 'new-record';
-  const { lastSaved, clearDraft } = useFormAutoSave(formId, watchedValues as unknown as Record<string, unknown>, true);
+  const { clearDraft } = useFormAutoSave(formId, watchedValues as unknown as Record<string, unknown>, true);
+
+  // Expose submit method to parent
+  useImperativeHandle(ref, () => ({
+    submit: () => handleSubmit(onFormSubmit)()
+  }));
 
   // Reset form when initialData changes
   useEffect(() => {
@@ -178,7 +194,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   return (
     
     <LoadingOverlay isLoading={isLoading} text="Loading form...">
-      <div className='bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 mt-4' >
+      <div className={`${backgroundStyle} rounded-xl p-4 mt-4`} >
         <div className="space-y-4 sm:space-y-6">
           {title && (
             <div className="mb-4 sm:mb-6">
@@ -208,7 +224,9 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
                   <ProjectAutocomplete
                     id="projectName"
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(value) => {
+                      field.onChange(value);
+                    }}
                     onBlur={field.onBlur}
                     placeholder="Enter project name"
                     disabled={isLoading || isSubmitting}
@@ -374,36 +392,13 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
             />
           )}
 
-          {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-            {onCancel && (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-                disabled={isLoading || isSubmitting || isRetrying}
-              >
-                Cancel
-              </button>
-            )}
-            <button
-              type="submit"
-              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-              disabled={isLoading || isSubmitting || isRetrying}
-            >
-              {(isSubmitting || isRetrying) ? (
-                <ButtonLoading text={isRetrying ? 'Retrying...' : 'Saving...'} />
-              ) : (
-                initialData ? 'Update Record' : 'Create Record'
-              )}
-            </button>
-          </div>
+          {actions}
         </form>
         </div>       
       </div>
   </LoadingOverlay>
   );
-};
+});
 
 // Helper functions
 function formatTimeForInput(isoString: string): string {
