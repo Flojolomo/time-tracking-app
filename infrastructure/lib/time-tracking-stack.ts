@@ -206,27 +206,19 @@ export class TimeTrackingStack extends cdk.Stack {
     const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/timeRecords/src', {
+      code: lambda.Code.fromAsset('lambda/timeRecords', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           local: {
             tryBundle(outputDir: string) {
-              try {
-                const { execSync } = require('child_process');
-                execSync('npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=' + outputDir + '/index.js', {
-                  cwd: 'lambda/timeRecords/src',
-                  stdio: 'inherit'
-                });
-                return true;
-              } catch {
-                return false;
-              }
+              const { execSync } = require('child_process');
+              execSync('npx esbuild src/index.ts --bundle --platform=node --target=node20 --external:@aws-sdk/* --outfile=' + outputDir + '/index.js', {
+                cwd: 'lambda/timeRecords',
+                stdio: 'inherit'
+              });
+              return true;
             }
           },
-          command: [
-            'bash', '-c',
-            'npm ci && npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=/asset-output/index.js'
-          ],
         },
       }),
       timeout: cdk.Duration.seconds(30),
@@ -250,27 +242,19 @@ export class TimeTrackingStack extends cdk.Stack {
     const projectsHandler = new lambda.Function(this, 'ProjectsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/projects/src', {
+      code: lambda.Code.fromAsset('lambda/projects', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           local: {
             tryBundle(outputDir: string) {
-              try {
-                const { execSync } = require('child_process');
-                execSync('npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=' + outputDir + '/index.js', {
-                  cwd: 'lambda/projects/src',
-                  stdio: 'inherit'
-                });
-                return true;
-              } catch {
-                return false;
-              }
+              const { execSync } = require('child_process');
+              execSync('npx esbuild src/index.ts --bundle --platform=node --target=node20 --external:@aws-sdk/* --outfile=' + outputDir + '/index.js', {
+                cwd: 'lambda/projects',
+                stdio: 'inherit'
+              });
+              return true;
             }
           },
-          command: [
-            'bash', '-c',
-            'npm ci && npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=/asset-output/index.js'
-          ],
         },
       }),
       timeout: cdk.Duration.seconds(30),
@@ -294,27 +278,19 @@ export class TimeTrackingStack extends cdk.Stack {
     const profileHandler = new lambda.Function(this, 'ProfileApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('lambda/profile/src', {
+      code: lambda.Code.fromAsset('lambda/profile', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           local: {
             tryBundle(outputDir: string) {
-              try {
-                const { execSync } = require('child_process');
-                execSync('npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=' + outputDir + '/index.js', {
-                  cwd: 'lambda/profile/src',
-                  stdio: 'inherit'
-                });
-                return true;
-              } catch {
-                return false;
-              }
+              const { execSync } = require('child_process');
+              execSync('npx esbuild src/index.ts --bundle --platform=node --target=node20 --external:@aws-sdk/* --outfile=' + outputDir + '/index.js', {
+                cwd: 'lambda/profile',
+                stdio: 'inherit'
+              });
+              return true;
             }
           },
-          command: [
-            'bash', '-c',
-            'npm ci && npx esbuild index.ts --bundle --platform=node --target=node20 --outfile=/asset-output/index.js'
-          ],
         },
       }),
       timeout: cdk.Duration.seconds(30),
