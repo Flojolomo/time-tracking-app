@@ -531,7 +531,11 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onDelete }) => 
         { isEditing ? (
             <TimeRecordForm
               initialData={record}
-              onSubmit={async () => setIsEditing(false)}
+              onSubmit={async (data) => {
+              await TimeRecordService.updateTimeRecord({ id: record.id, ...data });
+              setIsEditing(false);
+              window.location.reload();
+            }}
               onCancel={() => setIsEditing(false)}
               title={
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
