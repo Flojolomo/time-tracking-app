@@ -201,39 +201,6 @@ export class GitHubOidcStack extends cdk.Stack {
       ],
     }));
 
-    // Create a separate role for development environment deployments
-    const developmentRole = new iam.Role(this, 'GitHubActionsDevelopmentRole', {
-      roleName: `GitHubActions-${props.githubOrg}-${props.mainStackName}-DevelopmentRole`,
-      assumedBy: new iam.WebIdentityPrincipal(
-        this.oidcProvider.openIdConnectProviderArn,
-        {
-          StringEquals: {
-            'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-          },
-          StringLike: {
-            'token.actions.githubusercontent.com:sub': [
-              `repo:${props.githubRepository}:pull_request`,
-              `repo:${props.githubRepository}:environment:development`,
-            ],
-          },
-        }
-      ),
-      description: 'Role for GitHub Actions to deploy to development environment',
-      maxSessionDuration: cdk.Duration.hours(1),
-    });
-
-    // Development role gets the same permissions as production for now
-    // In a real scenario, you might want to restrict this further
-    developmentRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('PowerUserAccess')
-    );
-
-    // Copy the same policies to development role
-    this.deploymentRole.node.children
-      .filter(child => child instanceof iam.Policy)
-      .forEach(policy => {
-        developmentRole.attachInlinePolicy(policy as iam.Policy);
-      });
 
     // Outputs for GitHub Actions workflow configuration
     new cdk.CfnOutput(this, 'GitHubOidcProviderArn', {
@@ -248,12 +215,6 @@ export class GitHubOidcStack extends cdk.Stack {
       exportName: `${this.stackName}-DeploymentRoleArn`,
     });
 
-    new cdk.CfnOutput(this, 'DevelopmentRoleArn', {
-      value: developmentRole.roleArn,
-      description: 'ARN of the GitHub Actions deployment role for development',
-      exportName: `${this.stackName}-DevelopmentRoleArn`,
-    });
-
     new cdk.CfnOutput(this, 'AwsRegion', {
       value: this.region,
       description: 'AWS Region for deployments',
@@ -264,7 +225,6 @@ export class GitHubOidcStack extends cdk.Stack {
       value: JSON.stringify({
         aws_region: this.region,
         production_role_arn: this.deploymentRole.roleArn,
-        development_role_arn: developmentRole.roleArn,
         main_stack_name: props.mainStackName,
         github_repository: props.githubRepository,
         s3_bucket_name: `time-tracking-website-${this.account}-${this.region}`,
