@@ -32,7 +32,7 @@ jobs:
     - name: Run tests
       run: |
         cd frontend
-        npm run test -- --run --coverage
+        npm run test
         
     - name: Run lint
       run: |
