@@ -15,10 +15,10 @@ interface ActiveTimerFormData {
   startTime: string;
 }
 
-interface TimerWidgetProps {
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface TimerWidgetProps {}
 
-export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
+export const TimerWidget: React.FC<TimerWidgetProps> = () => {
   const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -103,9 +103,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
       setError('');
       const response = await TimeRecordService.getActiveTimer();
       setActiveRecord(response.activeRecord);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load active record:', error);
-      setError(error.message || 'Failed to load timer status');
+      setError(error instanceof Error ? error.message : 'Failed to load timer status');
     }
   };
 
@@ -159,8 +159,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
       });
 
       showSuccess('Timer Started', 'Your time tracking has begun!');
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to start timer';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start timer';
       setError(errorMessage);
       showError('Start Failed', errorMessage);
     } finally {
@@ -210,8 +210,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
       setActiveRecord(null);
 
       showSuccess('Timer Stopped', 'Your time record has been saved successfully!');
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to stop timer';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to stop timer';
       setError(errorMessage);
       showError('Stop Failed', errorMessage);
     } finally {
@@ -220,7 +220,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
   };
 
   // Debounced auto-save function for individual field changes
-  const debouncedFieldUpdate = useCallback((fieldName: string, value: any) => {
+  const debouncedFieldUpdate = useCallback((fieldName: string, value: string) => {
     // Clear existing timer for this field
     if (debounceTimers.current[fieldName]) {
       clearTimeout(debounceTimers.current[fieldName]);
@@ -231,7 +231,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
       if (!activeRecord) return;
 
       try {
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {};
         
         if (fieldName === 'project') {
           updateData.project = value.trim();
@@ -266,8 +266,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
             setActiveRecord(updatedRecord);
           });
         }
-      } catch (error: any) {
-        const errorMessage = error.message || 'Failed to update active timer';
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to update active timer';
         setError(errorMessage);
         showError('Update Failed', errorMessage);
       }
@@ -278,7 +278,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ }) => {
   }, [activeRecord, executeWithRetry, showError]);
 
   // Auto-save function for individual field changes (now debounced)
-  const handleFieldUpdate = useCallback((fieldName: string, value: any) => {
+  const handleFieldUpdate = useCallback((fieldName: string, value: string) => {
     debouncedFieldUpdate(fieldName, value);
   }, [debouncedFieldUpdate]);
 

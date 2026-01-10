@@ -146,9 +146,10 @@ export class SyncManager {
               await this.syncAction(action, maxRetries, retryDelay);
               result.syncedActions++;
               PendingActions.remove(action.id);
-            } catch (error: any) {
+            } catch (error: unknown) {
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
               result.failedActions++;
-              result.errors.push(`Action ${action.id}: ${error.message}`);
+              result.errors.push(`Action ${action.id}: ${errorMessage}`);
               
               // Increment retry count
               PendingActions.incrementRetry(action.id);
@@ -169,9 +170,10 @@ export class SyncManager {
 
       result.success = result.failedActions === 0;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       result.success = false;
-      result.errors.push(`Sync failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      result.errors.push(`Sync failed: ${errorMessage}`);
     } finally {
       this.isSyncing = false;
       SyncStatusManager.setSyncingStatus(false);
@@ -193,8 +195,8 @@ export class SyncManager {
       try {
         await this.executeAction(action);
         return; // Success
-      } catch (error: any) {
-        lastError = error;
+      } catch (error: unknown) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
         
         if (attempt < maxRetries) {
           // Wait before retrying
@@ -245,7 +247,7 @@ export class SyncManager {
   queueAction(
     type: 'create' | 'update' | 'delete',
     endpoint: string,
-    data: any
+    data: Record<string, unknown>
   ): string {
     const actionId = PendingActions.add({
       type,
@@ -266,15 +268,22 @@ export class SyncManager {
   /**
    * Create offline time record
    */
-  createOfflineTimeRecord(data: any): OfflineTimeRecord {
+  createOfflineTimeRecord(data: unknown): OfflineTimeRecord {
+    // Type guard to ensure data has the required properties
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid data provided for offline time record');
+    }
+    
+    const recordData = data as Record<string, unknown>;
+    
     const offlineRecord: OfflineTimeRecord = {
       id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      projectName: data.projectName,
-      description: data.description,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      duration: data.duration,
-      tags: data.tags,
+      projectName: String(recordData.projectName || ''),
+      description: recordData.description ? String(recordData.description) : undefined,
+      startTime: String(recordData.startTime || new Date().toISOString()),
+      endTime: recordData.endTime ? String(recordData.endTime) : undefined,
+      duration: typeof recordData.duration === 'number' ? recordData.duration : undefined,
+      tags: Array.isArray(recordData.tags) ? recordData.tags.map(String) : undefined,
       isOffline: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -292,7 +301,7 @@ export class SyncManager {
   /**
    * Update offline time record
    */
-  updateOfflineTimeRecord(id: string, data: any): boolean {
+  updateOfflineTimeRecord(id: string, data: Record<string, unknown>): boolean {
     const success = OfflineTimeRecords.update(id, data);
     
     if (success) {

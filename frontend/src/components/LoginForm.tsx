@@ -35,8 +35,8 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       setSubmitError(null);
       await login(data);
       onSuccess?.();
-    } catch (error: any) {
-      setSubmitError(error.message);
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : 'Login failed');
     }
   };
 

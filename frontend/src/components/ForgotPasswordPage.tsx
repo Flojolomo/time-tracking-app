@@ -42,8 +42,8 @@ export function ForgotPasswordPage() {
       await requestPasswordReset(data.email);
       setEmail(data.email);
       setStep('reset');
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Password reset request failed');
     } finally {
       setIsLoading(false);
     }
@@ -55,21 +55,24 @@ export function ForgotPasswordPage() {
       setIsLoading(true);
       await confirmPasswordReset(email, data.verificationCode, data.newPassword);
       setStep('success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password reset error:', error);
       
       let errorMessage = 'Password reset failed. Please try again.';
       
-      if (error.name === 'CodeMismatchException') {
-        errorMessage = 'Invalid verification code. Please check your email and try again.';
-      } else if (error.name === 'ExpiredCodeException') {
-        errorMessage = 'Verification code has expired. Please request a new password reset.';
-      } else if (error.name === 'InvalidPasswordException') {
-        errorMessage = 'Password does not meet requirements. Please choose a stronger password.';
-      } else if (error.name === 'UserNotFoundException') {
-        errorMessage = 'User not found. Please check your email and try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error && typeof error === 'object' && 'name' in error) {
+        const namedError = error as { name: string; message?: string };
+        if (namedError.name === 'CodeMismatchException') {
+          errorMessage = 'Invalid verification code. Please check your email and try again.';
+        } else if (namedError.name === 'ExpiredCodeException') {
+          errorMessage = 'Verification code has expired. Please request a new password reset.';
+        } else if (namedError.name === 'InvalidPasswordException') {
+          errorMessage = 'Password does not meet requirements. Please choose a stronger password.';
+        } else if (namedError.name === 'UserNotFoundException') {
+          errorMessage = 'User not found. Please check your email and try again.';
+        } else if (namedError.message) {
+          errorMessage = namedError.message;
+        }
       }
       
       setError(errorMessage);

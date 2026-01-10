@@ -3,7 +3,7 @@
  * Main dashboard showing time tracking analytics and visualizations
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TimeRecordService, StatisticsService } from '../utils';
 import type { 
   TimeRecord, 
@@ -35,21 +35,24 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
     let startDate: string;
 
     switch (range) {
-      case 'week':
+      case 'week': {
         const weekAgo = new Date(now);
         weekAgo.setDate(weekAgo.getDate() - 7);
         startDate = weekAgo.toISOString().split('T')[0];
         break;
-      case 'month':
+      }
+      case 'month': {
         const monthAgo = new Date(now);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         startDate = monthAgo.toISOString().split('T')[0];
         break;
-      case 'quarter':
+      }
+      case 'quarter': {
         const quarterAgo = new Date(now);
         quarterAgo.setMonth(quarterAgo.getMonth() - 3);
         startDate = quarterAgo.toISOString().split('T')[0];
         break;
+      }
       default:
         startDate = endDate;
     }
@@ -58,7 +61,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
   };
 
   // Load and calculate statistics
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -90,12 +93,12 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ className = '' }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dateRange]);
 
   // Load statistics when component mounts or date range changes
   useEffect(() => {
     loadStatistics();
-  }, [dateRange]);
+  }, [dateRange, loadStatistics]);
 
   // Handle date range change
   const handleDateRangeChange = (newRange: 'week' | 'month' | 'quarter') => {

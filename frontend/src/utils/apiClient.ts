@@ -5,16 +5,20 @@
 
 import { get, post, put, del } from 'aws-amplify/api';
 import { fetchAuthSession } from 'aws-amplify/auth';
+import { TimeRecord } from '../types';
 
 /**
  * Utility function to handle API errors
  */
-export function handleApiError(error: any): string {
-  if (error?.response?.body?.message) {
-    return error.response.body.message;
+export function handleApiError(error: unknown): string {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const apiError = error as { response?: { body?: { message?: string } } };
+    if (apiError.response?.body?.message) {
+      return apiError.response.body.message;
+    }
   }
   
-  if (error?.message) {
+  if (error instanceof Error) {
     return error.message;
   }
   
@@ -49,7 +53,7 @@ export async function apiRequest<T>(
   path: string,
   options?: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-    body?: any;
+    body?: Record<string, unknown>;
     queryParams?: Record<string, string>;
   }
 ): Promise<T> {
@@ -60,7 +64,7 @@ export async function apiRequest<T>(
     const { method = 'GET', body: requestBody, queryParams } = options || {};
     
     // Remove leading slash and API base URL since Amplify handles this
-    const cleanPath = path.replace(/^https?:\/\/[^\/]+/, '').replace(/^\//, '');
+    const cleanPath = path.replace(/^https?:\/\/[^/]+/, '').replace(/^\//, '');
     
     let response;
     
@@ -116,16 +120,19 @@ export async function apiRequest<T>(
     const { body } = await response.response;
     const data = await body.json();
     return data as T;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API request failed:', error);
     
     // Handle specific AWS/Amplify errors
-    if (error.name === 'NotAuthorizedException' || error.name === 'UnauthorizedException') {
-      throw new Error('Authentication failed. Please log in again.');
-    }
-    
-    if (error.name === 'NetworkError' || error.message?.includes('network')) {
-      throw new Error('Network error - please check your internet connection and try again');
+    if (error && typeof error === 'object' && 'name' in error) {
+      const namedError = error as { name: string; message?: string };
+      if (namedError.name === 'NotAuthorizedException' || namedError.name === 'UnauthorizedException') {
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      
+      if (namedError.name === 'NetworkError' || namedError.message?.includes('network')) {
+        throw new Error('Network error - please check your internet connection and try again');
+      }
     }
     
     // Re-throw with better error message
@@ -210,7 +217,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
 /**
  * Start a new active time record
  */
-export async function startTimer(): Promise<any> {
+export async function startTimer(): Promise<TimeRecord> {
   return apiRequest('/api/time-records/start', {
     method: 'POST',
     body: {}
@@ -224,7 +231,7 @@ export async function stopTimer(recordId: string, data: {
   project: string;
   description?: string;
   tags?: string[];
-}): Promise<any> {
+}): Promise<TimeRecord> {
   return apiRequest(`/api/time-records/stop/${recordId}`, {
     method: 'PUT',
     body: data
@@ -234,7 +241,7 @@ export async function stopTimer(recordId: string, data: {
 /**
  * Get the currently active time record
  */
-export async function getActiveTimer(): Promise<{ activeRecord: any | null }> {
+export async function getActiveTimer(): Promise<{ activeRecord: TimeRecord | null }> {
   return apiRequest('/api/time-records/active', {
     method: 'GET'
   });

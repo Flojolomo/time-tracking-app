@@ -85,14 +85,15 @@ export function useOffline() {
     try {
       const result = await syncManager.forcSync();
       return result.success;
-    } catch (error: any) {
-      showError('Sync Failed', error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Sync failed';
+      showError('Sync Failed', errorMessage);
       return false;
     }
   }, [networkStatus.isOnline, syncManager, showError]);
 
   // Save form draft
-  const saveDraft = useCallback((formId: string, data: any) => {
+  const saveDraft = useCallback((formId: string, data: Record<string, unknown>) => {
     const success = FormDrafts.save(formId, data);
     if (success) {
       updateOfflineStatus();
@@ -138,7 +139,7 @@ export function useOffline() {
 }
 
 // Hook for form auto-save functionality
-export function useFormAutoSave(formId: string, data: any, enabled: boolean = true) {
+export function useFormAutoSave(formId: string, data: Record<string, unknown> | null, enabled: boolean = true) {
   const { saveDraft, removeDraft } = useOffline();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 

@@ -66,30 +66,34 @@ const formatDuration = (minutes: number): string => {
 // Helper to compute date range
 const computeDateRange = (viewType: ViewType, selectedDate: Date) => {
   switch (viewType) {
-    case 'daily':
+    case 'daily': {
       return {
         start: formatDate(selectedDate),
         end: formatDate(selectedDate)
       };
-    case 'weekly':
+    }
+    case 'weekly': {
       const weekStart = getWeekStart(selectedDate);
       const weekEnd = getWeekEnd(selectedDate);
       return {
         start: formatDate(weekStart),
         end: formatDate(weekEnd)
       };
-    case 'monthly':
+    }
+    case 'monthly': {
       const monthStart = getMonthStart(selectedDate);
       const monthEnd = getMonthEnd(selectedDate);
       return {
         start: formatDate(monthStart),
         end: formatDate(monthEnd)
       };
-    default:
+    }
+    default: {
       return {
         start: formatDate(selectedDate),
         end: formatDate(selectedDate)
       };
+    }
   }
 };
 
@@ -179,10 +183,11 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   // Group records based on view type
   const groupedRecords = useMemo(() => {
     switch (viewType) {
-      case 'daily':
+      case 'daily': {
         return { [formatDate(selectedDate)]: records };
+      }
       
-      case 'weekly':
+      case 'weekly': {
         const weeklyGroups: Record<string, TimeRecord[]> = {};
         records.forEach(record => {
           const recordDate = formatDate(new Date(record.startTime));
@@ -192,8 +197,9 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
           weeklyGroups[recordDate].push(record);
         });
         return weeklyGroups;
+      }
       
-      case 'monthly':
+      case 'monthly': {
         const monthlyGroups: Record<string, TimeRecord[]> = {};
         records.forEach(record => {
           const recordDate = formatDate(new Date(record.startTime));
@@ -203,6 +209,7 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
           monthlyGroups[recordDate].push(record);
         });
         return monthlyGroups;
+      }
       
       default:
         return {};
@@ -213,15 +220,18 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   const navigatePrevious = () => {
     const newDate = new Date(selectedDate);
     switch (viewType) {
-      case 'daily':
+      case 'daily': {
         newDate.setDate(newDate.getDate() - 1);
         break;
-      case 'weekly':
+      }
+      case 'weekly': {
         newDate.setDate(newDate.getDate() - 7);
         break;
-      case 'monthly':
+      }
+      case 'monthly': {
         newDate.setMonth(newDate.getMonth() - 1);
         break;
+      }
     }
     onDateChange(newDate);
   };
@@ -229,15 +239,18 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   const navigateNext = () => {
     const newDate = new Date(selectedDate);
     switch (viewType) {
-      case 'daily':
+      case 'daily': {
         newDate.setDate(newDate.getDate() + 1);
         break;
-      case 'weekly':
+      }
+      case 'weekly': {
         newDate.setDate(newDate.getDate() + 7);
         break;
-      case 'monthly':
+      }
+      case 'monthly': {
         newDate.setMonth(newDate.getMonth() + 1);
         break;
+      }
     }
     onDateChange(newDate);
   };
@@ -249,16 +262,20 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   // Get display title based on view type
   const getDisplayTitle = (): string => {
     switch (viewType) {
-      case 'daily':
+      case 'daily': {
         return formatDisplayDate(selectedDate);
-      case 'weekly':
+      }
+      case 'weekly': {
         const weekStart = getWeekStart(selectedDate);
         const weekEnd = getWeekEnd(selectedDate);
         return formatDisplayWeek(weekStart, weekEnd);
-      case 'monthly':
+      }
+      case 'monthly': {
         return formatDisplayMonth(selectedDate);
-      default:
+      }
+      default: {
         return '';
+      }
     }
   };
 

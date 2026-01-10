@@ -32,8 +32,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       });
       setIsSignupComplete(true);
       onSuccess?.();
-    } catch (error: any) {
-      setSubmitError(error.message);
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : 'Signup failed');
     }
   };
 

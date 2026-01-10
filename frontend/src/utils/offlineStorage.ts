@@ -19,7 +19,7 @@ export interface OfflineAction {
   id: string;
   type: 'create' | 'update' | 'delete';
   endpoint: string;
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
   retryCount: number;
 }
@@ -42,7 +42,7 @@ const STORAGE_KEYS = {
  * Local storage wrapper with error handling
  */
 class SafeStorage {
-  static get(key: string): any {
+  static get(key: string): unknown {
     try {
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : null;
@@ -52,7 +52,7 @@ class SafeStorage {
     }
   }
 
-  static set(key: string, value: any): boolean {
+  static set(key: string, value: unknown): boolean {
     try {
       localStorage.setItem(key, JSON.stringify(value));
       return true;
@@ -228,28 +228,28 @@ export class SyncStatusManager {
  * Form drafts management for unsaved changes
  */
 export class FormDrafts {
-  static save(formId: string, data: any): boolean {
+  static save(formId: string, data: Record<string, unknown>): boolean {
     const drafts = SafeStorage.get(STORAGE_KEYS.FORM_DRAFTS) || {};
-    drafts[formId] = {
+    (drafts as Record<string, unknown>)[formId] = {
       data,
       timestamp: Date.now()
     };
     return SafeStorage.set(STORAGE_KEYS.FORM_DRAFTS, drafts);
   }
 
-  static get(formId: string): any {
+  static get(formId: string): Record<string, unknown> | null {
     const drafts = SafeStorage.get(STORAGE_KEYS.FORM_DRAFTS) || {};
-    return drafts[formId]?.data || null;
+    return (drafts as Record<string, { data: Record<string, unknown>; timestamp: number }>)[formId]?.data || null;
   }
 
   static remove(formId: string): boolean {
     const drafts = SafeStorage.get(STORAGE_KEYS.FORM_DRAFTS) || {};
-    delete drafts[formId];
+    delete (drafts as Record<string, unknown>)[formId];
     return SafeStorage.set(STORAGE_KEYS.FORM_DRAFTS, drafts);
   }
 
-  static getAll(): Record<string, any> {
-    return SafeStorage.get(STORAGE_KEYS.FORM_DRAFTS) || {};
+  static getAll(): Record<string, unknown> {
+    return (SafeStorage.get(STORAGE_KEYS.FORM_DRAFTS) as Record<string, unknown>) || {};
   }
 
   static clear(): boolean {
@@ -259,10 +259,12 @@ export class FormDrafts {
   static cleanOld(maxAge: number = 24 * 60 * 60 * 1000): boolean {
     const drafts = this.getAll();
     const now = Date.now();
-    const cleaned: Record<string, any> = {};
+    const cleaned: Record<string, unknown> = {};
 
-    Object.entries(drafts).forEach(([key, value]: [string, any]) => {
-      if (value.timestamp && (now - value.timestamp) < maxAge) {
+    Object.entries(drafts).forEach(([key, value]: [string, unknown]) => {
+      if (value && typeof value === 'object' && 'timestamp' in value && 
+          typeof (value as { timestamp: number }).timestamp === 'number' &&
+          (now - (value as { timestamp: number }).timestamp) < maxAge) {
         cleaned[key] = value;
       }
     });
@@ -294,8 +296,8 @@ export function getStorageUsage(): { used: number; available: number } {
   
   // Fallback estimation
   let used = 0;
-  for (let key in localStorage) {
-    if (localStorage.hasOwnProperty(key)) {
+  for (const key in localStorage) {
+    if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
       used += localStorage[key].length;
     }
   }

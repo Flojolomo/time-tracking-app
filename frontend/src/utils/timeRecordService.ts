@@ -73,7 +73,7 @@ export class TimeRecordService {
         queryParams.tags = filters.tags.join(',');
       }
 
-      const response = await apiRequest<{ timeRecords: TimeRecord[]; count: number; lastEvaluatedKey?: any }>('api/time-records', {
+      const response = await apiRequest<{ timeRecords: TimeRecord[]; count: number; lastEvaluatedKey?: unknown }>('api/time-records', {
         method: 'GET',
         queryParams
       });
@@ -100,8 +100,8 @@ export class TimeRecordService {
       return await apiRequest<TimeRecord>(`api/time-records/${id}`, {
         method: 'GET'
       });
-    } catch (error: any) {
-      if (error.message.includes('404') || error.message.includes('not found')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
         return null;
       }
       throw new Error(`Failed to fetch time record: ${handleApiError(error)}`);
@@ -119,7 +119,7 @@ export class TimeRecordService {
         duration = calculateDuration(input.startTime, input.endTime);
       }
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         updatedAt: formatDateForAPI(new Date())
       };
 

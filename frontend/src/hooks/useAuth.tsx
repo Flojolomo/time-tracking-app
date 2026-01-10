@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, fetchUserAttributes, updatePassword, updateUserAttributes, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { AuthUser, LoginCredentials, SignupCredentials, AuthContextType } from '../types';
 import { getAmplifyConfig, isDevelopmentMode } from '../aws-config';
@@ -11,14 +11,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<Record<string, unknown> | null>(null);
 
   // Load configuration and check auth state on app load
   useEffect(() => {
     initializeAuth();
-  }, []);
+  }, [initializeAuth]);
 
-  const initializeAuth = async () => {
+  const initializeAuth = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: userAttributes.given_name || userAttributes.name || currentUser.signInDetails?.loginId || '',
         accessToken: session.tokens?.accessToken?.toString() || ''
       });
-    } catch (error) {
+    } catch {
       // User is not authenticated or AWS not configured
       setUser(null);
       if (config && isDevelopmentMode(config)) {
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [config]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
@@ -93,8 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           accessToken: session.tokens?.accessToken?.toString() || ''
         });
       }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Login failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -126,8 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Note: User will need to verify email before they can sign in
       // This is handled by Cognito's email verification flow
       
-    } catch (error: any) {
-      const errorMessage = error.message || 'Signup failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -144,8 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       setUser(null);
-    } catch (error: any) {
-      const errorMessage = error.message || 'Logout failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -175,8 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: userAttributes.given_name || userAttributes.name || user.email,
         });
       }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Profile update failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Profile update failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -194,8 +194,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         oldPassword,
         newPassword,
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Password change failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Password change failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -212,8 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await resetPassword({
         username: email,
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Password reset request failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Password reset request failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -232,8 +232,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         confirmationCode,
         newPassword,
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Password reset confirmation failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Password reset confirmation failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -273,8 +273,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Clear local state
       setUser(null);
-    } catch (error: any) {
-      const errorMessage = error.message || 'Profile deletion failed';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Profile deletion failed';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
