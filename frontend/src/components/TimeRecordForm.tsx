@@ -15,6 +15,7 @@ interface TimeRecordFormProps {
   onSubmit: (data: CreateTimeRecordInput | UpdateTimeRecordInput) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
+  title?: React.ReactNode;
 }
 
 interface FormData {
@@ -30,7 +31,8 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   initialData,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  title
 }) => {
   const [submitError, setSubmitError] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -174,231 +176,231 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   };
 
   return (
+    
     <LoadingOverlay isLoading={isLoading} text="Loading form...">
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 max-w-2xl mx-auto">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-          {initialData ? 'Edit Time Record' : 'New Time Record'}
-          {lastSaved && (
-            <div className="text-xs text-gray-500 font-normal mt-1">
-              Auto-saved {lastSaved.toLocaleTimeString()}
+      <div className='bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 mt-4' >
+        <div className="space-y-4 sm:space-y-6">
+          {title && (
+            <div className="mb-4 sm:mb-6">
+              {title}
             </div>
           )}
-        </h2>
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 sm:space-y-6">
-          {/* Validation Errors */}
-          {validationErrors.length > 0 && (
-            <ValidationError errors={validationErrors} />
-          )}
+          <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 sm:space-y-6">
+            {/* Validation Errors */}
+            {validationErrors.length > 0 && (
+              <ValidationError errors={validationErrors} />
+            )}
 
-          {/* Project Name Field */}
+            {/* Project Name Field */}
+            <div>
+              <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
+                Project Name *
+              </label>
+              <Controller
+                name="projectName"
+                control={control}
+                rules={{
+                  required: 'Project name is required',
+                  validate: (value) => value.trim().length > 0 || 'Project name cannot be empty'
+                }}
+                render={({ field }) => (
+                  <ProjectAutocomplete
+                    id="projectName"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Enter project name"
+                    disabled={isLoading || isSubmitting}
+                    error={!!errors.projectName}
+                    className={errors.projectName ? 'border-red-500' : ''}
+                  />
+                )}
+              />
+              {errors.projectName && (
+                <p className="mt-1 text-sm text-red-600">{errors.projectName.message}</p>
+              )}
+            </div>
+
+          {/* Date Field */}
           <div>
-            <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
-              Project Name *
+            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+              Date *
             </label>
             <Controller
-              name="projectName"
+              name="date"
               control={control}
-              rules={{
-                required: 'Project name is required',
-                validate: (value) => value.trim().length > 0 || 'Project name cannot be empty'
-              }}
+              rules={{ required: 'Date is required' }}
               render={({ field }) => (
-                <ProjectAutocomplete
-                  id="projectName"
-                  value={field.value}
-                  onChange={field.onChange}
+                <input
+                  {...field}
+                  type="date"
+                  id="date"
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
+                    errors.date ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  disabled={isLoading || isSubmitting}
+                />
+              )}
+            />
+            {errors.date && (
+              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
+            )}
+          </div>
+
+          {/* Time Fields Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Start Time Field */}
+            <div>
+              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
+                Start Time *
+              </label>
+              <Controller
+                name="startTime"
+                control={control}
+                rules={{ required: 'Start time is required' }}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="time"
+                    id="startTime"
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
+                      errors.startTime ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    disabled={isLoading || isSubmitting}
+                  />
+                )}
+              />
+              {errors.startTime && (
+                <p className="mt-1 text-sm text-red-600">{errors.startTime.message}</p>
+              )}
+            </div>
+
+            {/* End Time Field */}
+            <div>
+              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
+                End Time *
+              </label>
+              <Controller
+                name="endTime"
+                control={control}
+                rules={{
+                  required: 'End time is required',
+                  validate: (value) => {
+                    if (!value || !watchedValues.startTime || !watchedValues.date) return true;
+                    
+                    const startDateTime = new Date(`${watchedValues.date}T${watchedValues.startTime}`);
+                    const endDateTime = new Date(`${watchedValues.date}T${value}`);
+                    
+                    return endDateTime > startDateTime || 'End time must be after start time';
+                  }
+                }}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="time"
+                    id="endTime"
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
+                      errors.endTime ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    disabled={isLoading || isSubmitting}
+                  />
+                )}
+              />
+              {errors.endTime && (
+                <p className="mt-1 text-sm text-red-600">{errors.endTime.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Duration Display */}
+          {watchedValues.startTime && watchedValues.endTime && watchedValues.date && (
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="text-sm text-gray-600">
+                Duration: {formatDuration(calculateDurationFromForm(watchedValues))}
+              </p>
+            </div>
+          )}
+
+          {/* Description Field */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              Comment
+            </label>
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <textarea
+                  {...field}
+                  id="description"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base resize-none"
+                  placeholder="Add a comment about this time record (optional)"
+                  disabled={isLoading || isSubmitting}
+                />
+              )}
+            />
+          </div>
+
+          {/* Tags Field */}
+          <div>
+            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+            </label>
+            <Controller
+              name="tags"
+              control={control}
+              render={({ field }) => (
+                <TagAutocomplete
+                  id="tags"
+                  value={field.value ? field.value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                  onChange={(tags) => field.onChange(tags.join(', '))}
                   onBlur={field.onBlur}
-                  placeholder="Enter project name"
+                  placeholder="Add tags"
                   disabled={isLoading || isSubmitting}
-                  error={!!errors.projectName}
-                  className={errors.projectName ? 'border-red-500' : ''}
+                  error={false}
+                  className=""
                 />
               )}
             />
-            {errors.projectName && (
-              <p className="mt-1 text-sm text-red-600">{errors.projectName.message}</p>
-            )}
           </div>
 
-        {/* Date Field */}
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-            Date *
-          </label>
-          <Controller
-            name="date"
-            control={control}
-            rules={{ required: 'Date is required' }}
-            render={({ field }) => (
-              <input
-                {...field}
-                type="date"
-                id="date"
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
-                  errors.date ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={isLoading || isSubmitting}
-              />
-            )}
-          />
-          {errors.date && (
-            <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
+          {/* Error Display */}
+          {submitError && (
+            <ErrorMessage 
+              error={submitError} 
+              onDismiss={() => setSubmitError('')}
+            />
           )}
-        </div>
 
-        {/* Time Fields Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Start Time Field */}
-          <div>
-            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
-              Start Time *
-            </label>
-            <Controller
-              name="startTime"
-              control={control}
-              rules={{ required: 'Start time is required' }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="time"
-                  id="startTime"
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
-                    errors.startTime ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  disabled={isLoading || isSubmitting}
-                />
-              )}
-            />
-            {errors.startTime && (
-              <p className="mt-1 text-sm text-red-600">{errors.startTime.message}</p>
+          {/* Form Actions */}
+          <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+                disabled={isLoading || isSubmitting || isRetrying}
+              >
+                Cancel
+              </button>
             )}
-          </div>
-
-          {/* End Time Field */}
-          <div>
-            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
-              End Time *
-            </label>
-            <Controller
-              name="endTime"
-              control={control}
-              rules={{
-                required: 'End time is required',
-                validate: (value) => {
-                  if (!value || !watchedValues.startTime || !watchedValues.date) return true;
-                  
-                  const startDateTime = new Date(`${watchedValues.date}T${watchedValues.startTime}`);
-                  const endDateTime = new Date(`${watchedValues.date}T${value}`);
-                  
-                  return endDateTime > startDateTime || 'End time must be after start time';
-                }
-              }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="time"
-                  id="endTime"
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
-                    errors.endTime ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  disabled={isLoading || isSubmitting}
-                />
-              )}
-            />
-            {errors.endTime && (
-              <p className="mt-1 text-sm text-red-600">{errors.endTime.message}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Duration Display */}
-        {watchedValues.startTime && watchedValues.endTime && watchedValues.date && (
-          <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-sm text-gray-600">
-              Duration: {formatDuration(calculateDurationFromForm(watchedValues))}
-            </p>
-          </div>
-        )}
-
-        {/* Description Field */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Comment
-          </label>
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <textarea
-                {...field}
-                id="description"
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base resize-none"
-                placeholder="Add a comment about this time record (optional)"
-                disabled={isLoading || isSubmitting}
-              />
-            )}
-          />
-        </div>
-
-        {/* Tags Field */}
-        <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-            Tags
-          </label>
-          <Controller
-            name="tags"
-            control={control}
-            render={({ field }) => (
-              <TagAutocomplete
-                id="tags"
-                value={field.value ? field.value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
-                onChange={(tags) => field.onChange(tags.join(', '))}
-                onBlur={field.onBlur}
-                placeholder="Add tags"
-                disabled={isLoading || isSubmitting}
-                error={false}
-                className=""
-              />
-            )}
-          />
-        </div>
-
-        {/* Error Display */}
-        {submitError && (
-          <ErrorMessage 
-            error={submitError} 
-            onDismiss={() => setSubmitError('')}
-          />
-        )}
-
-        {/* Form Actions */}
-        <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-          {onCancel && (
             <button
-              type="button"
-              onClick={onCancel}
-              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+              type="submit"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
               disabled={isLoading || isSubmitting || isRetrying}
             >
-              Cancel
+              {(isSubmitting || isRetrying) ? (
+                <ButtonLoading text={isRetrying ? 'Retrying...' : 'Saving...'} />
+              ) : (
+                initialData ? 'Update Record' : 'Create Record'
+              )}
             </button>
-          )}
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-            disabled={isLoading || isSubmitting || isRetrying}
-          >
-            {(isSubmitting || isRetrying) ? (
-              <ButtonLoading text={isRetrying ? 'Retrying...' : 'Saving...'} />
-            ) : (
-              initialData ? 'Update Record' : 'Create Record'
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+          </div>
+        </form>
+        </div>       
+      </div>
   </LoadingOverlay>
   );
 };

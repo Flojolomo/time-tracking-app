@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { TimeRecord, TimeRecordFilters } from '../types';
 import { TimeRecordService } from '../utils/timeRecordService';
 import { useDataCache } from '../contexts/DataCacheContext';
-import { UnifiedTimeRecordForm } from './UnifiedTimeRecordForm';
+import { TimeRecordForm } from './TimeRecordForm';
 
 // View types for different time periods
 export type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -104,7 +104,6 @@ interface TimeRecordListProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   filters?: TimeRecordFilters;
-  onEditRecord?: (record: TimeRecord) => void;
 }
 
 export const TimeRecordList: React.FC<TimeRecordListProps> = ({
@@ -112,7 +111,6 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   selectedDate,
   onDateChange,
   filters,
-  onEditRecord
 }) => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -380,7 +378,6 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
                 date={date}
                 records={dayRecords}
                 showDate={viewType !== 'daily'}
-                onEditRecord={onEditRecord}
                 onDeleteRecord={handleDeleteRecord}
               />
             ))}
@@ -395,11 +392,10 @@ interface DayGroupProps {
   date: string;
   records: TimeRecord[];
   showDate: boolean;
-  onEditRecord?: (record: TimeRecord) => void;
   onDeleteRecord?: (record: TimeRecord) => void;
 }
 
-const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate, onEditRecord, onDeleteRecord }) => {
+const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate, onDeleteRecord}) => {
   const dayTotal = calculateTotalDuration(records);
   const displayDate = new Date(date + 'T00:00:00');
 
@@ -431,7 +427,6 @@ const DayGroup: React.FC<DayGroupProps> = ({ date, records, showDate, onEditReco
             <TimeRecordItem 
               key={record.id} 
               record={record} 
-              onEdit={onEditRecord}
               onDelete={onDeleteRecord}
             />
           ))}
@@ -447,9 +442,12 @@ interface TimeRecordItemProps {
   onDelete?: (record: TimeRecord) => void;
 }
 
-const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelete, isEditing, onSubmitEdit, onCancelEdit }) => {
+const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onDelete }) => {
   const startTime = new Date(record.startTime);
   const endTime = record.endTime ? new Date(record.endTime) : null;
+
+    const [isEditing, setIsEditing] = useState<boolean>(false);
+  
   
   const formatTime = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
@@ -459,17 +457,10 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelet
     });
   };
 
-  if (isEditing && onSubmitEdit && onCancelEdit) {
-    return (
-      <div className="px-4 sm:px-6 py-4 bg-blue-50 border-l-4 border-blue-400">
-        <UnifiedTimeRecordForm
-          initialData={record}
-          onSubmit={onSubmitEdit}
-          onCancel={onCancelEdit}
-        />
-      </div>
-    );
-  }
+  const handleEditRecord = (isEditing: boolean) => {
+    console.log("Is Editing", isEditing)
+    setIsEditing(!isEditing);
+  };
 
   return (
     <div className="px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors">
@@ -516,7 +507,7 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelet
         
         <div className="flex items-center justify-end space-x-2 ml-0 sm:ml-4">
           <button
-            onClick={() => onEdit?.(record)}
+            onClick={() => handleEditRecord(isEditing)}
             className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded transition-colors"
             title="Edit record"
           >
@@ -536,6 +527,19 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelet
           </button>
         </div>
       </div>
-    </div>
+      
+        { isEditing ? (
+            <TimeRecordForm
+              initialData={record}
+              onSubmit={async () => setIsEditing(false)}
+              onCancel={() => setIsEditing(false)}
+              title={
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                  {"Edit Time Record"}
+                </h2>
+              }
+            />
+        ) : (null) }
+      </div>
   );
 };

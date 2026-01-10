@@ -3,7 +3,7 @@ import { TimeRecordList } from '../components/TimeRecordList';
 import { TimeRecordForm } from '../components/TimeRecordForm';
 import { ViewSelector } from '../components/ViewSelector';
 import { RecordFilters } from '../components/RecordFilters';
-import { TimeRecordFilters, TimeRecord } from '../types';
+import { TimeRecordFilters } from '../types';
 import { useViewState } from '../contexts/ViewStateContext';
 import { useViewRouting } from '../hooks/useViewRouting';
 import { useDataCache } from '../contexts/DataCacheContext';
@@ -22,7 +22,6 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   const { navigateToView } = useViewRouting();
   const { refreshData } = useDataCache();
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<TimeRecord | undefined>(undefined);
 
   // Merge context filters with prop filters (memoized to prevent unnecessary re-renders)
   const mergedFilters: TimeRecordFilters = React.useMemo(() => ({
@@ -45,7 +44,6 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   };
 
   const handleFormSuccess = () => {
-    setEditingRecord(undefined);
     // Refresh cached data after saving a record
     refreshData();
     // The TimeRecordList will automatically refresh due to React Query
@@ -53,26 +51,13 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
 
   const handleFormSubmit = async (data: any) => {
     try {
-      if (editingRecord) {
-        // Update existing record - include the id in the data
-        await TimeRecordService.updateTimeRecord({
-          id: editingRecord.id,
-          ...data
-        });
-      } else {
-        // Create new record
-        await TimeRecordService.createTimeRecord(data);
-      }
+      await TimeRecordService.createTimeRecord(data);
       handleFormSuccess();
     } catch (error) {
       console.error('Error saving record:', error);
       // You might want to show a notification here
       throw error; // Re-throw to let the form handle the error
     }
-  };
-
-  const handleEditRecord = (record: TimeRecord) => {
-    setEditingRecord(record);
   };
 
   return (
@@ -83,7 +68,6 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <button
             onClick={() => {
-              setEditingRecord(undefined);
               setShowForm(!showForm);
             }}
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -97,24 +81,24 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
         </div>
       </div>
 
+      {/* Time Record Form */}
+      {showForm && (
+        <TimeRecordForm
+            onSubmit={handleFormSubmit}
+            onCancel={() => setShowForm(false)}
+            title={
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                {"New Time Record"}
+              </h2>
+            }
+          />
+      )}
+
       {/* Filters */}
       <RecordFilters
         filters={mergedFilters}
         onFiltersChange={handleFiltersChange}
       />
-
-      {/* Time Record Form */}
-      {showForm && (
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Add New Time Record
-          </h2>
-          <TimeRecordForm
-            onSubmit={handleFormSubmit}
-            onCancel={() => setShowForm(false)}
-          />
-        </div>
-      )}
 
       {/* Time Record List */}
       <TimeRecordList
@@ -122,12 +106,6 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
         selectedDate={state.selectedDate}
         onDateChange={setDate}
         filters={mergedFilters}
-        onEditRecord={handleEditRecord}
-        editingRecord={editingRecord}
-        onSubmitEdit={handleFormSubmit}
-        onCancelEdit={() => {
-          setEditingRecord(undefined);
-        }}
       />
     </div>
   );
