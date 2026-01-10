@@ -320,29 +320,31 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                 
                 <div className="relative">
                   {/* Header with Clock Icon and Stop Button */}
-                  <div className="flex items-start justify-between mb-6">
-                    {/* Clock Icon in Upper Left */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                    {/* Clock Icon and Status */}
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse shadow-lg"></div>
-                        <span className="text-sm font-semibold text-green-800 uppercase tracking-wide">
-                          Recording
-                        </span>
-                        <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                          <span className="text-sm font-semibold text-green-800 uppercase tracking-wide">
+                            Recording
+                          </span>
+                        </div>
+                        <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full whitespace-nowrap">
                           Active Session
                         </div>
                       </div>
                     </div>
                     
-                    {/* Stop Button in Upper Right */}
+                    {/* Stop Button */}
                     <button
                       onClick={handleStopTimer}
-                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50"
+                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 w-full sm:w-auto flex-shrink-0"
                       disabled={isLoading || isSubmitting || isRetrying}
                     >
                       {(isSubmitting || isRetrying) ? (
@@ -355,10 +357,10 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                   
                   {/* Timer Display */}
                   <div className="mb-6">
-                    <div className="text-4xl sm:text-5xl font-mono font-bold text-green-900 tracking-tight">
+                    <div className="text-3xl sm:text-4xl md:text-5xl font-mono font-bold text-green-900 tracking-tight break-all">
                       {formatElapsedTime(elapsedTime)}
                     </div>
-                    <p className="text-sm text-green-600 mt-1">
+                    <p className="text-sm text-green-600 mt-1 break-all">
                       Started at {activeRecord ? formatDisplayTime(activeRecord.startTime) : ''}
                     </p>
                   </div>
@@ -370,7 +372,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                       <label className="block text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">
                         Started At
                       </label>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="space-y-2">
                         <Controller
                           name="startTime"
                           control={activeControl}
@@ -389,7 +391,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                             <input
                               {...field}
                               type="datetime-local"
-                              className="flex-1 px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 transition-all min-w-0"
+                              className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 transition-all"
                               value={field.value ? toLocalDateTimeString(field.value) : ''}
                               onChange={(e) => {
                                 const localDateTime = e.target.value;
@@ -404,13 +406,13 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                           )}
                         />
                         {/* Display formatted time for better readability */}
-                        <div className="text-xs text-green-600 sm:text-right sm:min-w-0">
-                          {activeRecord && (
-                            <div className="font-medium break-words">
+                        {activeRecord && (
+                          <div className="text-xs text-green-600">
+                            <div className="font-medium break-all">
                               {formatDisplayTime(activeRecord.startTime)}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                       {activeErrors.startTime && (
                         <p className="mt-1 text-xs text-red-600">{activeErrors.startTime.message}</p>
