@@ -31,6 +31,7 @@ describe('DataCacheContext', () => {
     const mockRecords = [
       {
         id: '1',
+        userId: "123",
         projectName: 'Test Project',
         tags: ['development', 'testing'],
         startTime: '2023-01-01T10:00:00Z',
@@ -40,6 +41,7 @@ describe('DataCacheContext', () => {
       },
       {
         id: '2',
+        userId: "123",
         projectName: 'Another Project',
         tags: ['design', 'development'],
         startTime: '2023-01-01T14:00:00Z',
@@ -78,6 +80,7 @@ describe('DataCacheContext', () => {
     const mockRecords = [
       {
         id: '1',
+        userId: "123",
         projectName: 'Frontend Development',
         tags: ['frontend', 'react', 'typescript'],
         startTime: '2023-01-01T10:00:00Z',
@@ -87,6 +90,7 @@ describe('DataCacheContext', () => {
       },
       {
         id: '2',
+        userId: "123",
         projectName: 'Backend API',
         tags: ['backend', 'api', 'nodejs'],
         startTime: '2023-01-01T14:00:00Z',

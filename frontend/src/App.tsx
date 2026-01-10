@@ -415,20 +415,4 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Dashboard component for authenticated users
-function Dashboard() {
-
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        
-        {/* Timer Widget */}
-        <TimerWidget />
-        
-
-      </div>
-    </DashboardLayout>
-  );
-}
-
 export default App

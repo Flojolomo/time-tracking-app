@@ -43,11 +43,10 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
   // Form for editing active timer fields
   const {
-    control: activeControl,
     reset: resetActive,
     getValues: getActiveValues,
     setError: setActiveError,
-    formState: { errors: activeErrors, isSubmitting }
+    formState: { isSubmitting }
   } = useForm<ActiveTimerFormData>({
     defaultValues: {
       project: '',
@@ -120,20 +119,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Helper function to convert UTC time to local datetime-local format
-  const toLocalDateTimeString = (utcDateString: string): string => {
-    const date = new Date(utcDateString);
-    // Get local timezone offset and adjust
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-    return localDate.toISOString().slice(0, 16);
-  };
-
-  // Helper function to convert local datetime-local to UTC
-  const toUTCString = (localDateTimeString: string): string => {
-    const localDate = new Date(localDateTimeString);
-    return localDate.toISOString();
   };
 
   // Helper function to format time for display with timezone consideration
