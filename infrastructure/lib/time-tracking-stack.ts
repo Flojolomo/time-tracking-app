@@ -10,8 +10,19 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
+interface TimeTrackingStackProps extends cdk.StackProps {
+/**
+ * Cache policy used by CloudFront
+ */
+  cachePolicy: cloudfront.ICachePolicy;
+  /**
+   * Origins added to CORS headers for development purposes.
+   */
+  allowedOrigins: string[];
+}
+
 export class TimeTrackingStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: TimeTrackingStackProps) {
     super(scope, id, props);
 
     // DynamoDB Table for Time Records
@@ -174,6 +185,7 @@ export class TimeTrackingStack extends cdk.Stack {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachePolicy: props.cachePolicy ?? cloudfront.CachePolicy.CACHING_OPTIMIZED,
       },
       defaultRootObject: 'index.html',
       errorResponses: [
@@ -228,9 +240,7 @@ export class TimeTrackingStack extends cdk.Stack {
         REGION: this.region,
         CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
         ALLOWED_ORIGINS: [
-          'http://localhost:3001',
-          'http://localhost:3000',
-          'http://localhost:5173',
+          ...(props.allowedOrigins || []),
           `https://${distribution.distributionDomainName}`
         ].join(',')
       },
@@ -274,9 +284,7 @@ export class TimeTrackingStack extends cdk.Stack {
         REGION: this.region,
         CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
         ALLOWED_ORIGINS: [
-          'http://localhost:3001',
-          'http://localhost:3000',
-          'http://localhost:5173',
+          ...(props.allowedOrigins || []),
           `https://${distribution.distributionDomainName}`
         ].join(',')
       },
@@ -320,9 +328,7 @@ export class TimeTrackingStack extends cdk.Stack {
         REGION: this.region,
         CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
         ALLOWED_ORIGINS: [
-          'http://localhost:3001',
-          'http://localhost:3000',
-          'http://localhost:5173',
+          ...(props.allowedOrigins || []),
           `https://${distribution.distributionDomainName}`
         ].join(',')
       },

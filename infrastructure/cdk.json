@@ -17,6 +17,26 @@
     ]
   },
   "context": {
+    "github-org": "Flojolomo",
+    "github-repo": "time-tracking-app",
+    "environments": {
+      "dev": {
+        "account": "123456789012",
+        "region": "eu-central-1",
+        "cachePolicy": "CACHING_DISABLED",
+        "allowedOrigins": [
+          "http://localhost:3000",
+          "http://localhost:3001",
+          "http://localhost:5173"
+        ]
+      },
+      "prod": {
+        "account": "987654321098",
+        "region": "eu-central-1",
+        "cachePolicy": "CACHING_OPTIMIZED",
+        "allowedOrigins": []
+      }
+    },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [
@@ -54,16 +74,6 @@
     "@aws-cdk/core:includePrefixInUniqueNameGeneration": true,
     "@aws-cdk/aws-efs:denyAnonymousAccess": true,
     "@aws-cdk/aws-opensearchservice:enableLogging": true,
-    "@aws-cdk/aws-nordicapis-apigateway:normalizeMethodOptions": true,
-    "environments": {
-      "dev": {
-        "account": "123456789012",
-        "region": "us-east-1"
-      },
-      "prod": {
-        "account": "123456789012",
-        "region": "us-east-1"
-      }
-    }
+    "@aws-cdk/aws-nordicapis-apigateway:normalizeMethodOptions": true
   }
 }

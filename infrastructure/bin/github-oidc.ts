@@ -9,7 +9,7 @@ const app = new cdk.App();
 const githubOrg = app.node.tryGetContext('github-org') || process.env.GITHUB_ORG || 'your-github-org';
 const githubRepo = app.node.tryGetContext('github-repo') || process.env.GITHUB_REPO || 'time-tracking-app';
 const githubRepository = `${githubOrg}/${githubRepo}`;
-const mainStackName = app.node.tryGetContext('main-stack-name') || process.env.MAIN_STACK_NAME || 'TimeTrackingStack';
+const mainStackName = 'TimeTrackingStack';
 
 new GitHubOidcStack(app, 'GitHubOidcStack', {
   githubRepository,
