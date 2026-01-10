@@ -88,7 +88,8 @@ class SafeStorage {
  */
 export class OfflineTimeRecords {
   static getAll(): OfflineTimeRecord[] {
-    return SafeStorage.get(STORAGE_KEYS.TIME_RECORDS) || [];
+    const result = SafeStorage.get(STORAGE_KEYS.TIME_RECORDS);
+    return Array.isArray(result) ? result : [];
   }
 
   static save(records: OfflineTimeRecord[]): boolean {
@@ -138,7 +139,8 @@ export class OfflineTimeRecords {
  */
 export class PendingActions {
   static getAll(): OfflineAction[] {
-    return SafeStorage.get(STORAGE_KEYS.PENDING_ACTIONS) || [];
+    const result = SafeStorage.get(STORAGE_KEYS.PENDING_ACTIONS);
+    return Array.isArray(result) ? result : [];
   }
 
   static save(actions: OfflineAction[]): boolean {
@@ -192,7 +194,11 @@ export class PendingActions {
  */
 export class SyncStatusManager {
   static get(): SyncStatus {
-    return SafeStorage.get(STORAGE_KEYS.SYNC_STATUS) || {
+    const result = SafeStorage.get(STORAGE_KEYS.SYNC_STATUS);
+    if (result && typeof result === 'object' && 'lastSync' in result) {
+      return result as SyncStatus;
+    }
+    return {
       lastSync: null,
       pendingActions: 0,
       isOnline: navigator.onLine,

@@ -11,6 +11,7 @@ import {
 } from './offlineStorage';
 import { TimeRecordService } from './timeRecordService';
 import { isOnline, addNetworkListener } from './networkUtils';
+import type { CreateTimeRecordInput, UpdateTimeRecordInput } from '../types';
 
 export interface SyncResult {
   success: boolean;
@@ -217,13 +218,13 @@ export class SyncManager {
     switch (type) {
       case 'create':
         if (endpoint.includes('/time-records')) {
-          await TimeRecordService.createTimeRecord(data);
+          await TimeRecordService.createTimeRecord(data as unknown as CreateTimeRecordInput);
         }
         break;
 
       case 'update':
         if (endpoint.includes('/time-records')) {
-          await TimeRecordService.updateTimeRecord(data);
+          await TimeRecordService.updateTimeRecord(data as unknown as UpdateTimeRecordInput);
         }
         break;
 
@@ -281,8 +282,8 @@ export class SyncManager {
       projectName: String(recordData.projectName || ''),
       description: recordData.description ? String(recordData.description) : undefined,
       startTime: String(recordData.startTime || new Date().toISOString()),
-      endTime: recordData.endTime ? String(recordData.endTime) : undefined,
-      duration: typeof recordData.duration === 'number' ? recordData.duration : undefined,
+      endTime: recordData.endTime ? String(recordData.endTime) : '',
+      duration: typeof recordData.duration === 'number' ? recordData.duration : 0,
       tags: Array.isArray(recordData.tags) ? recordData.tags.map(String) : undefined,
       isOffline: true,
       createdAt: new Date().toISOString(),
@@ -293,7 +294,7 @@ export class SyncManager {
     OfflineTimeRecords.add(offlineRecord);
 
     // Queue for sync
-    this.queueAction('create', '/api/time-records', data);
+    this.queueAction('create', '/api/time-records', data as Record<string, unknown>);
 
     return offlineRecord;
   }

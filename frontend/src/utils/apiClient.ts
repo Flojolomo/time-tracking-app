@@ -53,7 +53,7 @@ export async function apiRequest<T>(
   path: string,
   options?: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-    body?: Record<string, unknown>;
+    body?: unknown;
     queryParams?: Record<string, string>;
   }
 ): Promise<T> {
@@ -75,7 +75,7 @@ export async function apiRequest<T>(
         // Use only simple headers to avoid preflight
         'Content-Type': 'application/json',
       },
-      ...(requestBody && { body: requestBody })
+      ...(requestBody as Object && { body: requestBody }) as Object
     };
     
     switch (method) {

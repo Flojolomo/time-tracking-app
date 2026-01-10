@@ -14,10 +14,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<Record<string, unknown> | null>(null);
 
   // Load configuration and check auth state on app load
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
-
   const initializeAuth = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -60,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [config]);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   const login = async (credentials: LoginCredentials) => {
     try {

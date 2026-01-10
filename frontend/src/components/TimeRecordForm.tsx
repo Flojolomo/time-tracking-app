@@ -59,7 +59,7 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
   
   // Auto-save form data
   const formId = initialData ? `edit-record-${initialData.id}` : 'new-record';
-  const { lastSaved, clearDraft } = useFormAutoSave(formId, watchedValues, true);
+  const { lastSaved, clearDraft } = useFormAutoSave(formId, watchedValues as unknown as Record<string, unknown>, true);
 
   // Reset form when initialData changes
   useEffect(() => {
