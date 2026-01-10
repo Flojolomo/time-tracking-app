@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { apiRequest, handleApiError } from '../utils/apiClient';
-
-interface ProjectSuggestionsResponse {
-  suggestions: string[];
-}
+import React, { useState, useEffect, useRef } from 'react';
+import { useDataCache } from '../contexts/DataCacheContext';
 
 interface ProjectAutocompleteProps {
   value: string;
@@ -26,78 +22,27 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
   error = false,
   id
 }) => {
+  const { getProjectSuggestions, isLoading } = useDataCache();
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [apiError, setApiError] = useState<string>('');
   
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
 
-  // Fetch suggestions from API
-  const fetchSuggestions = useCallback(async (query: string) => {
-    if (query.trim().length === 0) {
-      setSuggestions([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setApiError('');
-
-    try {
-      const data = await apiRequest<ProjectSuggestionsResponse>('api/projects/suggestions', {
-        method: 'GET',
-        queryParams: { q: query, limit: '10' }
-      });
-      
-      const projectSuggestions = data.suggestions || [];
-      
-      // Filter out suggestions that exactly match the current input value
-      const filteredSuggestions = projectSuggestions.filter(
-        suggestion => suggestion.toLowerCase() !== query.toLowerCase().trim()
-      );
-      
-      setSuggestions(filteredSuggestions);
-      setSelectedIndex(-1);
-    } catch (error) {
-      console.error('Error fetching project suggestions:', error);
-      setApiError(handleApiError(error));
-      setSuggestions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Debounced search - only handles the delay, not the visibility
-  const debouncedSearch = useCallback((query: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    if (query.trim().length === 0) {
+  // Update suggestions based on current value
+  useEffect(() => {
+    if (value.trim().length === 0) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
 
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(query);
-    }, 300); // Reduced debounce delay to 300ms for better responsiveness
-  }, [fetchSuggestions]);
-
-  // Effect to trigger search when value changes
-  useEffect(() => {
-    debouncedSearch(value);
-    
-    // Cleanup timeout on unmount
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, [value, debouncedSearch]);
+    const projectSuggestions = getProjectSuggestions(value);
+    setSuggestions(projectSuggestions);
+    setShowSuggestions(projectSuggestions.length > 0);
+    setSelectedIndex(-1);
+  }, [value, getProjectSuggestions]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,7 +156,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          disabled={disabled}
+          disabled={disabled || isLoading}
           className={`${baseInputClasses} ${className}`}
           autoComplete="off"
         />
@@ -222,6 +167,8 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
           </div>
         )}
+        
+
       </div>
 
       {/* Suggestions dropdown */}
@@ -247,12 +194,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
         </div>
       )}
 
-      {/* Error message */}
-      {apiError && (
-        <div className="mt-1 text-sm text-red-600">
-          Failed to load suggestions: {apiError}
-        </div>
-      )}
+
     </div>
   );
 };

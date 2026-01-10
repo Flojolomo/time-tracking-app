@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { TimeRecord, TimeRecordFilters } from '../types';
 import { TimeRecordService } from '../utils/timeRecordService';
+import { useDataCache } from '../contexts/DataCacheContext';
+import { UnifiedTimeRecordForm } from './UnifiedTimeRecordForm';
 
 // View types for different time periods
 export type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -115,6 +117,7 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { refreshData } = useDataCache();
   
   // Track last fetched params to prevent duplicate requests
   const lastFetchedRef = useRef<string>('');
@@ -170,6 +173,8 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
       // Reset the fetch key to force a refresh
       lastFetchedRef.current = '';
       await loadRecords();
+      // Refresh cached data after deleting a record
+      refreshData();
     } catch (error) {
       console.error('Error deleting record:', error);
     }
@@ -442,7 +447,7 @@ interface TimeRecordItemProps {
   onDelete?: (record: TimeRecord) => void;
 }
 
-const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelete }) => {
+const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelete, isEditing, onSubmitEdit, onCancelEdit }) => {
   const startTime = new Date(record.startTime);
   const endTime = record.endTime ? new Date(record.endTime) : null;
   
@@ -453,6 +458,18 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onEdit, onDelet
       hour12: true 
     });
   };
+
+  if (isEditing && onSubmitEdit && onCancelEdit) {
+    return (
+      <div className="px-4 sm:px-6 py-4 bg-blue-50 border-l-4 border-blue-400">
+        <UnifiedTimeRecordForm
+          initialData={record}
+          onSubmit={onSubmitEdit}
+          onCancel={onCancelEdit}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors">

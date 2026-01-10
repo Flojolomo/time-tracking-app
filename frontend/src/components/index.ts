@@ -6,6 +6,8 @@ export { AuthDemo } from './AuthDemo';
 export { ConfigurationStatus } from './ConfigurationStatus';
 export { TimeRecordForm } from './TimeRecordForm';
 export { ProjectAutocomplete } from './ProjectAutocomplete';
+export { TagAutocomplete } from './TagAutocomplete';
+export { UnifiedTimeRecordForm } from './UnifiedTimeRecordForm';
 export { TimeRecordList } from './TimeRecordList';
 export { ViewSelector } from './ViewSelector';
 export { RecordFilters } from './RecordFilters';

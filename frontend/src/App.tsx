@@ -4,6 +4,7 @@ import { LandingPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsD
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { DataCacheProvider } from './contexts/DataCacheContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotificationContainer } from './components/NotificationContainer';
 import { NetworkStatusBanner } from './components/NetworkStatusBanner';
@@ -48,9 +49,10 @@ function App() {
   return (
     <ErrorBoundary>
       <NotificationProvider>
-        <ViewStateProvider>
-          <NetworkStatusBanner />
-          <OfflineStatusBar />
+        <DataCacheProvider>
+          <ViewStateProvider>
+            <NetworkStatusBanner />
+            <OfflineStatusBar />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
@@ -174,7 +176,8 @@ function App() {
           </Routes>
           <NotificationContainer />
         </ViewStateProvider>
-      </NotificationProvider>
+      </DataCacheProvider>
+    </NotificationProvider>
     </ErrorBoundary>
   )
 }

@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { CreateTimeRecordInput, UpdateTimeRecordInput, TimeRecord } from '../types';
 import { calculateDuration } from '../utils/apiClient';
 import { ProjectAutocomplete } from './ProjectAutocomplete';
+import { TagAutocomplete } from './TagAutocomplete';
 import { LoadingOverlay, ButtonLoading } from './LoadingSpinner';
 import { ErrorMessage, ValidationError } from './ErrorMessage';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -350,19 +351,18 @@ export const TimeRecordForm: React.FC<TimeRecordFormProps> = ({
             name="tags"
             control={control}
             render={({ field }) => (
-              <input
-                {...field}
-                type="text"
+              <TagAutocomplete
                 id="tags"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                placeholder="Enter tags separated by commas (optional)"
+                value={field.value ? field.value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                onChange={(tags) => field.onChange(tags.join(', '))}
+                onBlur={field.onBlur}
+                placeholder="Add tags"
                 disabled={isLoading || isSubmitting}
+                error={false}
+                className=""
               />
             )}
           />
-          <p className="mt-1 text-sm text-gray-500">
-            Separate multiple tags with commas (e.g., "meeting, client, urgent")
-          </p>
         </div>
 
         {/* Error Display */}

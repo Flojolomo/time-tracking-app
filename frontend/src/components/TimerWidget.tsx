@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { TimeRecordService } from '../utils/timeRecordService';
 import { ProjectAutocomplete } from './ProjectAutocomplete';
+import { TagAutocomplete } from './TagAutocomplete';
 import { LoadingOverlay, ButtonLoading } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useNetworkAwareOperation } from '../hooks/useNetworkStatus';
+import { useDataCache } from '../contexts/DataCacheContext';
 import { TimeRecord } from '../types';
 
 interface ActiveTimerFormData {
@@ -26,6 +28,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
   
   const { showSuccess, showError } = useNotifications();
   const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
+  const { refreshData } = useDataCache();
 
   // Debounce timer refs
   const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -208,6 +211,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
       // Reset state
       setActiveRecord(null);
+
+      // Refresh cached data after stopping timer
+      refreshData();
 
       showSuccess('Timer Stopped', 'Your time record has been saved successfully!');
     } catch (error: unknown) {
@@ -481,7 +487,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                     </div>
 
                     {/* Editable Tags */}
-                    <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-green-200/50">
+                    <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-green-200/50 relative z-50">
                       <label className="block text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">
                         Tags
                       </label>
@@ -489,22 +495,20 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                         name="tags"
                         control={activeControl}
                         render={({ field }) => (
-                          <input
-                            {...field}
-                            type="text"
-                            className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 transition-all"
-                            placeholder="meeting, development, client"
-                            onBlur={() => {
-                              field.onBlur();
-                              handleFieldUpdate('tags', field.value);
+                          <TagAutocomplete
+                            value={field.value ? field.value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                            onChange={(tags) => {
+                              const tagsString = tags.join(', ');
+                              field.onChange(tagsString);
+                              handleFieldUpdate('tags', tagsString);
                             }}
+                            onBlur={field.onBlur}
+                            placeholder="Add tags"
+                            className="text-sm"
                             disabled={isLoading || isSubmitting || isRetrying}
                           />
                         )}
                       />
-                      <p className="mt-1 text-xs text-green-600">
-                        Separate tags with commas
-                      </p>
                     </div>
                   </div>
                 </div>
