@@ -7,10 +7,7 @@ const STATIC_CACHE_NAME = 'time-tracker-static-v1';
 // Files to cache for offline functionality
 const STATIC_FILES = [
   '/',
-  '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json'
+  '/index.html'
 ];
 
 // API endpoints that should be cached
