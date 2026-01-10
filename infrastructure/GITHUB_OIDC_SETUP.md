@@ -43,16 +43,30 @@ export MAIN_STACK_NAME="TimeTrackingStack"
 npm run deploy:oidc -- -c github-org=your-github-username-or-org -c github-repo=time-tracking-app -c main-stack-name=TimeTrackingStack
 ```
 
-### 2. Deploy the OIDC Stack
-
+**Option C: Use the Deployment Script (Recommended)**
 ```bash
-cd infrastructure
+# Simple deployment with defaults
+./deploy-oidc.sh
+
+# Or specify your repository details
+./deploy-oidc.sh your-github-username-or-org time-tracking-app TimeTrackingStack
+```
+
+### 3. Deploy the OIDC Stack
+
+**Manual Deployment:**
+```bash
 npm run deploy:oidc
+```
+
+**Or with custom parameters:**
+```bash
+npm run deploy:oidc -- -c github-org=your-github-username-or-org -c github-repo=time-tracking-app -c main-stack-name=TimeTrackingStack
 ```
 
 This will create the OIDC provider and IAM roles in AWS.
 
-### 3. Configure GitHub Repository
+### 4. Configure GitHub Repository
 
 After deployment, you'll see outputs including a `GitHubActionsConfiguration` JSON. Use these values to configure your GitHub repository:
 
@@ -69,7 +83,17 @@ Go to your GitHub repository → Settings → Secrets and variables → Actions 
 - `AWS_PRODUCTION_ROLE_ARN`: Production deployment role ARN
 - `AWS_DEVELOPMENT_ROLE_ARN`: Development deployment role ARN
 
-### 4. Verify Setup
+### 5. Set up GitHub Actions Workflow
+
+Copy the example workflow to your repository:
+
+```bash
+# From your repository root (not the infrastructure directory)
+mkdir -p .github/workflows
+cp infrastructure/.github-workflows-example/deploy.yml .github/workflows/deploy.yml
+```
+
+### 6. Verify Setup
 
 You can verify the setup by running:
 

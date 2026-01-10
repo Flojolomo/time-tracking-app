@@ -6,8 +6,6 @@ import {
   ChangePasswordCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
-  DeleteUserCommand,
-  AdminDeleteUserCommand,
   AdminGetUserCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
@@ -178,7 +176,6 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     const data = JSON.parse(event.body);
     
     // Validate input data
-    const allowedFields = ['givenName', 'familyName', 'timezone', 'preferences'];
     const updates: { Name: string; Value: string }[] = [];
 
     // Build attribute updates
@@ -427,7 +424,6 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
 
     // Use the Identity Pool ID as the username for admin operations
     // In Cognito Identity Pool + User Pool integration, the Identity Pool ID often maps to the User Pool username
-    const cognitoUsername = identityPoolUserId;
 
     // Wait for cleanup of user data via time records lambda
     try {
