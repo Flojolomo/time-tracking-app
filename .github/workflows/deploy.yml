@@ -2,155 +2,95 @@ name: Deploy Time Tracking App
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
-  AWS_REGION: 'us-east-1'
+  AWS_REGION: 'eu-central-1'
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Test Frontend
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
         
-    - name: Install frontend dependencies
+    - name: Install dependencies
       run: |
         cd frontend
         npm ci
         
-    - name: Run frontend tests
+    - name: Run tests
       run: |
         cd frontend
         npm run test -- --run --coverage
         
-    - name: Run frontend linting
+    - name: Run lint
       run: |
         cd frontend
         npm run lint
         
-    - name: Build frontend
+    - name: Build
       run: |
         cd frontend
         npm run build
 
-  deploy-infrastructure:
+  deploy:
     runs-on: ubuntu-latest
-    name: Deploy Infrastructure
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push'
     
     permissions:
       id-token: write
       contents: read
-      
+    
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: infrastructure/package-lock.json
         
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ${{ env.AWS_REGION }}
         
-    - name: Install infrastructure dependencies
+    - name: Deploy infrastructure
       run: |
         cd infrastructure
         npm ci
+        npm run deploy:${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+      env:
+        CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+        CDK_DEFAULT_REGION: ${{ vars.AWS_REGION || env.AWS_REGION }}
         
-    - name: Build Lambda functions
-      run: |
-        cd infrastructure
-        npm run build:lambdas
-        
-    - name: Deploy CDK stack
-      run: |
-        cd infrastructure
-        npx cdk deploy --require-approval never
-        
-    - name: Extract stack outputs
-      id: stack-outputs
-      run: |
-        cd infrastructure
-        OUTPUTS=$(npx cdk list --json | jq -r '.[0]')
-        echo "stack-name=$OUTPUTS" >> $GITHUB_OUTPUT
-        
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    name: Deploy Frontend
-    needs: deploy-infrastructure
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    permissions:
-      id-token: write
-      contents: read
-      
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-        
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
-        
-    - name: Update Amplify configuration
-      run: |
-        node update-amplify-config.js
-        
-    - name: Install frontend dependencies
+    - name: Deploy frontend
       run: |
         cd frontend
         npm ci
+        npm run build
         
-    - name: Build frontend with production config
-      run: |
-        cd frontend
-        npm run build:prod
-        
-    - name: Deploy to S3
-      run: |
-        # Get S3 bucket name from CloudFormation outputs
         BUCKET_NAME=$(aws cloudformation describe-stacks \
           --stack-name TimeTrackingStack \
           --query "Stacks[0].Outputs[?OutputKey=='S3BucketName'].OutputValue" \
           --output text)
         
-        # Sync frontend build to S3
-        aws s3 sync frontend/dist/ s3://$BUCKET_NAME/ --delete
+        aws s3 sync dist/ s3://$BUCKET_NAME/ --delete
         
-    - name: Invalidate CloudFront cache
-      run: |
-        # Get CloudFront distribution ID from CloudFormation outputs
         DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
           --stack-name TimeTrackingStack \
           --query "Stacks[0].Outputs[?contains(OutputKey, 'Distribution')].OutputValue" \
@@ -161,13 +101,3 @@ jobs:
             --distribution-id $DISTRIBUTION_ID \
             --paths "/*"
         fi
-        
-    - name: Output deployment URLs
-      run: |
-        echo "🚀 Deployment complete!"
-        echo ""
-        echo "📋 Deployment URLs:"
-        aws cloudformation describe-stacks \
-          --stack-name TimeTrackingStack \
-          --query "Stacks[0].Outputs[?OutputKey=='WebsiteUrl'].OutputValue" \
-          --output text

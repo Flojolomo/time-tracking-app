@@ -21,7 +21,6 @@
     "github-repo": "time-tracking-app",
     "environments": {
       "dev": {
-        "account": "123456789012",
         "region": "eu-central-1",
         "cachePolicy": "CACHING_DISABLED",
         "allowedOrigins": [
@@ -31,7 +30,6 @@
         ]
       },
       "prod": {
-        "account": "987654321098",
         "region": "eu-central-1",
         "cachePolicy": "CACHING_OPTIMIZED",
         "allowedOrigins": []
