@@ -115,7 +115,9 @@ function App() {
             {/* Protected routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardLayout>
+                    <TimerWidget />
+                </DashboardLayout>
               </ProtectedRoute>
             } />
             
