@@ -210,6 +210,29 @@ export class TimeTrackingStack extends cdk.Stack {
       });
     }
 
+    // CloudFront Function to handle SPA routing while preserving static asset requests
+    const spaRoutingFunction = new cloudfront.Function(this, 'SpaRoutingFunction', {
+      functionName: `time-tracking-spa-routing-${this.node.tryGetContext('stage') || 'dev'}`,
+      code: cloudfront.FunctionCode.fromInline(`
+function handler(event) {
+    var request = event.request;
+    var uri = request.uri;
+    
+    // If the URI has a file extension, serve it directly (don't fallback to index.html)
+    if (uri.match(/\.[a-zA-Z0-9]+$/)) {
+        return request;
+    }
+    
+    // If no file extension and not root, it's a SPA route - serve index.html
+    if (uri !== '/' && !uri.match(/\.[a-zA-Z0-9]+$/)) {
+        request.uri = '/index.html';
+    }
+    
+    return request;
+}
+      `),
+    });
+
     // CloudFront Distribution
     const distribution = new cloudfront.Distribution(this, 'TimeTrackingDistribution', {
       defaultBehavior: {
@@ -217,20 +240,13 @@ export class TimeTrackingStack extends cdk.Stack {
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: props.cachePolicy ?? cloudfront.CachePolicy.CACHING_OPTIMIZED,
         responseHeadersPolicy: responseHeadersPolicy,
+        functionAssociations: [{
+          function: spaRoutingFunction,
+          eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+        }],
       },
       defaultRootObject: 'index.html',
-      errorResponses: [
-        {
-          httpStatus: 404,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-        },
-        {
-          httpStatus: 403,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-        },
-      ],
+      // Remove error responses since we're handling routing with the function
     });
 
     // Add CloudFront domain to CORS config
