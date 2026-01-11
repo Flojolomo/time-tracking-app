@@ -18,9 +18,10 @@ interface ActiveTimerFormData {
 interface TimerWidgetProps {
   activeRecord: TimeRecord | null;
   onRecordChange: () => void;
+  onRecordUpdate?: (updatedRecord: TimeRecord) => void;
 }
 
-export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecordChange }) => {
+export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecordChange, onRecordUpdate }) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -244,7 +245,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecord
         if (hasChanged) {
           await executeWithRetry(async () => {
             await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
-            onRecordChange();
           });
         }
       } catch (error: unknown) {

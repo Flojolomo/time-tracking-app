@@ -7,6 +7,7 @@ interface UseActiveTimerReturn {
   isLoading: boolean;
   error: string | null;
   loadActiveRecord: () => Promise<void>;
+  updateActiveRecord: (updatedRecord: TimeRecord) => void;
   clearError: () => void;
 }
 
@@ -33,6 +34,10 @@ export const useActiveTimer = (): UseActiveTimerReturn => {
     }
   }, []);
 
+  const updateActiveRecord = useCallback((updatedRecord: TimeRecord) => {
+    setActiveRecord(prev => ({ ...prev, ...updatedRecord }));
+  }, []);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -42,6 +47,7 @@ export const useActiveTimer = (): UseActiveTimerReturn => {
     isLoading,
     error,
     loadActiveRecord,
+    updateActiveRecord,
     clearError
   };
 };

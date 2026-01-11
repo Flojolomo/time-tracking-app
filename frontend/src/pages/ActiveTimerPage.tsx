@@ -3,7 +3,7 @@ import { useActiveTimer } from '../hooks/useActiveTimer';
 import { TimerWidget } from '../components/TimerWidget';
 
 export const ActiveTimerPage: React.FC = () => {
-  const { activeRecord, isLoading, error, loadActiveRecord, clearError } = useActiveTimer();
+  const { activeRecord, isLoading, error, loadActiveRecord, updateActiveRecord, clearError } = useActiveTimer();
 
   useEffect(() => {
     loadActiveRecord();
@@ -47,5 +47,11 @@ export const ActiveTimerPage: React.FC = () => {
     );
   }
 
-  return <TimerWidget activeRecord={activeRecord} onRecordChange={loadActiveRecord} />;
+  return (
+    <TimerWidget 
+      activeRecord={activeRecord} 
+      onRecordChange={loadActiveRecord}
+      onRecordUpdate={updateActiveRecord}
+    />
+  );
 };
