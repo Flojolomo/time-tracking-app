@@ -21,7 +21,7 @@ interface TimerWidgetProps {
   onRecordUpdate?: (updatedRecord: TimeRecord) => void;
 }
 
-export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecordChange }) => {
+export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecordChange }) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');

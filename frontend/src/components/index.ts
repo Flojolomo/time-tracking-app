@@ -12,7 +12,7 @@ export { RecordFilters } from './RecordFilters';
 export { ProjectChart } from './ProjectChart';
 export { TimelineChart } from './TimelineChart';
 export { MetricsCards } from './MetricsCards';
-export { TimerWidget } from './TimerWidget';
+export { ActiveTimerWidget } from './ActiveTimerWidget';
 
 // Error handling and UI components
 export { ErrorBoundary, withErrorBoundary } from './ErrorBoundary';

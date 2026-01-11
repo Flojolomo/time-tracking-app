@@ -65,13 +65,7 @@ function App() {
             
             {/* Protected routes with DataCacheProvider */}
             <Route path="/active-timer" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <ActiveTimerPage />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
+              <ActiveTimerPage />
             } />
             
             {/* Time record views with different URL paths */}
