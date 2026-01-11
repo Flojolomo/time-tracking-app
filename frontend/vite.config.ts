@@ -1,34 +1,38 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    cors: true
+    cors: true,
+    strictPort: true, // fail if port is already in use
+    hmr: {
+      port: 3000
+    }
   },
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     sourcemap: true,
     rollupOptions: {
       input: {
-        main: './index.html'
-      }
-    }
+        main: "./index.html",
+      },
+    },
   },
   define: {
-    global: 'globalThis',
-    'process.env': {}
+    global: "globalThis",
+    "process.env": {},
   },
   resolve: {
     alias: {
-      './runtimeConfig': './runtimeConfig.browser',
+      "./runtimeConfig": "./runtimeConfig.browser",
     },
   },
   optimizeDeps: {
-    include: ['aws-amplify'],
-    exclude: ['@aws-amplify/ui-react']
+    include: ["aws-amplify"],
+    exclude: ["@aws-amplify/ui-react"],
   },
-  publicDir: 'public'
-})
+  publicDir: "public",
+});
