@@ -7,23 +7,32 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = process.env.TABLE_NAME!;
 
-const createCorsHeaders = () => ({
+// Parse CORS configuration from environment variables
+const corsConfig = {
+  allowedOrigins: JSON.parse(process.env.CORS_ALLOWED_ORIGINS || '[]'),
+  allowedMethods: JSON.parse(process.env.CORS_ALLOWED_METHODS || '["GET","OPTIONS"]'),
+  allowedHeaders: JSON.parse(process.env.CORS_ALLOWED_HEADERS || '["Content-Type","Authorization"]'),
+  maxAge: parseInt(process.env.CORS_MAX_AGE || '86400')
+};
+
+// Pre-compute static CORS headers at module initialization
+const corsHeaders = {
   'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
-  'Access-Control-Allow-Methods': 'GET,OPTIONS',
-  'Access-Control-Max-Age': '86400',
-});
+  'Access-Control-Allow-Origin': corsConfig.allowedOrigins.join(',') || '*',
+  'Access-Control-Allow-Headers': corsConfig.allowedHeaders.join(','),
+  'Access-Control-Allow-Methods': corsConfig.allowedMethods.join(','),
+  'Access-Control-Max-Age': corsConfig.maxAge.toString(),
+};
 
 const createErrorResponse = (statusCode: number, message: string): APIGatewayProxyResult => ({
   statusCode,
-  headers: createCorsHeaders(),
+  headers: corsHeaders,
   body: JSON.stringify({ error: message })
 });
 
 const createSuccessResponse = (statusCode: number, data: any): APIGatewayProxyResult => ({
   statusCode,
-  headers: createCorsHeaders(),
+  headers: corsHeaders,
   body: JSON.stringify(data)
 });
 
@@ -115,7 +124,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: createCorsHeaders(),
+      headers: corsHeaders,
       body: ''
     };
   }

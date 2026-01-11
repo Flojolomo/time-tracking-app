@@ -16,14 +16,23 @@ interface TimeTrackingStackProps extends cdk.StackProps {
  */
   cachePolicy: cloudfront.ICachePolicy;
   /**
-   * Origins added to CORS headers for development purposes.
+   * Complete CORS configuration for Lambda functions
    */
-  allowedOrigins: string[];
+  corsConfig: {
+    allowedOrigins: string[];
+    allowCredentials: boolean;
+    allowedMethods?: string[];
+    allowedHeaders?: string[];
+    maxAge?: number;
+  };
 }
 
 export class TimeTrackingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: TimeTrackingStackProps) {
     super(scope, id, props);
+
+    // Create mutable copy of CORS config
+    const corsConfig = { ...props.corsConfig };
 
     // DynamoDB Table for Time Records
     const timeRecordsTable = new dynamodb.Table(this, 'TimeRecordsTable', {
@@ -202,6 +211,9 @@ export class TimeTrackingStack extends cdk.Stack {
       ],
     });
 
+    // Add CloudFront domain to CORS config
+    corsConfig.allowedOrigins = [...corsConfig.allowedOrigins, `https://${distribution.distributionDomainName}`];
+
     // Lambda function for time records API
     const timeRecordsHandler = new lambda.Function(this, 'TimeRecordsApiHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -231,10 +243,7 @@ export class TimeTrackingStack extends cdk.Stack {
         USER_POOL_DOMAIN: userPoolDomain.domainName,
         REGION: this.region,
         CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
-        ALLOWED_ORIGINS: [
-          ...(props.allowedOrigins || []),
-          `https://${distribution.distributionDomainName}`
-        ].join(',')
+        CORS_CONFIG: JSON.stringify(corsConfig)
       },
     });
 
@@ -267,10 +276,7 @@ export class TimeTrackingStack extends cdk.Stack {
         USER_POOL_DOMAIN: userPoolDomain.domainName,
         REGION: this.region,
         CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
-        ALLOWED_ORIGINS: [
-          ...(props.allowedOrigins || []),
-          `https://${distribution.distributionDomainName}`
-        ].join(',')
+        CORS_CONFIG: JSON.stringify(corsConfig)
       },
     });
 
@@ -303,10 +309,7 @@ export class TimeTrackingStack extends cdk.Stack {
         USER_POOL_DOMAIN: userPoolDomain.domainName,
         REGION: this.region,
         CLOUDFRONT_DOMAIN: distribution.distributionDomainName,
-        ALLOWED_ORIGINS: [
-          ...(props.allowedOrigins || []),
-          `https://${distribution.distributionDomainName}`
-        ].join(',')
+        CORS_CONFIG: JSON.stringify(corsConfig)
       },
     });
 
@@ -370,9 +373,9 @@ export class TimeTrackingStack extends cdk.Stack {
         loggingLevel: apigateway.MethodLoggingLevel.ERROR,
       },
       defaultCorsPreflightOptions: {
-        allowOrigins: ['*'], // More permissive to avoid preflight
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowHeaders: [
+        allowOrigins: corsConfig.allowedOrigins,
+        allowMethods: corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: corsConfig.allowedHeaders || [
           'Content-Type',
           'Authorization', 
           'X-Amz-Date',
@@ -382,8 +385,8 @@ export class TimeTrackingStack extends cdk.Stack {
           'X-Amz-Content-Sha256',
           'X-Amz-Target'
         ],
-        allowCredentials: false, // Set to false to avoid preflight for simple requests
-        maxAge: cdk.Duration.hours(24), // Cache preflight responses longer
+        allowCredentials: corsConfig.allowCredentials,
+        maxAge: cdk.Duration.seconds(corsConfig.maxAge || 86400),
       },
     });
 
