@@ -100,8 +100,6 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
 
   const {
     reset: resetActive,
-    getValues: getActiveValues,
-    setError: setActiveError,
     formState: { isSubmitting }
   } = useForm<ActiveTimerFormData>({
     defaultValues: {

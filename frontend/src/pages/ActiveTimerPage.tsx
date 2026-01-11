@@ -1,13 +1,12 @@
 import React from 'react';
 import { ActiveTimerProvider, useActiveTimer } from '../contexts/ActiveTimerContext';
 import { ActiveTimerWidget } from '../components/ActiveTimerWidget';
-import { ElapsedTimeWidget } from '../components/ElapsedTimeWidget';
 import { ActiveTimerStartWidget } from '../components/ActiveTimerStartWidget';
 import { LandingPage } from './LandingPage';
 import { DataCacheProvider } from '../contexts/DataCacheContext';
 
 const ActiveTimerContent: React.FC = () => {
-  const { activeRecord, loadActiveRecord, updateActiveRecord, isLoading } = useActiveTimer();
+  const { activeRecord, loadActiveRecord, isLoading } = useActiveTimer();
 
   const header = <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
           <div className="flex items-center space-x-3">
