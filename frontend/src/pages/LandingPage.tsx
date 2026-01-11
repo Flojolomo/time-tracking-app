@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export const LandingPage: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -21,68 +23,97 @@ export const LandingPage: React.FC = () => {
             </svg>
 
             <div className="relative pt-6 px-4 sm:px-6 lg:px-8">
-              <nav className="relative flex items-center justify-between sm:h-10 lg:justify-start" aria-label="Global">
-                <div className="flex items-center flex-grow flex-shrink-0 lg:flex-grow-0">
-                  <div className="flex items-center justify-between w-full md:w-auto">
-                    <h1 className="text-2xl font-bold text-indigo-600">TimeTracker</h1>
-                    
-                    {/* Mobile menu button */}
-                    <div className="md:hidden">
-                      <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                        aria-expanded="false"
-                      >
-                        <span className="sr-only">Open main menu</span>
-                        {!isMobileMenuOpen ? (
-                          <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                          </svg>
-                        ) : (
-                          <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+              <nav className="relative flex items-center justify-between sm:h-10" aria-label="Global">
+                <div className="flex items-center">
+                  <h1 className="text-2xl font-bold text-indigo-600">TimeTracker</h1>
                 </div>
                 
-                {/* Desktop Navigation */}
-                <div className="hidden md:block md:ml-10 md:pr-4 md:space-x-8">
-                  <Link
-                    to="/login"
-                    className="font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                {/* Menu button on the right */}
+                <div>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                    aria-expanded="false"
                   >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
-                  >
-                    Sign up
-                  </Link>
+                    <span className="sr-only">Open main menu</span>
+                    {!isMobileMenuOpen ? (
+                      <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    ) : (
+                      <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </nav>
 
-              {/* Mobile menu */}
+              {/* Menu dropdown positioned on the right */}
               {isMobileMenuOpen && (
-                <div className="md:hidden mt-4">
-                  <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg border border-gray-200">
-                    <Link
-                      to="/login"
-                      className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Log in
-                    </Link>
-                    <Link
-                      to="/signup"
-                      className="text-indigo-600 hover:text-indigo-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign up
-                    </Link>
+                <div className="absolute right-0 top-16 z-50">
+                  <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg border border-gray-200 min-w-48">
+                    {!isAuthenticated ? (
+                      <>
+                        <Link
+                          to="/login"
+                          className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Log in
+                        </Link>
+                        <Link
+                          to="/signup"
+                          className="text-indigo-600 hover:text-indigo-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Sign up
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link
+                          to="/dashboard"
+                          className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/records"
+                          className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Time Records
+                        </Link>
+                        <Link
+                          to="/analytics"
+                          className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Analytics
+                        </Link>
+                        <Link
+                          to="/profile"
+                          className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Profile
+                        </Link>
+                        <div className="border-t border-gray-200 pt-2 mt-2">
+                          <div className="px-3 py-1 text-sm text-gray-500">{user?.email}</div>
+                          <button
+                            onClick={() => {
+                              logout();
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="text-red-600 hover:text-red-700 block px-3 py-2 rounded-md text-base font-medium transition-colors w-full text-left"
+                          >
+                            Sign out
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
