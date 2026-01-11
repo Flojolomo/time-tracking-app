@@ -46,6 +46,18 @@ function App() {
     });
   }, []);
 
+  // Reload content when app becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        window.location.reload();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   return (
     <ErrorBoundary>
       <NotificationProvider>
