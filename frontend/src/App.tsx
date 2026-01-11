@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthDemo, ConfigurationStatus, LoginForm, SignupForm } from './components';
-import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, TimeRecordViews } from './pages';
+import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, TimeRecordViews, LoginPage } from './pages';
 import { AppProviders, DataProviders } from './providers';
 import { AuthLayout, DashboardLayout } from './layouts';
 import { StatusBars } from './status';
@@ -14,15 +14,7 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<PublicPage />} />
             <Route path="/login" element={
-              <AuthenticatedRoute>
-                <AuthLayout>
-                  <ConfigurationStatus />
-                  <LoginForm 
-                    onSuccess={() => window.location.href = '/active-timer'} 
-                    onSwitchToSignup={() => window.location.href = '/signup'}
-                  />
-                </AuthLayout>
-              </AuthenticatedRoute>
+              <LoginPage />
             } />
             <Route path="/signup" element={
               <AuthenticatedRoute>
