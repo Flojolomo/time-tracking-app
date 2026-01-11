@@ -25,36 +25,39 @@ export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> 
     </>
 
   const authenticatedMenu = <>
-        <Link
-            to="/active-timer"
-            className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            onClick={() => setIsMobileMenuOpen(false)}
-        >
-            Active Timer
-        </Link>
-        <Link
-            to="/records"
-            className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            onClick={() => setIsMobileMenuOpen(false)}
-        >
-            Time Records
-        </Link>
-        <Link
-            to="/analytics"
-            className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            onClick={() => setIsMobileMenuOpen(false)}
-        >
-            Analytics
-        </Link>
-        <Link
+        <div className="px-3 py-1 text-sm text-gray-500">{user?.email}</div>
+
+        <div className="border-t border-gray-200 pt-2 mt-2">
+            <Link
+                to="/active-timer"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+            >
+                Active Timer
+            </Link>
+            <Link
+                to="/records"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+            >
+                Time Records
+            </Link>
+            <Link
+                to="/analytics"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+            >
+                Analytics
+            </Link>
+        </div>
+        <div className="border-t border-gray-200 pt-2 mt-2">
+             <Link
             to="/profile"
             className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
-        >
-            Profile
-        </Link>
-        <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="px-3 py-1 text-sm text-gray-500">{user?.email}</div>
+            >
+                Profile
+            </Link>
             <button
             onClick={() => {
                 logout();
