@@ -59,3 +59,10 @@ async function initializeApp() {
 
 // Initialize the app
 initializeApp();
+
+// Register service worker in production
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  import('./utils/serviceWorker').then(({ registerServiceWorker }) => {
+    registerServiceWorker();
+  });
+}
