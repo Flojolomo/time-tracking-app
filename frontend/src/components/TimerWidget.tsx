@@ -6,7 +6,6 @@ import { LoadingOverlay, ButtonLoading } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useNetworkAwareOperation } from '../hooks/useNetworkStatus';
-import { useDataCache } from '../contexts/DataCacheContext';
 import { TimeRecord } from '../types';
 
 interface ActiveTimerFormData {
@@ -16,18 +15,18 @@ interface ActiveTimerFormData {
   startTime: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface TimerWidgetProps { }
+interface TimerWidgetProps {
+  activeRecord: TimeRecord | null;
+  onRecordChange: () => void;
+}
 
-export const TimerWidget: React.FC<TimerWidgetProps> = () => {
-  const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
+export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecordChange }) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
   const { showSuccess, showError } = useNotifications();
   const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
-  const { refreshData } = useDataCache();
 
   // Debounce timer refs
   const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -56,10 +55,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
     }
   });
 
-  // Load active record on component mount
-  useEffect(() => {
-    loadActiveRecord();
-  }, []);
+
 
   // Update active timer form when active record changes
   useEffect(() => {
@@ -75,14 +71,18 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
   // Update elapsed time every second when timer is active
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
 
     if (activeRecord) {
       const updateElapsedTime = () => {
-        const start = new Date(activeRecord.startTime);
-        const now = new Date();
-        const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
-        setElapsedTime(elapsed);
+        try {
+          const start = new Date(activeRecord.startTime);
+          const now = new Date();
+          const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+          setElapsedTime(elapsed);
+        } catch (error) {
+          console.error('Error updating elapsed time:', error);
+        }
       };
 
       // Update immediately
@@ -90,25 +90,19 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
       // Then update every second
       interval = setInterval(updateElapsedTime, 1000);
+    } else {
+      setElapsedTime(0);
     }
 
     return () => {
       if (interval) {
         clearInterval(interval);
+        interval = null;
       }
     };
   }, [activeRecord]);
 
-  const loadActiveRecord = async () => {
-    try {
-      setError('');
-      const response = await TimeRecordService.getActiveTimer();
-      setActiveRecord(response.activeRecord);
-    } catch (error: unknown) {
-      console.error('Failed to load active record:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load timer status');
-    }
-  };
+
 
   const formatElapsedTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -141,8 +135,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
       setError('');
 
       await executeWithRetry(async () => {
-        const newRecord = await TimeRecordService.startTimer();
-        setActiveRecord(newRecord);
+        await TimeRecordService.startTimer();
+        onRecordChange();
       });
 
       showSuccess('Timer Started', 'Your time tracking has begun!');
@@ -193,11 +187,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
         await TimeRecordService.stopTimer(activeRecord.id, stopData);
       });
 
-      // Reset state
-      setActiveRecord(null);
-
-      // Refresh cached data after stopping timer
-      refreshData();
+      // Refresh active record state
+      onRecordChange();
 
       showSuccess('Timer Stopped', 'Your time record has been saved successfully!');
     } catch (error: unknown) {
@@ -252,8 +243,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
         if (hasChanged) {
           await executeWithRetry(async () => {
-            const updatedRecord = await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
-            setActiveRecord(updatedRecord);
+            await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
+            onRecordChange();
           });
         }
       } catch (error: unknown) {

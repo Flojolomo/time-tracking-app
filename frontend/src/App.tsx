@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm, TimerWidget } from './components';
-import { LandingPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, TimeRecordViews } from './pages';
+import { AuthDemo, ProtectedRoute, ConfigurationStatus, LoginForm, SignupForm } from './components';
+import { LandingPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, TimeRecordViews } from './pages';
 import { useAuth } from './hooks/useAuth';
 import { ViewStateProvider } from './contexts/ViewStateContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -61,10 +61,9 @@ function App() {
   return (
     <ErrorBoundary>
       <NotificationProvider>
-        <DataCacheProvider>
-          <ViewStateProvider>
-            <NetworkStatusBanner />
-            <OfflineStatusBar />
+        <ViewStateProvider>
+          <NetworkStatusBanner />
+          <OfflineStatusBar />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
@@ -126,70 +125,83 @@ function App() {
               </div>
             } />
             
-            {/* Protected routes */}
+            {/* Protected routes with DataCacheProvider */}
             <Route path="/active-timer" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                    <TimerWidget />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                      <ActiveTimerPage />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
             
             {/* Time record views with different URL paths */}
             <Route path="/records" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <TimeRecordViews />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                    <TimeRecordViews />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
             
             <Route path="/records/daily" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <TimeRecordViews />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                    <TimeRecordViews />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
             
             <Route path="/records/weekly" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <TimeRecordViews />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                    <TimeRecordViews />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
             
             <Route path="/records/monthly" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <TimeRecordViews />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                    <TimeRecordViews />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
             
             {/* Statistics/Analytics route */}
             <Route path="/analytics" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <StatsDashboard />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                    <StatsDashboard />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
             
             {/* Profile route */}
             <Route path="/profile" element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <ProfilePage />
-                </DashboardLayout>
+                <DataCacheProvider>
+                  <DashboardLayout>
+                    <ProfilePage />
+                  </DashboardLayout>
+                </DataCacheProvider>
               </ProtectedRoute>
             } />
           </Routes>
           <NotificationContainer />
         </ViewStateProvider>
-      </DataCacheProvider>
-    </NotificationProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   )
 }

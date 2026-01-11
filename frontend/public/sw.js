@@ -1,8 +1,8 @@
 // Service Worker for Time Tracking App
 // Provides offline functionality and background sync
 
-const CACHE_NAME = 'time-tracker-v1';
-const STATIC_CACHE_NAME = 'time-tracker-static-v1';
+const CACHE_NAME = 'time-tracker-v3';
+const STATIC_CACHE_NAME = 'time-tracker-static-v3';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [

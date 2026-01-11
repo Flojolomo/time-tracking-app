@@ -22,7 +22,7 @@ export const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
   error = false,
   id
 }) => {
-  const { getTagSuggestions, isLoading } = useDataCache();
+  const { getTagSuggestions, isLoading, ensureDataLoaded } = useDataCache();
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -105,6 +105,10 @@ export const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
     }, 150);
   };
 
+  const handleInputFocus = async () => {
+    await ensureDataLoaded();
+  };
+
   useEffect(() => {
     if (selectedIndex >= 0 && suggestionsRef.current) {
       const selectedElement = suggestionsRef.current.children[selectedIndex] as HTMLElement;
@@ -149,6 +153,7 @@ export const TagAutocomplete: React.FC<TagAutocompleteProps> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleInputKeyDown}
+          onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={placeholder}
           disabled={disabled || isLoading}

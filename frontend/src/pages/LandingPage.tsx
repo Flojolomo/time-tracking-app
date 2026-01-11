@@ -6,6 +6,8 @@ export const LandingPage: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   
+  // No data requests on landing page - keep it lightweight
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Hero Section */}
@@ -77,7 +79,7 @@ export const LandingPage: React.FC = () => {
                           className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          Dashboard
+                          Active Timer
                         </Link>
                         <Link
                           to="/records"

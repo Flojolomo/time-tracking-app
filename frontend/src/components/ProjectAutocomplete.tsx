@@ -22,7 +22,7 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
   error = false,
   id
 }) => {
-  const { getProjectSuggestions, isLoading } = useDataCache();
+  const { getProjectSuggestions, isLoading, ensureDataLoaded } = useDataCache();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -51,7 +51,8 @@ export const ProjectAutocomplete: React.FC<ProjectAutocompleteProps> = ({
   };
 
   // Handle input focus
-  const handleInputFocus = () => {
+  const handleInputFocus = async () => {
+    await ensureDataLoaded();
     if (suggestions.length > 0) {
       setShowSuggestions(true);
     }

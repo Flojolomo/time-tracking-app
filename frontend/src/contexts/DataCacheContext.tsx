@@ -6,6 +6,7 @@ interface DataCacheContextType {
   tags: string[];
   isLoading: boolean;
   refreshData: () => Promise<void>;
+  ensureDataLoaded: () => Promise<void>;
   getProjectSuggestions: (query: string) => string[];
   getTagSuggestions: (query: string) => string[];
 }
@@ -53,6 +54,12 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children }
     }
   }, []);
 
+  const ensureDataLoaded = useCallback(async () => {
+    if (!lastRefresh) {
+      await refreshData();
+    }
+  }, [refreshData, lastRefresh]);
+
   const getProjectSuggestions = useCallback((query: string): string[] => {
     if (!query.trim()) return [];
     
@@ -77,29 +84,12 @@ export const DataCacheProvider: React.FC<DataCacheProviderProps> = ({ children }
       .slice(0, 10);
   }, [tags]);
 
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const checkAndRefresh = async () => {
-      if (!lastRefresh || Date.now() - lastRefresh.getTime() > 5 * 60 * 1000) {
-        await refreshData();
-      }
-    };
-
-    // Initial load
-    if (!lastRefresh) {
-      refreshData();
-    }
-
-    // Set up interval
-    const interval = setInterval(checkAndRefresh, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [refreshData, lastRefresh]);
-
   const value: DataCacheContextType = {
     projects,
     tags,
     isLoading,
     refreshData,
+    ensureDataLoaded,
     getProjectSuggestions,
     getTagSuggestions
   };
