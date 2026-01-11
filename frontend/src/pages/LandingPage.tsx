@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Menu } from '../components/Menu';
 
 export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const menuIcon = !isMobileMenuOpen ? (
         <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,7 +28,12 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
   const headerBar = <div className="relative pt-3 px-4 sm:px-6 lg:px-8">
               <nav className="relative flex items-center justify-between sm:h-10" aria-label="Global">
                 <div className="flex items-center">
-                  <h1 className="text-2xl font-bold text-indigo-600">TimeTracker</h1>
+                  <h1 
+                    className="text-2xl font-bold text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors"
+                    onClick={() => navigate('/')}
+                  >
+                    TimeTracker
+                  </h1>
                 </div>
                 <div className="flex items-center">
                   {menuButton}
