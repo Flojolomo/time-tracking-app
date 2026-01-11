@@ -638,6 +638,11 @@ function handler(event) {
       description: 'S3 Bucket Name for website hosting',
     });
 
+    new cdk.CfnOutput(this, 'CloudFrontDistributionId', {
+      value: distribution.distributionId,
+      description: 'CloudFront Distribution ID for cache invalidation',
+    });
+
     // Complete Amplify Gen 2 Outputs JSON
     new cdk.CfnOutput(this, 'AmplifyOutputsJson', {
       value: JSON.stringify({

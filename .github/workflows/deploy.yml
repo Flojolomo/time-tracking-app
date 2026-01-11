@@ -94,11 +94,9 @@ jobs:
         
         DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
           --stack-name TimeTrackingStack \
-          --query "Stacks[0].Outputs[?contains(OutputKey, 'Distribution')].OutputValue" \
+          --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
           --output text)
         
-        if [ ! -z "$DISTRIBUTION_ID" ]; then
-          aws cloudfront create-invalidation \
-            --distribution-id $DISTRIBUTION_ID \
-            --paths "/*"
-        fi
+        aws cloudfront create-invalidation \
+          --distribution-id $DISTRIBUTION_ID \
+          --paths "/*"
