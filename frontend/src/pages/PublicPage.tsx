@@ -239,7 +239,9 @@ export const PublicPage: React.FC = () => {
           </div>
         </main>
       
-      { visualBanner }
+      <div className="mt-8">
+        { visualBanner }
+      </div>
       { featureHighlights }
       { demoSection }
     </div>
