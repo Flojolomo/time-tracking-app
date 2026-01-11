@@ -74,31 +74,31 @@ const getTags = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     const queryParams = event.queryStringParameters || {};
     const { q: query, limit = '50' } = queryParams;
 
-    const params: any = {
-      TableName: TABLE_NAME,
-      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
-      ExpressionAttributeValues: {
-        ':pk': `USER#${userId}`,
-        ':skPrefix': 'RECORD#'
-      },
-      ProjectionExpression: 'tags',
-      FilterExpression: 'attribute_exists(tags) AND size(tags) > :zero',
-      ExpressionAttributeValues: {
-        ...params.ExpressionAttributeValues,
-        ':zero': 0
-      }
-    };
+    // const params: any = {
+    //   TableName: TABLE_NAME,
+    //   KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+    //   ExpressionAttributeValues: {
+    //     ':pk': `USER#${userId}`,
+    //     ':skPrefix': 'RECORD#'
+    //   },
+    //   ProjectionExpression: 'tags',
+    //   FilterExpression: 'attribute_exists(tags) AND size(tags) > :zero',
+    //   ExpressionAttributeValues: {
+    //     ...params.ExpressionAttributeValues,
+    //     ':zero': 0
+    //   }
+    // };
 
-    const command = new QueryCommand(params);
-    const result = await docClient.send(command);
+    // const command = new QueryCommand(params);
+    // const result = await docClient.send(command);
 
     // Extract and deduplicate tags
     const tagSet = new Set<string>();
-    (result.Items || []).forEach(item => {
-      if (item.tags && Array.isArray(item.tags)) {
-        item.tags.forEach((tag: string) => tagSet.add(tag));
-      }
-    });
+    // (result.Items || []).forEach(item => {
+    //   if (item.tags && Array.isArray(item.tags)) {
+    //     item.tags.forEach((tag: string) => tagSet.add(tag));
+    //   }
+    // });
 
     let tags = Array.from(tagSet).sort();
 

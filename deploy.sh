@@ -68,9 +68,9 @@ deploy_infrastructure() {
 deploy_frontend() {
     print_status "📦 Building and deploying frontend..."
     
-    # Update Amplify configuration first
-    print_status "🔧 Updating Amplify configuration..."
-    node update-amplify-config.js
+    # # Update Amplify configuration first
+    # print_status "🔧 Updating Amplify configuration..."
+    # node update-amplify-config.js
     
     cd frontend
     
