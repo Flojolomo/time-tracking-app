@@ -18,33 +18,40 @@ const corsConfig: {
   maxAge?: number;
 } = JSON.parse(process.env.CORS_CONFIG || '{}');
 
-// Pre-compute static CORS headers
-const corsHeaders: Record<string, string> = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': corsConfig.allowedOrigins.join(','),
-  'Access-Control-Allow-Methods': (corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']).join(','),
-  'Access-Control-Allow-Headers': (corsConfig.allowedHeaders || ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent', 'X-Amz-Content-Sha256', 'X-Amz-Target']).join(','),
-  'Access-Control-Max-Age': (corsConfig.maxAge || 86400).toString(),
-  ...(corsConfig.allowCredentials && { 'Access-Control-Allow-Credentials': 'true' })
+// Helper function to get CORS headers with correct origin
+const getCorsHeaders = (event: APIGatewayProxyEvent): Record<string, string> => {
+  const origin = event.headers.origin || event.headers.Origin;
+  const allowedOrigin = (origin && corsConfig.allowedOrigins?.includes(origin)) ? origin : corsConfig.allowedOrigins?.[0];
+  
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': allowedOrigin || 'null',
+    'Access-Control-Allow-Methods': (corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']).join(','),
+    'Access-Control-Allow-Headers': (corsConfig.allowedHeaders || ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent', 'X-Amz-Content-Sha256', 'X-Amz-Target']).join(','),
+    'Access-Control-Max-Age': (corsConfig.maxAge || 86400).toString(),
+    ...(corsConfig.allowCredentials && { 'Access-Control-Allow-Credentials': 'true' })
+  };
 };
 
 // Helper function to create error response
 const createErrorResponse = (
   statusCode: number,
-  message: string
+  message: string,
+  event?: APIGatewayProxyEvent
 ) => ({
   statusCode,
-  headers: corsHeaders,
+  headers: event ? getCorsHeaders(event) : { 'Content-Type': 'application/json' },
   body: JSON.stringify({ error: message })
 });
 
 // Helper function to create success response
 const createSuccessResponse = (
   statusCode: number,
-  data: any
+  data: any,
+  event?: APIGatewayProxyEvent
 ) => ({
   statusCode,
-  headers: corsHeaders,
+  headers: event ? getCorsHeaders(event) : { 'Content-Type': 'application/json' },
   body: JSON.stringify(data)
 });
 
@@ -66,8 +73,6 @@ interface TimeRecord {
   createdAt: string;    // ISO 8601 timestamp
   updatedAt: string;    // ISO 8601 timestamp
 }
-
-
 
 // Helper function to extract user ID from request context (IAM authorization)
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
@@ -194,7 +199,7 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found', corsConfig);
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const queryParams = event.queryStringParameters || {};
@@ -282,10 +287,10 @@ const getTimeRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       timeRecords,
       count: timeRecords.length,
       lastEvaluatedKey: result.LastEvaluatedKey
-    }, corsConfig);
+    }, event);
   } catch (error) {
     console.error('Error getting time records:', error);
-    return createErrorResponse(500, 'Internal server error', corsConfig);
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -294,25 +299,24 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found', event, corsConfig);
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required', event, corsConfig);
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     const validation = validateTimeRecord(data);
 
     if (!validation.isValid) {
-      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`);
+      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`, event);
     }
 
     const recordId = uuidv4();
     const now = new Date().toISOString();
     const duration = data.duration || calculateDuration(data.startTime, data.endTime);
     
-    // Use projectName if provided, otherwise fall back to project for backward compatibility
     const projectName = (data.projectName || data.project).trim();
 
     const timeRecord: TimeRecord = {
@@ -329,7 +333,7 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       duration,
       comment: data.description || data.comment || '',
       tags: data.tags || [],
-      isActive: false, // Regular records are not active
+      isActive: false,
       createdAt: now,
       updatedAt: now
     };
@@ -341,7 +345,6 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     await docClient.send(command);
 
-    // Transform response to match frontend expectations - only return needed fields
     const responseRecord = {
       id: timeRecord.recordId,
       userId: timeRecord.userId,
@@ -355,13 +358,13 @@ const createTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       updatedAt: timeRecord.updatedAt
     };
 
-    return createSuccessResponse(201, responseRecord, corsConfig);
+    return createSuccessResponse(201, responseRecord, event);
   } catch (error) {
     console.error('Error creating time record:', error);
     if (error instanceof SyntaxError) {
-      return createErrorResponse(400, 'Invalid JSON in request body', corsConfig);
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
     }
-    return createErrorResponse(500, 'Internal server error', corsConfig);
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -370,26 +373,25 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const recordId = event.pathParameters?.id;
     if (!recordId) {
-      return createErrorResponse(400, 'Record ID is required');
+      return createErrorResponse(400, 'Record ID is required', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     const validation = validateTimeRecord(data);
 
     if (!validation.isValid) {
-      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`);
+      return createErrorResponse(400, `Validation errors: ${validation.errors.join(', ')}`, event);
     }
 
-    // First, get the existing record to verify ownership and get the current SK
     const getCommand = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
@@ -405,19 +407,14 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
     const existingRecord = getResult.Items?.[0];
 
     if (!existingRecord) {
-      return createErrorResponse(404, 'Time record not found');
+      return createErrorResponse(404, 'Time record not found', event);
     }
 
     const now = new Date().toISOString();
     const duration = data.duration || calculateDuration(data.startTime, data.endTime);
-    
-    // Use projectName if provided, otherwise fall back to project for backward compatibility
     const projectName = (data.projectName || data.project).trim();
 
-    // If the date changed, we need to delete the old record and create a new one
-    // because the SK includes the date
     if (data.date !== existingRecord.date) {
-      // Delete old record
       const deleteCommand = new DeleteCommand({
         TableName: TABLE_NAME,
         Key: {
@@ -427,7 +424,6 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
       });
       await docClient.send(deleteCommand);
 
-      // Create new record with updated date
       const newTimeRecord: TimeRecord = {
         PK: `USER#${userId}`,
         SK: `RECORD#${data.date}#${recordId}`,
@@ -442,7 +438,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
         duration,
         comment: data.description || data.comment || '',
         tags: data.tags || [],
-        isActive: false, // Regular records are not active
+        isActive: false,
         createdAt: existingRecord.createdAt,
         updatedAt: now
       };
@@ -454,7 +450,6 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
       await docClient.send(putCommand);
       
-      // Transform response to match frontend expectations - only return needed fields
       const responseRecord = {
         id: newTimeRecord.recordId,
         userId: newTimeRecord.userId,
@@ -468,9 +463,8 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
         updatedAt: newTimeRecord.updatedAt
       };
       
-      return createSuccessResponse(200, responseRecord);
+      return createSuccessResponse(200, responseRecord, event);
     } else {
-      // Update existing record in place
       const updateCommand = new UpdateCommand({
         TableName: TABLE_NAME,
         Key: {
@@ -490,7 +484,7 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
           ':duration': duration,
           ':comment': data.description || data.comment || '',
           ':tags': data.tags || [],
-          ':isActive': false, // Regular records are not active
+          ':isActive': false,
           ':updatedAt': now,
           ':gsi1pk': `PROJECT#${projectName}`
         },
@@ -499,7 +493,6 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
       const updateResult = await docClient.send(updateCommand);
       
-      // Transform response to match frontend expectations - only return needed fields
       const responseRecord = {
         id: updateResult.Attributes?.recordId,
         userId: updateResult.Attributes?.userId,
@@ -513,14 +506,14 @@ const updateTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
         updatedAt: updateResult.Attributes?.updatedAt
       };
       
-      return createSuccessResponse(200, responseRecord);
+      return createSuccessResponse(200, responseRecord, event);
     }
   } catch (error) {
     console.error('Error updating time record:', error);
     if (error instanceof SyntaxError) {
-      return createErrorResponse(400, 'Invalid JSON in request body');
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -529,15 +522,14 @@ const deleteTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const recordId = event.pathParameters?.id;
     if (!recordId) {
-      return createErrorResponse(400, 'Record ID is required');
+      return createErrorResponse(400, 'Record ID is required', event);
     }
 
-    // First, get the existing record to verify ownership and get the SK
     const getCommand = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
@@ -553,10 +545,9 @@ const deleteTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
     const existingRecord = getResult.Items?.[0];
 
     if (!existingRecord) {
-      return createErrorResponse(404, 'Time record not found');
+      return createErrorResponse(404, 'Time record not found', event);
     }
 
-    // Delete the record
     const deleteCommand = new DeleteCommand({
       TableName: TABLE_NAME,
       Key: {
@@ -567,10 +558,10 @@ const deleteTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGateway
 
     await docClient.send(deleteCommand);
 
-    return createSuccessResponse(200, { message: 'Time record deleted successfully', recordId });
+    return createSuccessResponse(200, { message: 'Time record deleted successfully', recordId }, event);
   } catch (error) {
     console.error('Error deleting time record:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -579,7 +570,7 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const queryParams = event.queryStringParameters || {};
@@ -599,7 +590,6 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       }
     };
 
-    // Add date range filtering if provided
     if (startDate && endDate) {
       params.KeyConditionExpression += ' AND SK BETWEEN :startSK AND :endSK';
       params.ExpressionAttributeValues[':startSK'] = `RECORD#${startDate}`;
@@ -617,7 +607,6 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
     const records = result.Items || [];
 
-    // Calculate statistics
     const projectStats = new Map<string, number>();
     const tagStats = new Map<string, number>();
     const dailyStats = new Map<string, number>();
@@ -627,25 +616,21 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       const duration = record.duration || 0;
       totalDuration += duration;
 
-      // Project statistics
       if (record.project) {
         projectStats.set(record.project, (projectStats.get(record.project) || 0) + duration);
       }
 
-      // Tag statistics
       if (record.tags && Array.isArray(record.tags)) {
         record.tags.forEach((tag: string) => {
           tagStats.set(tag, (tagStats.get(tag) || 0) + duration);
         });
       }
 
-      // Daily statistics
       if (record.date) {
         dailyStats.set(record.date, (dailyStats.get(record.date) || 0) + duration);
       }
     });
 
-    // Convert maps to arrays and sort
     const projectTotals = Array.from(projectStats.entries())
       .map(([project, duration]) => ({ project, duration }))
       .sort((a, b) => b.duration - a.duration);
@@ -658,7 +643,6 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       .map(([date, duration]) => ({ date, duration }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Calculate averages
     const totalDays = dailyStats.size;
     const averageDailyTime = totalDays > 0 ? totalDuration / totalDays : 0;
 
@@ -672,10 +656,10 @@ const getStatistics = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       dailyTotals
     };
 
-    return createSuccessResponse(200, statistics);
+    return createSuccessResponse(200, statistics, event);
   } catch (error) {
     console.error('Error getting statistics:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -684,10 +668,9 @@ const startTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayP
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
-    // Check if user already has an active record
     const activeRecordQuery = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
@@ -702,27 +685,27 @@ const startTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayP
     const activeResult = await docClient.send(activeRecordQuery);
     
     if (activeResult.Items && activeResult.Items.length > 0) {
-      return createErrorResponse(400, 'User already has an active time record. Stop the current record before starting a new one.');
+      return createErrorResponse(400, 'User already has an active time record. Stop the current record before starting a new one.', event);
     }
 
     const recordId = uuidv4();
     const now = new Date().toISOString();
-    const today = now.split('T')[0]; // YYYY-MM-DD format
+    const today = now.split('T')[0];
 
     const activeRecord: TimeRecord = {
       PK: `USER#${userId}`,
       SK: `RECORD#${today}#${recordId}`,
-      GSI1PK: `PROJECT#ACTIVE`, // Temporary project for active records
+      GSI1PK: `PROJECT#ACTIVE`,
       GSI1SK: `DATE#${today}`,
       recordId,
       userId,
-      project: '', // Will be filled when stopped
+      project: '',
       startTime: now,
-      endTime: '', // Will be filled when stopped
+      endTime: '',
       date: today,
-      duration: 0, // Will be calculated when stopped
-      comment: '', // Will be filled when stopped
-      tags: [], // Will be filled when stopped
+      duration: 0,
+      comment: '',
+      tags: [],
       isActive: true,
       createdAt: now,
       updatedAt: now
@@ -735,7 +718,6 @@ const startTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayP
 
     await docClient.send(command);
 
-    // Transform response to match frontend expectations
     const responseRecord = {
       id: activeRecord.recordId,
       userId: activeRecord.userId,
@@ -750,10 +732,10 @@ const startTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayP
       updatedAt: activeRecord.updatedAt
     };
 
-    return createSuccessResponse(201, responseRecord);
+    return createSuccessResponse(201, responseRecord, event);
   } catch (error) {
     console.error('Error starting time record:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -762,26 +744,24 @@ const stopTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const recordId = event.pathParameters?.id;
     if (!recordId) {
-      return createErrorResponse(400, 'Record ID is required');
+      return createErrorResponse(400, 'Record ID is required', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     
-    // Validate required fields for stopping
     if (!data.project || typeof data.project !== 'string' || data.project.trim() === '') {
-      return createErrorResponse(400, 'Project name is required when stopping a time record');
+      return createErrorResponse(400, 'Project name is required when stopping a time record', event);
     }
 
-    // Get the existing active record
     const getCommand = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
@@ -798,14 +778,13 @@ const stopTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const existingRecord = getResult.Items?.[0];
 
     if (!existingRecord) {
-      return createErrorResponse(404, 'Active time record not found');
+      return createErrorResponse(404, 'Active time record not found', event);
     }
 
     const now = new Date().toISOString();
     const duration = calculateDuration(existingRecord.startTime, now);
     const projectName = data.project.trim();
 
-    // Update the record to stop it
     const updateCommand = new UpdateCommand({
       TableName: TABLE_NAME,
       Key: {
@@ -833,7 +812,6 @@ const stopTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const updateResult = await docClient.send(updateCommand);
 
-    // Transform response to match frontend expectations
     const responseRecord = {
       id: updateResult.Attributes?.recordId,
       userId: updateResult.Attributes?.userId,
@@ -848,13 +826,13 @@ const stopTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       updatedAt: updateResult.Attributes?.updatedAt
     };
 
-    return createSuccessResponse(200, responseRecord);
+    return createSuccessResponse(200, responseRecord, event);
   } catch (error) {
     console.error('Error stopping time record:', error);
     if (error instanceof SyntaxError) {
-      return createErrorResponse(400, 'Invalid JSON in request body');
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -863,7 +841,7 @@ const getActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGate
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const activeRecordQuery = new QueryCommand({
@@ -880,12 +858,11 @@ const getActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGate
     const result = await docClient.send(activeRecordQuery);
     
     if (!result.Items || result.Items.length === 0) {
-      return createSuccessResponse(200, { activeRecord: null });
+      return createSuccessResponse(200, { activeRecord: null }, event);
     }
 
     const activeRecord = result.Items[0];
 
-    // Transform response to match frontend expectations
     const responseRecord = {
       id: activeRecord.recordId,
       userId: activeRecord.userId,
@@ -900,10 +877,10 @@ const getActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIGate
       updatedAt: activeRecord.updatedAt
     };
 
-    return createSuccessResponse(200, { activeRecord: responseRecord });
+    return createSuccessResponse(200, { activeRecord: responseRecord }, event);
   } catch (error) {
     console.error('Error getting active time record:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -912,21 +889,20 @@ const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIG
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const recordId = event.pathParameters?.id;
     if (!recordId) {
-      return createErrorResponse(400, 'Record ID is required');
+      return createErrorResponse(400, 'Record ID is required', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
 
-    // Get the existing active record
     const getCommand = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
@@ -943,22 +919,19 @@ const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIG
     const existingRecord = getResult.Items?.[0];
 
     if (!existingRecord) {
-      return createErrorResponse(404, 'Active time record not found');
+      return createErrorResponse(404, 'Active time record not found', event);
     }
 
     const now = new Date().toISOString();
     
-    // Build update expression dynamically based on provided fields
     const updateExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {
       ':updatedAt': now
     };
 
-    // Always update the updatedAt timestamp
     updateExpressions.push('updatedAt = :updatedAt');
 
-    // Update project if provided
     if (data.project !== undefined && typeof data.project === 'string') {
       updateExpressions.push('#project = :project');
       updateExpressions.push('GSI1PK = :gsi1pk');
@@ -967,52 +940,46 @@ const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIG
       expressionAttributeValues[':gsi1pk'] = `PROJECT#${data.project.trim()}`;
     }
 
-    // Update description/comment if provided
     if (data.description !== undefined) {
       updateExpressions.push('#comment = :comment');
       expressionAttributeNames['#comment'] = 'comment';
       expressionAttributeValues[':comment'] = typeof data.description === 'string' ? data.description : '';
     }
 
-    // Update tags if provided
     if (data.tags !== undefined) {
       if (!Array.isArray(data.tags)) {
-        return createErrorResponse(400, 'Tags must be an array');
+        return createErrorResponse(400, 'Tags must be an array', event);
       }
       if (!data.tags.every((tag: any) => typeof tag === 'string')) {
-        return createErrorResponse(400, 'All tags must be strings');
+        return createErrorResponse(400, 'All tags must be strings', event);
       }
       updateExpressions.push('tags = :tags');
       expressionAttributeValues[':tags'] = data.tags;
     }
 
-    // Update start time if provided (Requirement 8.6)
     if (data.startTime !== undefined) {
       if (typeof data.startTime !== 'string') {
-        return createErrorResponse(400, 'Start time must be a valid ISO 8601 string');
+        return createErrorResponse(400, 'Start time must be a valid ISO 8601 string', event);
       }
       
       const newStartTime = new Date(data.startTime);
       if (isNaN(newStartTime.getTime())) {
-        return createErrorResponse(400, 'Start time must be a valid ISO 8601 timestamp');
+        return createErrorResponse(400, 'Start time must be a valid ISO 8601 timestamp', event);
       }
 
-      // Validate that new start time is not in the future
       const now = new Date();
       if (newStartTime > now) {
-        return createErrorResponse(400, 'Start time cannot be in the future');
+        return createErrorResponse(400, 'Start time cannot be in the future', event);
       }
 
       updateExpressions.push('startTime = :startTime');
       expressionAttributeValues[':startTime'] = data.startTime;
     }
 
-    // If no fields to update besides timestamp, return error
     if (updateExpressions.length === 1) {
-      return createErrorResponse(400, 'No valid fields provided for update');
+      return createErrorResponse(400, 'No valid fields provided for update', event);
     }
 
-    // Update the record
     const updateCommand = new UpdateCommand({
       TableName: TABLE_NAME,
       Key: {
@@ -1027,7 +994,6 @@ const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIG
 
     const updateResult = await docClient.send(updateCommand);
 
-    // Transform response to match frontend expectations
     const responseRecord = {
       id: updateResult.Attributes?.recordId,
       userId: updateResult.Attributes?.userId,
@@ -1042,33 +1008,31 @@ const updateActiveTimeRecord = async (event: APIGatewayProxyEvent): Promise<APIG
       updatedAt: updateResult.Attributes?.updatedAt
     };
 
-    return createSuccessResponse(200, responseRecord);
+    return createSuccessResponse(200, responseRecord, event);
   } catch (error) {
     console.error('Error updating active time record:', error);
     if (error instanceof SyntaxError) {
-      return createErrorResponse(400, 'Invalid JSON in request body');
+      return createErrorResponse(400, 'Invalid JSON in request body', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
 // User cleanup function - deletes all records for a specific user
 const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    // Get Identity Pool user ID from query parameters (sent by profile lambda)
     const identityPoolUserId = event.queryStringParameters?.identityPoolUserId;
 
     if (!identityPoolUserId) {
-      return createErrorResponse(400, 'Identity Pool User ID is required as query parameter');
+      return createErrorResponse(400, 'Identity Pool User ID is required as query parameter', event);
     }
 
     if (typeof identityPoolUserId !== 'string') {
-      return createErrorResponse(400, 'Identity Pool User ID must be a string');
+      return createErrorResponse(400, 'Identity Pool User ID must be a string', event);
     }
 
     console.log('Starting cleanup of user records');
     
-    // Query all user's records using the Identity Pool user ID
     const queryCommand = new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: 'PK = :pk',
@@ -1079,13 +1043,10 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
 
     const queryResult = await docClient.send(queryCommand);
     
-    // TODO probably need pagination
-    // Delete each record
     if (queryResult.Items && queryResult.Items.length > 0) {
       console.log(`Found ${queryResult.Items.length} records to delete`);
       
-      // Process deletions in batches to avoid overwhelming DynamoDB
-      const batchSize = 25; // DynamoDB batch write limit
+      const batchSize = 25;
       const batches = [];
       
       for (let i = 0; i < queryResult.Items.length; i += batchSize) {
@@ -1093,7 +1054,6 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
         batches.push(batch);
       }
       
-      // Process each batch
       for (const batch of batches) {
         const deletePromises = batch.map(item => {
           const deleteCommand = new DeleteCommand({
@@ -1109,7 +1069,6 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
         await Promise.all(deletePromises);
         console.log(`Deleted batch of ${batch.length} records`);
         
-        // Small delay between batches to be gentle on DynamoDB
         if (batches.length > 1) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -1120,17 +1079,17 @@ const cleanupUserRecords = async (event: APIGatewayProxyEvent): Promise<APIGatew
       return createSuccessResponse(200, { 
         message: `Successfully deleted ${queryResult.Items.length} records for Identity Pool user ${identityPoolUserId}`,
         deletedCount: queryResult.Items.length
-      });
+      }, event);
     } else {
       console.log('No time records found for cleanup');
       return createSuccessResponse(200, { 
         message: `No records found for Identity Pool user ${identityPoolUserId}`,
         deletedCount: 0
-      });
+      }, event);
     }
   } catch (error) {
     console.error(`Error during cleanup for Identity Pool user:`, error);
-    return createErrorResponse(500, 'Internal server error during user cleanup');
+    return createErrorResponse(500, 'Internal server error during user cleanup', event);
   }
 };
 
@@ -1141,7 +1100,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: getCorsHeaders(event),
       body: ''
     };
   }
@@ -1172,10 +1131,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     } else if (path === '/api/stats' && method === 'GET') {
       return await getStatistics(event);
     } else {
-      return createErrorResponse(404, 'Not found', corsConfig);
+      return createErrorResponse(404, 'Not found', event);
     }
   } catch (error) {
     console.error('Unhandled error:', error);
-    return createErrorResponse(500, 'Internal server error', corsConfig);
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };

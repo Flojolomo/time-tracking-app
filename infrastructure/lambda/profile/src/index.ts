@@ -25,33 +25,40 @@ const corsConfig: {
   maxAge?: number;
 } = JSON.parse(process.env.CORS_CONFIG || '{}');
 
-// Pre-compute static CORS headers
-const corsHeaders: Record<string, string> = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': corsConfig.allowedOrigins.join(','),
-  'Access-Control-Allow-Methods': (corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']).join(','),
-  'Access-Control-Allow-Headers': (corsConfig.allowedHeaders || ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent', 'X-Amz-Content-Sha256', 'X-Amz-Target']).join(','),
-  'Access-Control-Max-Age': (corsConfig.maxAge || 86400).toString(),
-  ...(corsConfig.allowCredentials && { 'Access-Control-Allow-Credentials': 'true' })
+// Helper function to get CORS headers with correct origin
+const getCorsHeaders = (event: APIGatewayProxyEvent): Record<string, string> => {
+  const origin = event.headers.origin || event.headers.Origin;
+  const allowedOrigin = (origin && corsConfig.allowedOrigins?.includes(origin)) ? origin : corsConfig.allowedOrigins?.[0];
+  
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': allowedOrigin || 'null',
+    'Access-Control-Allow-Methods': (corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']).join(','),
+    'Access-Control-Allow-Headers': (corsConfig.allowedHeaders || ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent', 'X-Amz-Content-Sha256', 'X-Amz-Target']).join(','),
+    'Access-Control-Max-Age': (corsConfig.maxAge || 86400).toString(),
+    ...(corsConfig.allowCredentials && { 'Access-Control-Allow-Credentials': 'true' })
+  };
 };
 
 // Helper function to create error response
 const createErrorResponse = (
   statusCode: number,
-  message: string
+  message: string,
+  event?: APIGatewayProxyEvent
 ) => ({
   statusCode,
-  headers: corsHeaders,
+  headers: event ? getCorsHeaders(event) : { 'Content-Type': 'application/json' },
   body: JSON.stringify({ error: message })
 });
 
 // Helper function to create success response
 const createSuccessResponse = (
   statusCode: number,
-  data: any
+  data: any,
+  event?: APIGatewayProxyEvent
 ) => ({
   statusCode,
-  headers: corsHeaders,
+  headers: event ? getCorsHeaders(event) : { 'Content-Type': 'application/json' },
   body: JSON.stringify(data)
 });
 
@@ -126,12 +133,12 @@ const getUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const accessToken = extractAccessToken(event);
     if (!accessToken) {
-      return createErrorResponse(401, 'Unauthorized: Access token not found');
+      return createErrorResponse(401, 'Unauthorized: Access token not found', event);
     }
 
     // Get user information from Cognito
@@ -161,13 +168,13 @@ const getUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       lastModified: new Date().toISOString() // Use current time as last modified
     };
 
-    return createSuccessResponse(200, { profile });
+    return createSuccessResponse(200, { profile }, event);
   } catch (error: any) {
     console.error('Error getting user profile:', error);
     if (error.name === 'NotAuthorizedException') {
-      return createErrorResponse(401, 'Invalid or expired access token');
+      return createErrorResponse(401, 'Invalid or expired access token', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -176,16 +183,16 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const accessToken = extractAccessToken(event);
     if (!accessToken) {
-      return createErrorResponse(401, 'Unauthorized: Access token not found');
+      return createErrorResponse(401, 'Unauthorized: Access token not found', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
@@ -211,7 +218,7 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     }
 
     if (updates.length === 0) {
-      return createErrorResponse(400, 'No valid fields to update');
+      return createErrorResponse(400, 'No valid fields to update', event);
     }
 
     // Update user attributes in Cognito
@@ -225,16 +232,16 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     return createSuccessResponse(200, { 
       message: 'Profile updated successfully',
       updatedFields: updates.map(u => u.Name)
-    });
+    }, event);
   } catch (error: any) {
     console.error('Error updating user profile:', error);
     if (error.name === 'NotAuthorizedException') {
-      return createErrorResponse(401, 'Invalid or expired access token');
+      return createErrorResponse(401, 'Invalid or expired access token', event);
     }
     if (error.name === 'InvalidParameterException') {
-      return createErrorResponse(400, 'Invalid parameter values');
+      return createErrorResponse(400, 'Invalid parameter values', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -243,30 +250,30 @@ const updateUserPassword = async (event: APIGatewayProxyEvent): Promise<APIGatew
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found');
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const accessToken = extractAccessToken(event);
     if (!accessToken) {
-      return createErrorResponse(401, 'Unauthorized: Access token not found');
+      return createErrorResponse(401, 'Unauthorized: Access token not found', event);
     }
 
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     
     if (!data.currentPassword || !data.newPassword) {
-      return createErrorResponse(400, 'Current password and new password are required');
+      return createErrorResponse(400, 'Current password and new password are required', event);
     }
 
     if (typeof data.currentPassword !== 'string' || typeof data.newPassword !== 'string') {
-      return createErrorResponse(400, 'Passwords must be strings');
+      return createErrorResponse(400, 'Passwords must be strings', event);
     }
 
     if (data.newPassword.length < 8) {
-      return createErrorResponse(400, 'New password must be at least 8 characters long');
+      return createErrorResponse(400, 'New password must be at least 8 characters long', event);
     }
 
     // Change password in Cognito
@@ -280,19 +287,19 @@ const updateUserPassword = async (event: APIGatewayProxyEvent): Promise<APIGatew
 
     return createSuccessResponse(200, { 
       message: 'Password updated successfully' 
-    });
+    }, event);
   } catch (error: any) {
     console.error('Error updating password:', error);
     if (error.name === 'NotAuthorizedException') {
-      return createErrorResponse(401, 'Invalid current password or expired access token');
+      return createErrorResponse(401, 'Invalid current password or expired access token', event);
     }
     if (error.name === 'InvalidPasswordException') {
-      return createErrorResponse(400, 'New password does not meet requirements');
+      return createErrorResponse(400, 'New password does not meet requirements', event);
     }
     if (error.name === 'LimitExceededException') {
-      return createErrorResponse(429, 'Too many password change attempts. Please try again later.');
+      return createErrorResponse(429, 'Too many password change attempts. Please try again later.', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -300,13 +307,13 @@ const updateUserPassword = async (event: APIGatewayProxyEvent): Promise<APIGatew
 const forgotPassword = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     
     if (!data.email || typeof data.email !== 'string') {
-      return createErrorResponse(400, 'Email is required and must be a string');
+      return createErrorResponse(400, 'Email is required and must be a string', event);
     }
 
     // Initiate forgot password flow
@@ -319,19 +326,19 @@ const forgotPassword = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     return createSuccessResponse(200, { 
       message: 'Password reset email sent successfully' 
-    });
+    }, event);
   } catch (error: any) {
     console.error('Error initiating password reset:', error);
     if (error.name === 'UserNotFoundException') {
       // For security, don't reveal if user exists or not
       return createSuccessResponse(200, { 
         message: 'Password reset email sent successfully' 
-      });
+      }, event);
     }
     if (error.name === 'LimitExceededException') {
-      return createErrorResponse(429, 'Too many password reset attempts. Please try again later.');
+      return createErrorResponse(429, 'Too many password reset attempts. Please try again later.', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -339,21 +346,21 @@ const forgotPassword = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 const resetPassword = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     if (!event.body) {
-      return createErrorResponse(400, 'Request body is required');
+      return createErrorResponse(400, 'Request body is required', event);
     }
 
     const data = JSON.parse(event.body);
     
     if (!data.email || !data.confirmationCode || !data.newPassword) {
-      return createErrorResponse(400, 'Email, confirmation code, and new password are required');
+      return createErrorResponse(400, 'Email, confirmation code, and new password are required', event);
     }
 
     if (typeof data.email !== 'string' || typeof data.confirmationCode !== 'string' || typeof data.newPassword !== 'string') {
-      return createErrorResponse(400, 'All fields must be strings');
+      return createErrorResponse(400, 'All fields must be strings', event);
     }
 
     if (data.newPassword.length < 8) {
-      return createErrorResponse(400, 'New password must be at least 8 characters long');
+      return createErrorResponse(400, 'New password must be at least 8 characters long', event);
     }
 
     // Confirm forgot password with new password
@@ -368,22 +375,22 @@ const resetPassword = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
     return createSuccessResponse(200, { 
       message: 'Password reset completed successfully' 
-    });
+    }, event);
   } catch (error: any) {
     console.error('Error completing password reset:', error);
     if (error.name === 'CodeMismatchException') {
-      return createErrorResponse(400, 'Invalid confirmation code');
+      return createErrorResponse(400, 'Invalid confirmation code', event);
     }
     if (error.name === 'ExpiredCodeException') {
-      return createErrorResponse(400, 'Confirmation code has expired');
+      return createErrorResponse(400, 'Confirmation code has expired', event);
     }
     if (error.name === 'InvalidPasswordException') {
-      return createErrorResponse(400, 'New password does not meet requirements');
+      return createErrorResponse(400, 'New password does not meet requirements', event);
     }
     if (error.name === 'UserNotFoundException') {
-      return createErrorResponse(404, 'User not found');
+      return createErrorResponse(404, 'User not found', event);
     }
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -394,11 +401,11 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     const userId = event.queryStringParameters?.userId;
 
     if (!userId) {
-      return createErrorResponse(400, 'User ID is required as query parameter');
+      return createErrorResponse(400, 'User ID is required as query parameter', event);
     }
 
     if (typeof userId !== 'string') {
-      return createErrorResponse(400, 'User ID must be a string');
+      return createErrorResponse(400, 'User ID must be a string', event);
     }
 
     console.log(`Starting profile deletion for user: ${userId}`);
@@ -419,16 +426,16 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     } catch (error: any) {
       console.error('Error verifying user in Cognito:', error);
       if (error.name === 'UserNotFoundException') {
-        return createErrorResponse(404, 'User not found in Cognito User Pool');
+        return createErrorResponse(404, 'User not found in Cognito User Pool', event);
       }
-      return createErrorResponse(500, 'Error verifying user');
+      return createErrorResponse(500, 'Error verifying user', event);
     }
 
 
     // Extract Cognito Identity Pool ID from IAM context (for data cleanup)
     const identityPoolUserId = extractUserIdFromToken(event);
     if (!identityPoolUserId) {
-      return createErrorResponse(401, 'Unauthorized: Could not extract Identity Pool user ID from IAM context');
+      return createErrorResponse(401, 'Unauthorized: Could not extract Identity Pool user ID from IAM context', event);
     }
 
     // For Cognito User Pool operations, we need to get the username from the access token
@@ -452,10 +459,10 @@ const deleteUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
 
     return createSuccessResponse(200, { 
       message: 'User profile and all associated data deleted successfully' 
-    });
+    }, event);
   } catch (error: any) {
     console.error('Error deleting user profile:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -508,7 +515,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: getCorsHeaders(event),
       body: ''
     };
   }
@@ -531,10 +538,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     } else if (path === '/api/profile' && method === 'DELETE') {
       return await deleteUserProfile(event);
     } else {
-      return createErrorResponse(404, 'Not found');
+      return createErrorResponse(404, 'Not found', event);
     }
   } catch (error) {
     console.error('Unhandled error:', error);
-    return createErrorResponse(500, 'Internal server error');
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };

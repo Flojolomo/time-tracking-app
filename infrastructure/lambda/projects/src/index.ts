@@ -17,33 +17,40 @@ const corsConfig: {
   maxAge?: number;
 } = JSON.parse(process.env.CORS_CONFIG || '{}');
 
-// Pre-compute static CORS headers
-const corsHeaders: Record<string, string> = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': corsConfig.allowedOrigins.join(','),
-  'Access-Control-Allow-Methods': (corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']).join(','),
-  'Access-Control-Allow-Headers': (corsConfig.allowedHeaders || ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent', 'X-Amz-Content-Sha256', 'X-Amz-Target']).join(','),
-  'Access-Control-Max-Age': (corsConfig.maxAge || 86400).toString(),
-  ...(corsConfig.allowCredentials && { 'Access-Control-Allow-Credentials': 'true' })
+// Helper function to get CORS headers with correct origin
+const getCorsHeaders = (event: APIGatewayProxyEvent): Record<string, string> => {
+  const origin = event.headers.origin || event.headers.Origin;
+  const allowedOrigin = (origin && corsConfig.allowedOrigins?.includes(origin)) ? origin : corsConfig.allowedOrigins?.[0];
+  
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': allowedOrigin || 'null',
+    'Access-Control-Allow-Methods': (corsConfig.allowedMethods || ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']).join(','),
+    'Access-Control-Allow-Headers': (corsConfig.allowedHeaders || ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Amz-User-Agent', 'X-Amz-Content-Sha256', 'X-Amz-Target']).join(','),
+    'Access-Control-Max-Age': (corsConfig.maxAge || 86400).toString(),
+    ...(corsConfig.allowCredentials && { 'Access-Control-Allow-Credentials': 'true' })
+  };
 };
 
 // Helper function to create error response
 const createErrorResponse = (
   statusCode: number,
-  message: string
+  message: string,
+  event?: APIGatewayProxyEvent
 ) => ({
   statusCode,
-  headers: corsHeaders,
+  headers: event ? getCorsHeaders(event) : { 'Content-Type': 'application/json' },
   body: JSON.stringify({ error: message })
 });
 
 // Helper function to create success response
 const createSuccessResponse = (
   statusCode: number,
-  data: any
+  data: any,
+  event?: APIGatewayProxyEvent
 ) => ({
   statusCode,
-  headers: corsHeaders,
+  headers: event ? getCorsHeaders(event) : { 'Content-Type': 'application/json' },
   body: JSON.stringify(data)
 });
 
@@ -112,7 +119,7 @@ const getProjectSuggestions = async (event: APIGatewayProxyEvent): Promise<APIGa
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found', event, corsConfig);
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     const queryParams = event.queryStringParameters || {};
@@ -161,10 +168,10 @@ const getProjectSuggestions = async (event: APIGatewayProxyEvent): Promise<APIGa
     return createSuccessResponse(200, {
       suggestions: projects,
       count: projects.length
-    }, event, corsConfig);
+    }, event);
   } catch (error) {
     console.error('Error getting project suggestions:', error);
-    return createErrorResponse(500, 'Internal server error', event, corsConfig);
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -173,7 +180,7 @@ const getProjects = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxy
   try {
     const userId = extractUserIdFromToken(event);
     if (!userId) {
-      return createErrorResponse(401, 'Unauthorized: User ID not found', event, corsConfig);
+      return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
     // Query user's time records to get project statistics
@@ -229,10 +236,10 @@ const getProjects = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxy
     return createSuccessResponse(200, {
       projects,
       count: projects.length
-    }, event, corsConfig);
+    }, event);
   } catch (error) {
     console.error('Error getting projects:', error);
-    return createErrorResponse(500, 'Internal server error', event, corsConfig);
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
 
@@ -244,7 +251,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: getCorsHeaders(event),
       body: ''
     };
   }
@@ -259,10 +266,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     } else if (path === '/api/projects' && method === 'GET') {
       return await getProjects(event);
     } else {
-      return createErrorResponse(404, 'Not found', event, corsConfig);
+      return createErrorResponse(404, 'Not found', event);
     }
   } catch (error) {
     console.error('Unhandled error:', error);
-    return createErrorResponse(500, 'Internal server error', event, corsConfig);
+    return createErrorResponse(500, 'Internal server error', event);
   }
 };
