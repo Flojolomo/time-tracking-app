@@ -18,6 +18,9 @@ const cachePolicy = envConfig.cachePolicy === 'CACHING_DISABLED'
   ? cloudfront.CachePolicy.CACHING_DISABLED
   : cloudfront.CachePolicy.CACHING_OPTIMIZED;
 
+// Create response headers policy based on environment
+let responseHeadersPolicy: cloudfront.IResponseHeadersPolicy | undefined;
+
 // Create CORS configuration from environment config
 const corsConfig = {
   allowCredentials: false,
@@ -42,5 +45,6 @@ new TimeTrackingStack(app, 'TimeTrackingStack', {
     region: process.env.CDK_DEFAULT_REGION || envConfig.region
   },
   cachePolicy,
+  cacheMaxAge: envConfig.cacheMaxAge,
   corsConfig
 });

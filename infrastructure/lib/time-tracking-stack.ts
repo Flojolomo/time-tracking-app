@@ -16,6 +16,10 @@ interface TimeTrackingStackProps extends cdk.StackProps {
  */
   cachePolicy: cloudfront.ICachePolicy;
   /**
+   * Cache max age in seconds for response headers
+   */
+  cacheMaxAge?: number;
+  /**
    * Complete CORS configuration for Lambda functions
    */
   corsConfig: {
@@ -189,12 +193,30 @@ export class TimeTrackingStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
+    // Create response headers policy if cacheMaxAge is specified
+    let responseHeadersPolicy: cloudfront.IResponseHeadersPolicy | undefined;
+    if (props.cacheMaxAge) {
+      responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'CachePolicy', {
+        responseHeadersPolicyName: `time-tracking-cache-${this.node.tryGetContext('stage') || 'dev'}`,
+        customHeadersBehavior: {
+          customHeaders: [
+            {
+              header: 'cache-control',
+              value: `public, max-age=${props.cacheMaxAge}`,
+              override: true
+            }
+          ]
+        }
+      });
+    }
+
     // CloudFront Distribution
     const distribution = new cloudfront.Distribution(this, 'TimeTrackingDistribution', {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(websiteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: props.cachePolicy ?? cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        responseHeadersPolicy: responseHeadersPolicy,
       },
       defaultRootObject: 'index.html',
       errorResponses: [

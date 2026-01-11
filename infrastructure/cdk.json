@@ -23,6 +23,7 @@
       "dev": {
         "region": "eu-central-1",
         "cachePolicy": "CACHING_DISABLED",
+        "cacheMaxAge": 120,
         "allowedOrigins": [
           "http://localhost:3000",
           "http://localhost:3001",
@@ -31,7 +32,8 @@
       },
       "prod": {
         "region": "eu-central-1",
-        "cachePolicy": "CACHING_DISABLED",
+        "cachePolicy": "CACHING_OPTIMIZED",
+        "cacheMaxAge": 86400,
         "allowedOrigins": [
           "http://localhost:3000",
           "http://localhost:3001",
