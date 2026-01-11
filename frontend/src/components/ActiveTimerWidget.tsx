@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { TimeRecordService } from '../utils/timeRecordService';
 import { TimeRecordForm } from './TimeRecordForm';
@@ -6,7 +6,7 @@ import { ButtonLoading } from './LoadingSpinner';
 import { ErrorMessage } from './ErrorMessage';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useNetworkAwareOperation } from '../hooks/useNetworkStatus';
-import { TimeRecord } from '../types';
+import { TimeRecord } from '../types'; 
 
 interface ActiveTimerFormData {
   project: string;
@@ -24,9 +24,19 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   const { showSuccess, showError } = useNotifications();
   const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
+
+  // Cleanup debounce timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(timer => {
+        if (timer) clearTimeout(timer);
+      });
+    };
+  }, []);
 
   // Update elapsed time every second when timer is active
   useEffect(() => {
@@ -169,9 +179,40 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   };
 
   const handleFieldUpdate = useCallback((fieldName: string, value: string) => {
-    // Simple field update without debouncing for now
-    console.log(`Field ${fieldName} updated to:`, value);
-  }, []);
+    // Clear existing timer for this field
+    if (debounceTimers.current[fieldName]) {
+      clearTimeout(debounceTimers.current[fieldName]);
+    }
+
+    // Set new timer
+    debounceTimers.current[fieldName] = setTimeout(async () => {
+      try {
+        const updateData: Record<string, unknown> = {};
+
+        if (fieldName === 'project') {
+          updateData.project = value.trim();
+        } else if (fieldName === 'description') {
+          updateData.description = value;
+        } else if (fieldName === 'tags') {
+          const tags = value.split(',').map((tag: string) => tag.trim()).filter(Boolean);
+          updateData.tags = tags;
+        } else if (fieldName === 'startTime') {
+          updateData.startTime = value;
+        }
+
+        await executeWithRetry(async () => {
+          await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
+        });
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to update active timer';
+        setError(errorMessage);
+        showError('Update Failed', errorMessage);
+      }
+
+      // Clean up the timer reference
+      delete debounceTimers.current[fieldName];
+    }, 500);
+  }, [activeRecord, executeWithRetry, showError]);
 
   return (
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 relative overflow-hidden">
