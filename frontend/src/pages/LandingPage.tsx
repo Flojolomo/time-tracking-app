@@ -73,7 +73,7 @@ export const LandingPage: React.FC = () => {
                     ) : (
                       <>
                         <Link
-                          to="/dashboard"
+                          to="/active-timer"
                           className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >

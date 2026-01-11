@@ -28,7 +28,7 @@ function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/active-timer" replace />;
   }
   
   return <>{children}</>;
@@ -73,7 +73,7 @@ function App() {
                 <AuthLayout>
                   <ConfigurationStatus />
                   <LoginForm 
-                    onSuccess={() => window.location.href = '/dashboard'} 
+                    onSuccess={() => window.location.href = '/active-timer'} 
                     onSwitchToSignup={() => window.location.href = '/signup'}
                   />
                 </AuthLayout>
@@ -127,7 +127,7 @@ function App() {
             } />
             
             {/* Protected routes */}
-            <Route path="/dashboard" element={
+            <Route path="/active-timer" element={
               <ProtectedRoute>
                 <DashboardLayout>
                     <TimerWidget />
@@ -205,17 +205,17 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/dashboard" className="text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors">
+              <Link to="/" className="text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors">
                 TimeTracker
               </Link>
               
               {/* Desktop Navigation */}
               <nav className="hidden md:flex md:ml-8 md:space-x-4">
                 <Link
-                  to="/dashboard"
+                  to="/active-timer"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
-                  Dashboard
+                  Active Timer
                 </Link>
                 <Link
                   to="/records"
@@ -276,11 +276,11 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
               <Link
-                to="/dashboard"
+                to="/active-timer"
                 className="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Dashboard
+                Active Timer
               </Link>
               <Link
                 to="/records"
