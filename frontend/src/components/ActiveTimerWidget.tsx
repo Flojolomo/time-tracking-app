@@ -24,17 +24,23 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
+  const [localRecord, setLocalRecord] = useState<TimeRecord>(activeRecord);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const { showSuccess, showError } = useNotifications();
   const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
 
-  // Cleanup debounce timers on unmount
+  // Update local record when active record changes
+  useEffect(() => {
+    setLocalRecord(activeRecord);
+  }, [activeRecord]);
+
+  // Cleanup debounce timer on unmount
   useEffect(() => {
     return () => {
-      Object.values(debounceTimers.current).forEach(timer => {
-        if (timer) clearTimeout(timer);
-      });
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
     };
   }, []);
 
@@ -42,10 +48,10 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
-    if (activeRecord) {
+    if (localRecord) {
       const updateElapsedTime = () => {
         try {
-          const start = new Date(activeRecord.startTime);
+          const start = new Date(localRecord.startTime);
           const now = new Date();
           const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
           setElapsedTime(elapsed);
@@ -66,7 +72,7 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
         interval = null;
       }
     };
-  }, [activeRecord]);
+  }, [localRecord]);
 
   const formatElapsedTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -119,25 +125,18 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   const handleStopTimer = async () => {
     try {
       setError('');
-      const currentValues = getActiveValues();
 
-      if (!currentValues.project || currentValues.project.trim() === '') {
+      if (!localRecord.projectName || localRecord.projectName.trim() === '') {
         setError('Project name is required to stop the timer');
-        setActiveError('project', {
-          type: 'required',
-          message: 'Project name is required to stop the timer'
-        });
         return;
       }
 
-      const tags = currentValues.tags
-        .split(',')
-        .map(tag => tag.trim())
+      const tags = (localRecord.tags || [])
         .filter(tag => tag.length > 0);
 
       const stopData = {
-        project: currentValues.project.trim(),
-        description: currentValues.description?.trim() || undefined,
+        project: localRecord.projectName.trim(),
+        description: localRecord.description?.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined
       };
 
@@ -179,40 +178,50 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   };
 
   const handleFieldUpdate = useCallback((fieldName: string, value: string) => {
-    // Clear existing timer for this field
-    if (debounceTimers.current[fieldName]) {
-      clearTimeout(debounceTimers.current[fieldName]);
+    console.log('Field update:', fieldName, value);
+    
+    // Update local record immediately
+    setLocalRecord(prev => {
+      const updated = { ...prev };
+      if (fieldName === 'project') {
+        updated.projectName = value;
+      } else if (fieldName === 'description') {
+        updated.description = value;
+      } else if (fieldName === 'tags') {
+        updated.tags = value.split(',').map(tag => tag.trim()).filter(Boolean);
+      } else if (fieldName === 'startTime') {
+        updated.startTime = value;
+      }
+      return updated;
+    });
+
+    // Clear existing timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
 
-    // Set new timer
-    debounceTimers.current[fieldName] = setTimeout(async () => {
+    // Set new timer to save after 500ms
+    debounceTimer.current = setTimeout(async () => {
       try {
+        console.log('Saving field update:', fieldName, value);
         const updateData: Record<string, unknown> = {};
-
-        if (fieldName === 'project') {
-          updateData.project = value.trim();
-        } else if (fieldName === 'description') {
-          updateData.description = value;
-        } else if (fieldName === 'tags') {
-          const tags = value.split(',').map((tag: string) => tag.trim()).filter(Boolean);
-          updateData.tags = tags;
-        } else if (fieldName === 'startTime') {
-          updateData.startTime = value;
-        }
+        if (fieldName === 'project') updateData.project = value.trim();
+        if (fieldName === 'description') updateData.description = value;
+        if (fieldName === 'tags') updateData.tags = value.split(',').map(tag => tag.trim()).filter(Boolean);
+        if (fieldName === 'startTime') updateData.startTime = value;
 
         await executeWithRetry(async () => {
           await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
         });
+        console.log('Field update saved successfully');
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update active timer';
+        console.error('Field update failed:', error);
         setError(errorMessage);
         showError('Update Failed', errorMessage);
       }
-
-      // Clean up the timer reference
-      delete debounceTimers.current[fieldName];
     }, 500);
-  }, [activeRecord, executeWithRetry, showError]);
+  }, [activeRecord.id, executeWithRetry, showError]);
 
   return (
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 relative overflow-hidden">
@@ -284,13 +293,13 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
             {formatElapsedTime(elapsedTime)}
           </div>
           <p className="text-sm text-green-600 mt-1 break-all">
-            Started at {formatDisplayTime(activeRecord.startTime)}
+            Started at {formatDisplayTime(localRecord.startTime)}
           </p>
         </div>
 
         {/* TimeRecordForm for active timer */}
         <TimeRecordForm
-          initialData={activeRecord}
+          initialData={localRecord}
           onSubmit={async () => { console.log("Submitted") }}
           onFieldUpdate={handleFieldUpdate}
           backgroundStyle="bg-gradient-to-br from-green-50 to-emerald-50"

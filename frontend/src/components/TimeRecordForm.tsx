@@ -287,6 +287,17 @@ export const TimeRecordForm = forwardRef<TimeRecordFormRef, TimeRecordFormProps>
                       className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${errors.startTime ? 'border-red-500' : 'border-gray-300'
                         }`}
                       disabled={isLoading || isSubmitting}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        if (onFieldUpdate && initialData) {
+                          // Convert time to full ISO timestamp
+                          const currentDate = new Date(initialData.startTime);
+                          const [hours, minutes] = e.target.value.split(':');
+                          const newDateTime = new Date(currentDate);
+                          newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                          onFieldUpdate('startTime', newDateTime.toISOString());
+                        }
+                      }}
                     />
                   )}
                 />
@@ -321,7 +332,7 @@ export const TimeRecordForm = forwardRef<TimeRecordFormRef, TimeRecordFormProps>
                       id="endTime"
                       className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${errors.endTime ? 'border-red-500' : 'border-gray-300'
                         }`}
-                      disabled={isLoading || isSubmitting}
+                      disabled={true}
                     />
                   )}
                 />
