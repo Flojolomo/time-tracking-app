@@ -7,3 +7,4 @@ export { ProfilePage } from './ProfilePage';
 export { StatsDashboard } from './StatsDashboard';
 export { TimeRecordViews } from './TimeRecordViews';
 export { LandingPage } from './LandingPage';
+export { LoginPage } from './LoginPage'; 
