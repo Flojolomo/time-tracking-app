@@ -71,7 +71,9 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
         </div>
       </div>
 
-      {children}
+      <div className="px-4 sm:px-6 py-6">
+        {children}
+      </div>
       {footer}
     </div>
   );

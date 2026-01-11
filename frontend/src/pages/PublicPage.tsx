@@ -6,7 +6,7 @@ export const PublicPage: React.FC = () => {
 
   { /* Visual Banner */ }
   const  visualBanner = <div>
-        <div className="h-30 w-full bg-gradient-to-r from-indigo-500 to-purple-600 sm:h-72 md:h-96 lg:w-full lg:h-full flex items-center justify-center">
+        <div className="h-50 w-full bg-gradient-to-r from-indigo-500 to-purple-600 sm:h-72 md:h-96 lg:w-full lg:h-full flex items-center justify-center">
           <div className="text-white text-center">
             <div className="w-32 h-32 mx-auto mb-4 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
@@ -206,7 +206,7 @@ export const PublicPage: React.FC = () => {
     <LandingPage>
       <div className="flex flex-col">
         <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-          <div className="sm:text-center lg:text-left">
+          <div className="py-8 sm:text-center lg:text-left ">
             <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
               <span className="block xl:inline">Track your time,</span>{' '}
               <span className="block text-indigo-600 xl:inline">boost productivity</span>
@@ -237,13 +237,10 @@ export const PublicPage: React.FC = () => {
               </div>
             </div>
           </div>
+          { visualBanner }
+          { featureHighlights }
+          { demoSection }
         </main>
-      
-      <div className="mt-8">
-        { visualBanner }
-      </div>
-      { featureHighlights }
-      { demoSection }
     </div>
   </LandingPage>)
 };
