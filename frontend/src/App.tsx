@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { AuthDemo, ConfigurationStatus, LoginForm, SignupForm } from './components';
+import { AuthDemo, ConfigurationStatus, SignupForm } from './components';
 import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, TimeRecordViews, LoginPage } from './pages';
 import { AppProviders, DataProviders } from './providers';
 import { AuthLayout, DashboardLayout } from './layouts';
@@ -65,7 +65,7 @@ function App() {
             
             {/* Protected routes with DataCacheProvider */}
             <Route path="/active-timer" element={
-              <ActiveTimerPage />
+                  <ActiveTimerPage />
             } />
             
             {/* Time record views with different URL paths */}

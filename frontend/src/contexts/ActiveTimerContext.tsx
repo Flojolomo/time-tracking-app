@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { TimeRecordService } from '../utils/timeRecordService';
 import { TimeRecord } from '../types';
 
@@ -15,7 +15,7 @@ const ActiveTimerContext = createContext<ActiveTimerContextType | undefined>(und
 
 export const ActiveTimerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadActiveRecord = useCallback(async (): Promise<void> => {
@@ -39,6 +39,11 @@ export const ActiveTimerProvider: React.FC<{ children: ReactNode }> = ({ childre
   const clearError = useCallback(() => {
     setError(null);
   }, []);
+
+  // Load active record on mount
+  useEffect(() => {
+    loadActiveRecord();
+  }, [loadActiveRecord]);
 
   return (
     <ActiveTimerContext.Provider value={{
