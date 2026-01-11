@@ -264,7 +264,6 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecord
   }, [debouncedFieldUpdate]);
 
   return (
-    <LoadingOverlay isLoading={isLoading} text="Loading timer...">
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
@@ -275,7 +274,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecord
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-white">
-              Time Tracker
+              Active Timer
             </h2>
           </div>
         </div>
@@ -397,6 +396,5 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, onRecord
           )}
         </div>
       </div>
-    </LoadingOverlay>
   );
 };
