@@ -17,14 +17,14 @@ interface ActiveTimerFormData {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface TimerWidgetProps {}
+interface TimerWidgetProps { }
 
 export const TimerWidget: React.FC<TimerWidgetProps> = () => {
   const [activeRecord, setActiveRecord] = useState<TimeRecord | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  
+
   const { showSuccess, showError } = useNotifications();
   const { executeWithRetry, isRetrying } = useNetworkAwareOperation();
   const { refreshData } = useDataCache();
@@ -76,7 +76,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
   // Update elapsed time every second when timer is active
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (activeRecord) {
       const updateElapsedTime = () => {
         const start = new Date(activeRecord.startTime);
@@ -87,7 +87,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
       // Update immediately
       updateElapsedTime();
-      
+
       // Then update every second
       interval = setInterval(updateElapsedTime, 1000);
     }
@@ -163,7 +163,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
       // Get current values from the active timer form
       const currentValues = getActiveValues();
-      
+
       // Validate required fields
       if (!currentValues.project || currentValues.project.trim() === '') {
         setError('Project name is required to stop the timer');
@@ -222,7 +222,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
       try {
         const updateData: Record<string, unknown> = {};
-        
+
         if (fieldName === 'project') {
           updateData.project = value.trim();
         } else if (fieldName === 'description') {
@@ -236,9 +236,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
 
         // Only update if there's actually a change
         const currentValue = fieldName === 'project' ? activeRecord.projectName :
-                            fieldName === 'description' ? activeRecord.description :
-                            fieldName === 'tags' ? (activeRecord.tags || []).join(', ') :
-                            fieldName === 'startTime' ? activeRecord.startTime : '';
+          fieldName === 'description' ? activeRecord.description :
+            fieldName === 'tags' ? (activeRecord.tags || []).join(', ') :
+              fieldName === 'startTime' ? activeRecord.startTime : '';
 
         // More robust comparison for different field types
         let hasChanged = false;
@@ -292,8 +292,8 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
         <div className="p-6">
           {/* Error Display */}
           {error && (
-            <ErrorMessage 
-              error={error} 
+            <ErrorMessage
+              error={error}
               onDismiss={() => setError('')}
               className="mb-6"
             />
@@ -307,7 +307,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                 {/* Background decoration */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-100 rounded-full translate-y-12 -translate-x-12 opacity-30"></div>
-                
+
                 <div className="relative">
                   {/* Header with Clock Icon and Stop Button */}
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
@@ -330,7 +330,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Stop Button */}
                     <button
                       onClick={handleStopTimer}
@@ -344,7 +344,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                       )}
                     </button>
                   </div>
-                  
+
                   {/* Timer Display */}
                   <div className="mb-6">
                     <div className="text-3xl sm:text-4xl md:text-5xl font-mono font-bold text-green-900 tracking-tight break-all">
@@ -358,13 +358,13 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                   {/* TimeRecordForm for active timer */}
                   <TimeRecordForm
                     initialData={activeRecord}
-                    onSubmit={async () => { console.log("Submitted")}}
+                    onSubmit={async () => { console.log("Submitted") }}
                     onFieldUpdate={handleFieldUpdate}
                     backgroundStyle="bg-gradient-to-br from-green-50 to-emerald-50"
-                    // "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200"
+                  // "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200"
 
                   />
-                  
+
                 </div>
               </div>
             </div>
@@ -377,14 +377,14 @@ export const TimerWidget: React.FC<TimerWidgetProps> = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                
+
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">
                   Ready to Track Time?
                 </h3>
                 <p className="text-gray-600 mb-8">
                   Start your timer to begin tracking your work session. You can add project details and descriptions while the timer is running.
                 </p>
-                
+
                 <button
                   onClick={handleStartTimer}
                   className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"

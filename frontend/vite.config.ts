@@ -7,10 +7,11 @@ export default defineConfig({
   server: {
     port: 3000,
     cors: true,
-    strictPort: true, // fail if port is already in use
-    hmr: {
-      port: 3000
-    }
+    watch: {
+      ignored: ['**/node_modules/**', '**/dist/**'] // make sure build output is ignored
+    },
+    // strictPort: true, // fail if port is already in use
+    hmr: false
   },
   build: {
     outDir: "dist",
