@@ -90,7 +90,7 @@ jobs:
           --query "Stacks[0].Outputs[?OutputKey=='S3BucketName'].OutputValue" \
           --output text)
         
-        aws s3 sync dist/ s3://$BUCKET_NAME/ --delete
+        aws s3 sync dist/ s3://$BUCKET_NAME/
         
         DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
           --stack-name TimeTrackingStack \
