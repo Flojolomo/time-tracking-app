@@ -31,8 +31,12 @@
       },
       "prod": {
         "region": "eu-central-1",
-        "cachePolicy": "CACHING_OPTIMIZED",
-        "allowedOrigins": []
+        "cachePolicy": "CACHING_DISABLED",
+        "allowedOrigins": [
+          "http://localhost:3000",
+          "http://localhost:3001",
+          "http://localhost:5173"
+        ]
       }
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
