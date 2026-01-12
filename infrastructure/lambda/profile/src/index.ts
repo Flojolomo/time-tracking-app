@@ -6,7 +6,8 @@ import {
   ChangePasswordCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
-  AdminGetUserCommand
+  AdminGetUserCommand,
+  AdminUpdateUserAttributesCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
@@ -65,56 +66,23 @@ const createSuccessResponse = (
 // Helper function to extract user ID from request context (IAM authorization)
 const extractUserIdFromToken = (event: APIGatewayProxyEvent): string | null => {
   try {
-    console.log('=== DEBUG: Extracting User ID (IAM Authorization) ===');
-    console.log('Request context:', JSON.stringify(event.requestContext, null, 2));
-    
-    // With IAM authorization, user info comes from the identity context
     const identity = event.requestContext.identity;
     
     if (identity) {
-      console.log('Identity context:', JSON.stringify(identity, null, 2));
-      
-      // For Cognito Identity Pool, the user ID is in the cognitoIdentityId field
-      if (identity.cognitoIdentityId) {
-        console.log('SUCCESS: User ID extracted from cognitoIdentityId:', identity.cognitoIdentityId);
-        return identity.cognitoIdentityId;
-      }
-      
-      // Alternative: check userArn for Cognito Identity Pool format
-      if (identity.userArn) {
-        console.log('User ARN:', identity.userArn);
-        const arnMatch = identity.userArn.match(/CognitoIdentityCredentials/);
-        if (arnMatch && identity.cognitoIdentityId) {
-          return identity.cognitoIdentityId;
+      // Extract User Pool user ID from cognitoAuthenticationProvider
+      if (identity.cognitoAuthenticationProvider) {
+        const match = identity.cognitoAuthenticationProvider.match(/CognitoSignIn:([a-f0-9-]{36})/);
+        if (match && match[1]) {
+          console.log('SUCCESS: User ID extracted from cognitoAuthenticationProvider:', match[1]);
+          return match[1];
         }
-      }
-      
-      // Fallback: use user ID if available
-      if (identity.user) {
-        console.log('SUCCESS: User ID extracted from identity.user:', identity.user);
-        return identity.user;
-      }
-    }
-    
-    // Additional fallback: check for Cognito authentication ID in request context
-    const requestContext = event.requestContext as any;
-    if (requestContext.cognitoAuthenticationProvider) {
-      console.log('Cognito auth provider:', requestContext.cognitoAuthenticationProvider);
-      const match = requestContext.cognitoAuthenticationProvider.match(/CognitoSignIn:([^,]+)/);
-      if (match && match[1]) {
-        console.log('SUCCESS: User ID extracted from cognitoAuthenticationProvider:', match[1]);
-        return match[1];
       }
     }
     
     console.error('ERROR: No user ID found in IAM authorization context');
-    console.log('Available identity fields:', identity ? Object.keys(identity) : 'No identity object');
-    console.log('Available requestContext fields:', Object.keys(event.requestContext));
-    
     return null;
   } catch (error) {
     console.error('Error extracting user ID:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return null;
   }
 };
@@ -136,17 +104,12 @@ const getUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return createErrorResponse(401, 'Unauthorized: User ID not found', event);
     }
 
-    const accessToken = extractAccessToken(event);
-    if (!accessToken) {
-      return createErrorResponse(401, 'Unauthorized: Access token not found', event);
-    }
-
-    // Get user information from Cognito
-    const getUserCommand = new GetUserCommand({
-      AccessToken: accessToken
+    const adminGetUserCommand = new AdminGetUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: userId
     });
 
-    const userResult = await cognitoClient.send(getUserCommand);
+    const userResult = await cognitoClient.send(adminGetUserCommand);
 
     // Extract user attributes
     const attributes: Record<string, string> = {};
@@ -164,15 +127,15 @@ const getUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       familyName: attributes.family_name || '',
       timezone: attributes['custom:timezone'] || '',
       preferences: attributes['custom:preferences'] ? JSON.parse(attributes['custom:preferences']) : {},
-      createdAt: new Date().toISOString(), // Cognito doesn't provide creation date in GetUser
-      lastModified: new Date().toISOString() // Use current time as last modified
+      createdAt: userResult.UserCreateDate?.toISOString() || new Date().toISOString(),
+      lastModified: userResult.UserLastModifiedDate?.toISOString() || new Date().toISOString()
     };
 
     return createSuccessResponse(200, { profile }, event);
   } catch (error: any) {
     console.error('Error getting user profile:', error);
-    if (error.name === 'NotAuthorizedException') {
-      return createErrorResponse(401, 'Invalid or expired access token', event);
+    if (error.name === 'UserNotFoundException') {
+      return createErrorResponse(404, 'User not found', event);
     }
     return createErrorResponse(500, 'Internal server error', event);
   }
@@ -184,11 +147,6 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     const userId = extractUserIdFromToken(event);
     if (!userId) {
       return createErrorResponse(401, 'Unauthorized: User ID not found', event);
-    }
-
-    const accessToken = extractAccessToken(event);
-    if (!accessToken) {
-      return createErrorResponse(401, 'Unauthorized: Access token not found', event);
     }
 
     if (!event.body) {
@@ -221,13 +179,17 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
       return createErrorResponse(400, 'No valid fields to update', event);
     }
 
-    // Update user attributes in Cognito
-    const updateCommand = new UpdateUserAttributesCommand({
-      AccessToken: accessToken,
+    console.log(userId)
+    console.log(USER_POOL_ID)
+
+    // Use AdminUpdateUserAttributes for IAM authorization
+    const adminUpdateCommand = new AdminUpdateUserAttributesCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: userId,
       UserAttributes: updates
     });
 
-    await cognitoClient.send(updateCommand);
+    await cognitoClient.send(adminUpdateCommand);
 
     return createSuccessResponse(200, { 
       message: 'Profile updated successfully',
@@ -235,8 +197,8 @@ const updateUserProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     }, event);
   } catch (error: any) {
     console.error('Error updating user profile:', error);
-    if (error.name === 'NotAuthorizedException') {
-      return createErrorResponse(401, 'Invalid or expired access token', event);
+    if (error.name === 'UserNotFoundException') {
+      return createErrorResponse(404, 'User not found', event);
     }
     if (error.name === 'InvalidParameterException') {
       return createErrorResponse(400, 'Invalid parameter values', event);

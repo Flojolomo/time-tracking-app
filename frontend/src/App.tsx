@@ -1,9 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { PublicPage, ActiveTimerPage, ForgotPasswordPage, ProfilePage, AnalyticsPage, RecordsPage, SignupPage, LoginPage } from './pages';
-import { AppProviders, DataProviders } from './providers';
-import { DashboardLayout } from './layouts';
+import { AppProviders } from './providers';
 import { StatusBars } from './status';
-import { ProtectedRoute } from './routes';
 
 function App() {
   return (

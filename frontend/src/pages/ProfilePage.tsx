@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
-import { Button, Input, Error, Alert, PageHeader, Section, TabNavigation } from '../components/ui';
+import { Button, Input, Error, Alert, PageHeader, Section, TabNavigation, LoadingSpinner } from '../components/ui';
 import { LandingPage } from './LandingPage';
 import { ProtectedRoute } from '../routes/ProtectedRoute';
+import { apiRequest } from '../utils/apiClient';
 
 interface ProfileFormData {
   name: string;
@@ -20,20 +21,27 @@ interface ResetPasswordFormData {
   email: string;
 }
 
+interface ProfileData {
+  name: string;
+  email: string;
+}
+
 const ProfileContent = () => {
   const { user, logout, updateProfile, changePassword, requestPasswordReset, deleteProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null); 
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'danger'>('profile');
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
     defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
+      name: '',
+      email: '',
     }
   });
 
@@ -47,18 +55,55 @@ const ProfileContent = () => {
     }
   });
 
-  // Update form values when user data changes
+  // Fetch profile data from backend
+  const fetchProfile = async () => {
+    try {
+      setIsLoadingProfile(true);
+      const response = await apiRequest<{ profile: any }>('/api/profile', { method: 'GET' });
+      const profile = response.profile;
+      
+      const profileData = {
+        name: `${profile.givenName || ''} ${profile.familyName || ''}`.trim() || profile.username || '',
+        email: profile.email || '',
+      };
+      
+      setProfileData(profileData);
+      profileForm.reset(profileData);
+    } catch (error: any) {
+      console.error('Failed to fetch profile:', error);
+      // Fallback to user data from auth
+      if (user) {
+        const fallbackData = {
+          name: user.name || '',
+          email: user.email || ''
+        };
+        setProfileData(fallbackData);
+        profileForm.reset(fallbackData);
+      }
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  // Load profile data on mount
   useEffect(() => {
     if (user) {
-      profileForm.reset({
-        name: user.name || '',
-        email: user.email || '',
-      });
+      fetchProfile();
       resetPasswordForm.reset({
         email: user.email || '',
       });
     }
-  }, [user, profileForm, resetPasswordForm]);
+  }, [user, resetPasswordForm]);
+
+  // Update form values when profile data changes
+  useEffect(() => {
+    if (profileData) {
+      profileForm.reset({
+        name: profileData.name || '',
+        email: profileData.email || '',
+      });
+    }
+  }, [profileData, profileForm]);
 
   const clearMessages = () => {
     setError(null);
@@ -163,39 +208,46 @@ const ProfileContent = () => {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
                   Personal Information
                 </h3>
-                <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
-                  <Input
-                    id="name"
-                    type="text"
-                    label="Name"
-                    placeholder="Enter your name"
-                    error={profileForm.formState.errors.name?.message}
-                    {...profileForm.register('name')}
-                  />
-
-                  <Input
-                    id="email"
-                    type="email"
-                    label="Email"
-                    placeholder="Email cannot be changed"
-                    disabled
-                    className="bg-gray-50 text-gray-500 cursor-not-allowed"
-                    {...profileForm.register('email')}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Email changes require additional verification and are not currently supported.
-                  </p>
-
-                  <div className="flex justify-end">
-                    <Button
-                      type="submit"
-                      loading={isLoading}
-                      loadingText="Updating..."
-                    >
-                      Update Profile
-                    </Button>
+                {isLoadingProfile ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner />
+                    <span className="ml-2 text-gray-600">Loading profile...</span>
                   </div>
-                </form>
+                ) : (
+                  <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
+                    <Input
+                      id="name"
+                      type="text"
+                      label="Name"
+                      placeholder="Enter your name"
+                      error={profileForm.formState.errors.name?.message}
+                      {...profileForm.register('name')}
+                    />
+
+                    <Input
+                      id="email"
+                      type="email"
+                      label="Email"
+                      placeholder="Email cannot be changed"
+                      disabled
+                      className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                      {...profileForm.register('email')}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Email changes require additional verification and are not currently supported.
+                    </p>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="submit"
+                        loading={isLoading}
+                        loadingText="Updating..."
+                      >
+                        Update Profile
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </Section>
             )}
 

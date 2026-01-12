@@ -38,7 +38,7 @@ const SignupContent: React.FC = () => {
         password: data.password
       });
       navigate('/login');
-    } catch (error) {
+    } catch (error: unknown) {
       setSubmitError(error instanceof Error ? error.message : 'Signup failed');
     } finally {
       setIsSubmitting(false);

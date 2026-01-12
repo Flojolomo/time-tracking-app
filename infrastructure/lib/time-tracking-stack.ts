@@ -377,7 +377,8 @@ function handler(event) {
         'cognito-idp:ConfirmForgotPassword',
         'cognito-idp:DeleteUser',
         'cognito-idp:AdminDeleteUser',
-        'cognito-idp:AdminGetUser'
+        'cognito-idp:AdminGetUser',
+        'cognito-idp:AdminUpdateUserAttributes'
       ],
       resources: [userPool.userPoolArn]
     }));

@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { PasswordResetPage } from '../PasswordResetPage';
 import { AuthProvider } from '../../hooks/useAuth';
 import { confirmResetPassword } from 'aws-amplify/auth';
 
