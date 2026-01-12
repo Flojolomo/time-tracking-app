@@ -43,10 +43,19 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const displayError = submitError || error;
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-        Sign In
-      </h2>
+    <div className="max-w-lg w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-white/20 rounded-lg">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m0 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-white">Sign In</h2>
+        </div>
+      </div>
+      
+      <div className="p-8">
       
       {successMessage && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
@@ -75,7 +84,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
                 message: 'Invalid email address'
               }
             })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Enter your email"
           />
           {errors.email && (
@@ -97,7 +106,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
                 message: 'Password must be at least 8 characters'
               }
             })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Enter your password"
           />
           {errors.password && (
@@ -105,38 +114,41 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting || isLoading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting || isLoading ? 'Signing In...' : 'Sign In'}
-        </button>
+        <div className="flex justify-end space-x-3 mt-6">
+          <button
+            type="submit"
+            disabled={isSubmitting || isLoading}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting || isLoading ? 'Signing In...' : 'Sign In'}
+          </button>
+        </div>
       </form>
 
-      <div className="mt-4 text-center">
-        <Link
-          to="/forgot-password"
-          className="text-sm text-blue-600 hover:text-blue-500 font-medium"
-        >
-          Forgot your password?
-        </Link>
-      </div>
-
-      {onSwitchToSignup && (
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
-            <button
-              type="button"
-              onClick={onSwitchToSignup}
-              className="text-blue-600 hover:text-blue-500 font-medium"
-            >
-              Sign up
-            </button>
-          </p>
+          <Link
+            to="/forgot-password"
+            className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+          >
+            Forgot your password?
+          </Link>
         </div>
-      )}
+
+        {onSwitchToSignup && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={onSwitchToSignup}
+                className="text-indigo-600 hover:text-indigo-500 font-medium"
+              >
+                Sign up
+              </button>
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

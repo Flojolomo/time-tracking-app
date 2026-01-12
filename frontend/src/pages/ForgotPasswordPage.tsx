@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
-import { LandingPage } from './LandingPage';
+import { AuthLandingPage } from './AuthLandingPage';
 
 interface ForgotPasswordFormData {
   email: string;
@@ -299,8 +299,8 @@ const ForgotPasswordContent: React.FC = () => {
 
 export const ForgotPasswordPage: React.FC = () => {
   return (
-    <LandingPage>
+    <AuthLandingPage>
       <ForgotPasswordContent />
-    </LandingPage>
+    </AuthLandingPage>
   );
 };

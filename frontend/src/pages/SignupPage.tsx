@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
-import { LandingPage } from './LandingPage';
+import { AuthLandingPage } from './AuthLandingPage';
 import { ConfigurationStatus } from '../components';
 
 interface SignupFormData {
@@ -45,7 +45,7 @@ const SignupContent: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+    <div className="max-w-lg w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-white/20 rounded-lg">
@@ -57,7 +57,7 @@ const SignupContent: React.FC = () => {
         </div>
       </div>
       
-      <div className="p-6">
+      <div className="p-8">
         <ConfigurationStatus />
         
         {(error || submitError) && (
@@ -181,8 +181,8 @@ const SignupContent: React.FC = () => {
 
 export const SignupPage: React.FC = () => {
   return (
-    <LandingPage>
+    <AuthLandingPage>
       <SignupContent />
-    </LandingPage>
+    </AuthLandingPage>
   );
 };

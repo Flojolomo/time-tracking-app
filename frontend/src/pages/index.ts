@@ -8,4 +8,5 @@ export { RecordsPage } from './RecordsPage';
 export { AnalyticsPage } from './AnalyticsPage';
 export { SignupPage } from './SignupPage';
 export { LandingPage } from './LandingPage';
+export { AuthLandingPage } from './AuthLandingPage';
 export { LoginPage } from './LoginPage'; 
