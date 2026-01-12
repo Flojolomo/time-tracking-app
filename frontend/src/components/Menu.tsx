@@ -1,11 +1,24 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> = ({ setIsMobileMenuOpen }) => {
   const { isAuthenticated, logout, user } = useAuth();
+  const navigate = useNavigate();
 
   console.log("isAuthenticated", isAuthenticated)
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsMobileMenuOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate to home even if logout fails
+      navigate('/');
+    }
+  };
 
   const anonymousMenu = <>
     <Link
@@ -59,10 +72,7 @@ export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> 
                 Profile
             </Link>
             <button
-            onClick={() => {
-                logout();
-                setIsMobileMenuOpen(false)
-            }}
+            onClick={handleLogout}
             className="text-red-600 hover:text-red-700 block px-3 py-2 rounded-md text-base font-medium transition-colors w-full text-left"
             >
             Sign out
