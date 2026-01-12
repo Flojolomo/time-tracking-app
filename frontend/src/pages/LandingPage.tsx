@@ -25,8 +25,8 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
       {menuIcon}
     </button>
 
-  const headerBar = <div className="relative pt-3 px-4 sm:px-6 lg:px-8">
-              <nav className="relative flex items-center justify-between sm:h-10" aria-label="Global">
+  const headerBar = <div className="relative pt-2 px-4 sm:px-6 lg:px-8">
+              <nav className="relative flex items-center justify-between sm:h-8" aria-label="Global">
                 <div className="flex items-center">
                   <h1 
                     className="text-2xl font-bold text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors"
