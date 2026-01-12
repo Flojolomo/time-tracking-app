@@ -36,8 +36,8 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
       {menuIcon}
     </button>
 
-  const headerBar = <div className="relative pt-2 px-4 sm:px-6 lg:px-8">
-              <nav className="relative flex items-center justify-between sm:h-8" aria-label="Global">
+  const headerBar = <div className="relative pt-2 px-4 sm:px-6 lg:px-4">
+              <nav className="relative flex items-center justify-between h-8" aria-label="Global">
                 <div className="flex items-center">
                   <h1 
                     className="text-2xl font-bold text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors"
@@ -73,16 +73,7 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-2 bg-gradient-to-br from-blue-50 to-indigo-100 sm:pb-8 md:pb-10 lg:pb-14 xl:pb-16 w-full">
-            <svg
-              className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-blue-50 transform translate-x-1/2"
-              fill="currentColor"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <polygon points="50,0 100,0 50,100 0,100" />
-            </svg>
+          <div className="relative z-10 pb-4 bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
             {headerBar}
             {isMobileMenuOpen && <Menu setIsMobileMenuOpen={setIsMobileMenuOpen}/> }
           </div>
