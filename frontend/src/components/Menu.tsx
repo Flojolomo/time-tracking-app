@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> = ({ setIsMobileMenuOpen }) => {
   const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [setIsMobileMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -79,7 +91,7 @@ export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> 
     </>
 
   return (
-    <div className="fixed right-4 top-20 z-[9999]">
+    <div className="fixed right-4 top-20 z-[9999]" ref={menuRef}>
       <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg border border-gray-200 min-w-48">
         {isAuthenticated ? authenticatedMenu : anonymousMenu}
       </div>
