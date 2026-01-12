@@ -301,6 +301,7 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
           onSubmit={async () => { console.log("Submitted") }}
           onFieldUpdate={handleFieldUpdate}
           backgroundStyle="bg-gradient-to-br from-green-50 to-emerald-50"
+          disableEndTime={true}
         />
       </div>
     </div>

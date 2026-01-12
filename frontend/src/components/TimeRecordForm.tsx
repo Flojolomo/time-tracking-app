@@ -19,6 +19,7 @@ interface TimeRecordFormProps {
   onFieldUpdate?: (fieldName: string, value: string) => void;
   actions?: React.ReactNode;
   backgroundStyle?: string;
+  disableEndTime?: boolean;
 }
 
 export interface TimeRecordFormRef {
@@ -42,7 +43,8 @@ export const TimeRecordForm = forwardRef<TimeRecordFormRef, TimeRecordFormProps>
     isLoading = false,
     title,
     actions,
-    backgroundStyle = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200'
+    backgroundStyle = 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200',
+    disableEndTime = false
   },
   ref
 ) => {
@@ -332,7 +334,7 @@ export const TimeRecordForm = forwardRef<TimeRecordFormRef, TimeRecordFormProps>
                       id="endTime"
                       className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${errors.endTime ? 'border-red-500' : 'border-gray-300'
                         }`}
-                      disabled={true}
+                      disabled={disableEndTime || isLoading || isSubmitting}
                     />
                   )}
                 />
