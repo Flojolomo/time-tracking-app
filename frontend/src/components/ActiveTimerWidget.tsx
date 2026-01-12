@@ -176,8 +176,6 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
   };
 
   const handleFieldUpdate = useCallback((fieldName: string, value: string) => {
-    console.log('Field update:', fieldName, value);
-    
     // Update local record immediately
     setLocalRecord(prev => {
       const updated = { ...prev };
@@ -201,7 +199,6 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
     // Set new timer to save after 500ms
     debounceTimer.current = setTimeout(async () => {
       try {
-        console.log('Saving field update:', fieldName, value);
         const updateData: Record<string, unknown> = {};
         if (fieldName === 'project') updateData.project = value.trim();
         if (fieldName === 'description') updateData.description = value;
@@ -211,7 +208,6 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
         await executeWithRetry(async () => {
           await TimeRecordService.updateActiveTimer(activeRecord.id, updateData);
         });
-        console.log('Field update saved successfully');
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update active timer';
         console.error('Field update failed:', error);
@@ -298,7 +294,7 @@ export const ActiveTimerWidget: React.FC<TimerWidgetProps> = ({ activeRecord, on
         {/* TimeRecordForm for active timer */}
         <TimeRecordForm
           initialData={localRecord}
-          onSubmit={async () => { console.log("Submitted") }}
+          onSubmit={async () => { }}
           onFieldUpdate={handleFieldUpdate}
           backgroundStyle="bg-gradient-to-br from-green-50 to-emerald-50"
           disableEndTime={true}

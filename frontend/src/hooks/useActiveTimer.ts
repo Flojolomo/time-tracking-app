@@ -17,9 +17,7 @@ export const useActiveTimer = (): UseActiveTimerReturn => {
   const [error, setError] = useState<string | null>(null);
 
 
-  console.log("useActiveTimer")
   const loadActiveRecord = useCallback(async (): Promise<void> => {
-    console.log('Loading active record...');
     try {
       setIsLoading(true);
       setError(null);

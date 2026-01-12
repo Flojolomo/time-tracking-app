@@ -132,7 +132,6 @@ export const TimeRecordForm = forwardRef<TimeRecordFormRef, TimeRecordFormProps>
   };
 
   const onFormSubmit = async (data: FormData) => {
-    console.log("Form submitted")
     try {
       setSubmitError('');
       setValidationErrors([]);

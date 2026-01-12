@@ -6,8 +6,6 @@ export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> 
   const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
 
-  console.log("isAuthenticated", isAuthenticated)
-
   const handleLogout = async () => {
     try {
       await logout();

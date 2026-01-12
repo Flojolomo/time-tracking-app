@@ -458,7 +458,6 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onDelete }) => 
   };
 
   const handleEditRecord = (isEditing: boolean) => {
-    console.log("Is Editing", isEditing)
     setIsEditing(!isEditing);
   };
 
