@@ -10,7 +10,7 @@ import type {
 import { ProjectChart, TimelineChart, MetricsCards } from '../components';
 import { LandingPage } from './LandingPage';
 import { DataCacheProvider } from '../contexts/DataCacheContext';
-import { Button, ButtonGroup, Error, LoadingSpinner, PageHeader, EmptyState, Section } from '../components/ui';
+import { Button, ButtonGroup, ErrorAlert, LoadingSpinner, PageHeader, EmptyState, Section } from '../components/ui';
 
 const AnalyticsContent: React.FC = () => {
   const [timeRecords, setTimeRecords] = useState<TimeRecord[]>([]);
@@ -85,7 +85,7 @@ const AnalyticsContent: React.FC = () => {
       setTimeStats(timeStatistics);
       setDailyStats(dailyStatistics);
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load statistics:', err);
       setError(err instanceof Error ? err.message : 'Failed to load statistics');
     } finally {
@@ -115,7 +115,7 @@ const AnalyticsContent: React.FC = () => {
   if (error) {
     return (
       <div className="space-y-4">
-        <Error message={error} />
+        <ErrorAlert message={error} />
         <div className="text-center">
           <Button onClick={loadStatistics} variant="secondary">
             Try again

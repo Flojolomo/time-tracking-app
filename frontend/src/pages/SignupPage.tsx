@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { AuthLandingPage } from './AuthLandingPage';
 import { ConfigurationStatus } from '../components';
-import { Button, Input, Card, Error } from '../components/ui';
+import { Button, Input, Card, ErrorAlert } from '../components/ui';
 
 interface SignupFormData {
   name: string;
@@ -57,7 +57,7 @@ const SignupContent: React.FC = () => {
       <ConfigurationStatus />
       
       {(error || submitError) && (
-        <Error message={error || submitError} />
+        <ErrorAlert message={error || submitError} />
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

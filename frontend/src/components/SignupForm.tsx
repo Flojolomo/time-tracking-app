@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { SignupCredentials } from '../types';
-import { Button, Input, Card, Error } from './ui';
+import { Button, Input, Card, ErrorAlert } from './ui';
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -80,7 +80,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         </svg>
       }
     >
-      {displayError && <Error message={displayError} />}
+      {displayError && <ErrorAlert message={displayError} />}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input

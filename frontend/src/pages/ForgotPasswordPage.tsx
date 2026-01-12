@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { AuthLandingPage } from './AuthLandingPage';
-import { Button, Input, Card, Error } from '../components/ui';
+import { Button, Input, Card, ErrorAlert } from '../components/ui';
 
 interface ForgotPasswordFormData {
   email: string;
@@ -120,7 +120,7 @@ const ForgotPasswordContent: React.FC = () => {
           Please check your email and enter the code below.
         </p>
 
-        {error && <Error message={error} />}
+        {error && <ErrorAlert message={error} />}
 
         <form onSubmit={handleSubmitReset(onSubmitReset)} className="space-y-4">
           <Input
@@ -206,7 +206,7 @@ const ForgotPasswordContent: React.FC = () => {
         Enter your email address and we'll send you a verification code to reset your password.
       </p>
 
-      {error && <Error message={error} />}
+      {error && <ErrorAlert message={error} />}
 
       <form onSubmit={handleSubmitRequest(onSubmitRequest)} className="space-y-4">
         <Input

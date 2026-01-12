@@ -6,7 +6,7 @@ interface ErrorProps {
   className?: string;
 }
 
-export const Error: React.FC<ErrorProps> = ({
+export const ErrorAlert: React.FC<ErrorProps> = ({
   message,
   className = ''
 }) => {

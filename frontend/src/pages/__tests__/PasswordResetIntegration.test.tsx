@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../../hooks/useAuth';
 import { confirmResetPassword } from 'aws-amplify/auth';
+import { ForgotPasswordPage } from '../ForgotPasswordPage';
 
 // Mock AWS Amplify
 jest.mock('aws-amplify/auth', () => ({
@@ -34,7 +35,7 @@ const renderPasswordResetPage = (searchParams = '?token=test-token&email=test@ex
   return render(
     <BrowserRouter>
       <AuthProvider>
-        <PasswordResetPage />
+        <ForgotPasswordPage />
       </AuthProvider>
     </BrowserRouter>
   );

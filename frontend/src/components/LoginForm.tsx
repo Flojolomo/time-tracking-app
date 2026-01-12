@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { LoginCredentials } from '../types';
 import { useLocation, Link } from 'react-router-dom';
-import { Button, Input, Card, Error, Alert } from './ui';
+import { Button, Input, Card, ErrorAlert, Alert } from './ui';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -63,7 +63,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       )}
       
       {displayError && (
-        <Error message={displayError} />
+        <ErrorAlert message={displayError} />
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

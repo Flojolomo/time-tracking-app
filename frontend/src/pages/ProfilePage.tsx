@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
-import { Button, Input, Error, Alert, PageHeader, Section, TabNavigation, LoadingSpinner } from '../components/ui';
+import { Button, Input, ErrorAlert, Alert, PageHeader, Section, TabNavigation, LoadingSpinner } from '../components/ui';
 import { LandingPage } from './LandingPage';
 import { ProtectedRoute } from '../routes/ProtectedRoute';
 import { apiRequest } from '../utils/apiClient';
@@ -200,7 +200,7 @@ const ProfileContent = () => {
           />
 
           <div className="p-6">
-            {error && <Error message={error} className="mb-6" />}
+            {error && <ErrorAlert message={error} className="mb-6" />}
             {success && <Alert type="success" message={success} className="mb-6" />}
 
             {activeTab === 'profile' && (

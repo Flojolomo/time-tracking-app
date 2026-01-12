@@ -3,7 +3,7 @@ import { TimeRecord, TimeRecordFilters } from '../types';
 import { TimeRecordService } from '../utils/timeRecordService';
 import { useDataCache } from '../contexts/DataCacheContext';
 import { TimeRecordForm } from './TimeRecordForm';
-import { LoadingSpinner, Error, EmptyState, IconButton, Button } from './ui';
+import { LoadingSpinner, ErrorAlert, EmptyState, IconButton, Button } from './ui';
 
 // View types for different time periods
 export type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -154,7 +154,7 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
       
       const fetchedRecords = await TimeRecordService.getTimeRecords(fetchFilters);
       setRecords(fetchedRecords);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to fetch time records');
     } finally {
       setLoading(false);
@@ -293,7 +293,7 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   }
 
   if (error) {
-    return <Error message={error} />;
+    return <ErrorAlert message={error} />;
   }
 
   const totalDuration = calculateTotalDuration(records);
