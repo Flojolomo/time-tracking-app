@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthDemo, ConfigurationStatus, SignupForm } from './components';
-import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, RecordsPage, LoginPage } from './pages';
+import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, AnalyticsPage, RecordsPage, LoginPage } from './pages';
 import { AppProviders, DataProviders } from './providers';
 import { AuthLayout, DashboardLayout } from './layouts';
 import { StatusBars } from './status';
@@ -71,16 +71,8 @@ function App() {
             {/* Records route */}
             <Route path="/records" element={<RecordsPage />} />
             
-            {/* Statistics/Analytics route */}
-            <Route path="/analytics" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <StatsDashboard />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
-            } />
+            {/* Analytics route */}
+            <Route path="/analytics" element={<AnalyticsPage />} />
             
             {/* Profile route */}
             <Route path="/profile" element={

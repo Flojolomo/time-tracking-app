@@ -6,5 +6,6 @@ export { PasswordResetPage } from './PasswordResetPage';
 export { ProfilePage } from './ProfilePage';
 export { StatsDashboard } from './StatsDashboard';
 export { RecordsPage } from './RecordsPage';
+export { AnalyticsPage } from './AnalyticsPage';
 export { LandingPage } from './LandingPage';
 export { LoginPage } from './LoginPage'; 
