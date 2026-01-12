@@ -70,7 +70,7 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
   
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="relative z-10 pb-4 bg-gradient-to-br from-blue-50 to-indigo-100 w-full">
@@ -80,7 +80,7 @@ export const LandingPage: React.FC<{ children: React.ReactNode; }> = ({ children
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 py-6">
+      <div className="flex-1 px-4 sm:px-6 py-6 overflow-auto">
         {children}
       </div>
       {footer}
