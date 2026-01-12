@@ -1,10 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
-import { AuthDemo, ConfigurationStatus, SignupForm } from './components';
-import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, AnalyticsPage, RecordsPage, LoginPage } from './pages';
+import { PublicPage, ActiveTimerPage, ForgotPasswordPage, ProfilePage, AnalyticsPage, RecordsPage, SignupPage, LoginPage } from './pages';
 import { AppProviders, DataProviders } from './providers';
-import { AuthLayout, DashboardLayout } from './layouts';
+import { DashboardLayout } from './layouts';
 import { StatusBars } from './status';
-import { AuthenticatedRoute, ProtectedRoute } from './routes';
+import { ProtectedRoute } from './routes';
 
 function App() {
   return (
@@ -16,21 +15,10 @@ function App() {
             <Route path="/login" element={
               <LoginPage />
             } />
-            <Route path="/signup" element={
-              <AuthenticatedRoute>
-                <AuthLayout>
-                  <ConfigurationStatus />
-                  <SignupForm 
-                    onSuccess={() => window.location.href = '/login'} 
-                    onSwitchToLogin={() => window.location.href = '/login'}
-                  />
-                </AuthLayout>
-              </AuthenticatedRoute>
-            } />
+            <Route path="/signup" element={<SignupPage />} />
             
-            {/* Password reset routes */}
+            {/* Password reset route */}
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<PasswordResetPage />} />
             
             {/* Protected routes with DataCacheProvider */}
             <Route path="/active-timer" element={

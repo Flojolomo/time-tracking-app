@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { LandingPage } from './LandingPage';
 
 interface ForgotPasswordFormData {
   email: string;
@@ -13,8 +14,9 @@ interface ResetPasswordFormData {
   confirmPassword: string;
 }
 
-export function ForgotPasswordPage() {
+const ForgotPasswordContent: React.FC = () => {
   const { requestPasswordReset, confirmPasswordReset } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'request' | 'reset' | 'success'>('request');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,14 +25,14 @@ export function ForgotPasswordPage() {
   const {
     register: registerRequest,
     handleSubmit: handleSubmitRequest,
-    formState: { errors: requestErrors, isSubmitting: isRequestSubmitting }
+    formState: { errors: requestErrors }
   } = useForm<ForgotPasswordFormData>();
 
   const {
     register: registerReset,
     handleSubmit: handleSubmitReset,
     watch,
-    formState: { errors: resetErrors, isSubmitting: isResetSubmitting }
+    formState: { errors: resetErrors }
   } = useForm<ResetPasswordFormData>();
 
   const newPassword = watch('newPassword');
@@ -56,8 +58,6 @@ export function ForgotPasswordPage() {
       await confirmPasswordReset(email, data.verificationCode, data.newPassword);
       setStep('success');
     } catch (error: unknown) {
-      console.error('Password reset error:', error);
-      
       let errorMessage = 'Password reset failed. Please try again.';
       
       if (error && typeof error === 'object' && 'name' in error) {
@@ -81,229 +81,226 @@ export function ForgotPasswordPage() {
     }
   };
 
-  // Success step
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 text-green-600">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Password Reset Successful
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Your password has been successfully reset. You can now sign in with your new password.
-            </p>
-            <div className="mt-4">
-              <Link
-                to="/login"
-                className="text-indigo-600 hover:text-indigo-500 font-medium"
-              >
-                Go to Login →
-              </Link>
-            </div>
+            <h2 className="text-xl font-semibold text-white">Password Reset Successful</h2>
           </div>
+        </div>
+        
+        <div className="p-6 text-center">
+          <p className="text-gray-600 mb-6">
+            Your password has been successfully reset. You can now sign in with your new password.
+          </p>
+          <button
+            onClick={() => navigate('/login')}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
   }
 
-  // Reset password step (with verification code)
   if (step === 'reset') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <Link to="/" className="flex justify-center">
-              <span className="text-2xl font-bold text-indigo-600">TimeTracker</span>
-            </Link>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Enter Verification Code
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              We've sent a verification code to <strong>{email}</strong>. 
-              Please check your email and enter the code below.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitReset(onSubmitReset)} className="space-y-4">
-              <div>
-                <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Verification Code
-                </label>
-                <input
-                  id="verificationCode"
-                  type="text"
-                  {...registerReset('verificationCode', {
-                    required: 'Verification code is required',
-                    pattern: {
-                      value: /^\d{6}$/,
-                      message: 'Verification code must be 6 digits'
-                    }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-lg tracking-widest"
-                  placeholder="000000"
-                  maxLength={6}
-                />
-                {resetErrors.verificationCode && (
-                  <p className="mt-1 text-sm text-red-600">{resetErrors.verificationCode.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  {...registerReset('newPassword', {
-                    required: 'New password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters'
-                    },
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                      message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-                    }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your new password"
-                />
-                {resetErrors.newPassword && (
-                  <p className="mt-1 text-sm text-red-600">{resetErrors.newPassword.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  {...registerReset('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: (value) => 
-                      value === newPassword || 'Passwords do not match'
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Confirm your new password"
-                />
-                {resetErrors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{resetErrors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isResetSubmitting || isLoading}
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isResetSubmitting || isLoading ? 'Resetting Password...' : 'Reset Password'}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center space-y-2">
-              <button
-                type="button"
-                onClick={() => setStep('request')}
-                className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
-              >
-                Didn't receive the code? Try again
-              </button>
-              <div>
-                <Link
-                  to="/login"
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Back to Login
-                </Link>
-              </div>
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
             </div>
+            <h2 className="text-xl font-semibold text-white">Enter Verification Code</h2>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // Request password reset step
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <Link to="/" className="flex justify-center">
-            <span className="text-2xl font-bold text-indigo-600">TimeTracker</span>
-          </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Reset Your Password
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Enter your email address and we'll send you a verification code to reset your password.
+        
+        <div className="p-6">
+          <p className="text-gray-600 mb-4">
+            We've sent a verification code to <strong>{email}</strong>. 
+            Please check your email and enter the code below.
           </p>
-        </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmitRequest(onSubmitRequest)} className="space-y-4">
+          <form onSubmit={handleSubmitReset(onSubmitReset)} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
+              <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">
+                Verification Code
               </label>
               <input
-                id="email"
-                type="email"
-                {...registerRequest('email', {
-                  required: 'Email is required',
+                id="verificationCode"
+                type="text"
+                {...registerReset('verificationCode', {
+                  required: 'Verification code is required',
                   pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address'
+                    value: /^\d{6}$/,
+                    message: 'Verification code must be 6 digits'
                   }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter your email address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-lg tracking-widest"
+                placeholder="000000"
+                maxLength={6}
               />
-              {requestErrors.email && (
-                <p className="mt-1 text-sm text-red-600">{requestErrors.email.message}</p>
+              {resetErrors.verificationCode && (
+                <p className="mt-1 text-sm text-red-600">{resetErrors.verificationCode.message}</p>
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isRequestSubmitting || isLoading}
-              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isRequestSubmitting || isLoading ? 'Sending...' : 'Send Verification Code'}
-            </button>
-          </form>
+            <div>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                New Password
+              </label>
+              <input
+                id="newPassword"
+                type="password"
+                {...registerReset('newPassword', {
+                  required: 'New password is required',
+                  minLength: {
+                    value: 8,
+                    message: 'Password must be at least 8 characters'
+                  },
+                  pattern: {
+                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+                  }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter your new password"
+              />
+              {resetErrors.newPassword && (
+                <p className="mt-1 text-sm text-red-600">{resetErrors.newPassword.message}</p>
+              )}
+            </div>
 
-          <div className="mt-6 text-center">
-            <Link
-              to="/login"
-              className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm New Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                {...registerReset('confirmPassword', {
+                  required: 'Please confirm your password',
+                  validate: (value) => 
+                    value === newPassword || 'Passwords do not match'
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Confirm your new password"
+              />
+              {resetErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{resetErrors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setStep('request')}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Resetting Password...' : 'Reset Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-white/20 rounded-lg">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-white">Reset Password</h2>
+        </div>
+      </div>
+      
+      <div className="p-6">
+        <p className="text-gray-600 mb-4">
+          Enter your email address and we'll send you a verification code to reset your password.
+        </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmitRequest(onSubmitRequest)} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              {...registerRequest('email', {
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Invalid email address'
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Enter your email"
+            />
+            {requestErrors.email && (
+              <p className="mt-1 text-sm text-red-600">{requestErrors.email.message}</p>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Back to Login
-            </Link>
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Sending Code...' : 'Send Reset Code'}
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
-}
+};
+
+export const ForgotPasswordPage: React.FC = () => {
+  return (
+    <LandingPage>
+      <ForgotPasswordContent />
+    </LandingPage>
+  );
+};
