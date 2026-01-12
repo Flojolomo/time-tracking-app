@@ -280,6 +280,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const clearError = () => {
+    setError(null);
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -292,7 +296,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     requestPasswordReset,
     confirmPasswordReset,
     deleteProfile,
-    error
+    error,
+    clearError
   };
 
   return (

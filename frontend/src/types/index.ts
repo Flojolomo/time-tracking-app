@@ -104,6 +104,7 @@ export interface AuthContextType {
   confirmPasswordReset: (email: string, confirmationCode: string, newPassword: string) => Promise<void>;
   deleteProfile: () => Promise<void>;
   error: string | null;
+  clearError: () => void;
 }
 
 // Statistics types

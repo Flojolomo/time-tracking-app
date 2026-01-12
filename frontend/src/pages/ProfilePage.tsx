@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
+import { Button, Input, Card, Error, Alert } from '../components/ui';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
 
 interface ProfileFormData {
   name: string;
@@ -202,12 +202,8 @@ export function ProfilePage() {
           {/* Content */}
           <div className="p-6">
             {/* Messages */}
-            {error && <ErrorMessage error={error} className="mb-6" />}
-            {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-600">{success}</p>
-              </div>
-            )}
+            {error && <Error message={error} className="mb-6" />}
+            {success && <Alert type="success" message={success} className="mb-6" />}
 
             {/* Profile Information Tab */}
             {activeTab === 'profile' && (
@@ -217,45 +213,36 @@ export function ProfilePage() {
                     Personal Information
                   </h3>
                   <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Name
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        {...profileForm.register('name')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter your name"
-                      />
-                    </div>
+                    <Input
+                      id="name"
+                      type="text"
+                      label="Name"
+                      placeholder="Enter your name"
+                      error={profileForm.formState.errors.name?.message}
+                      {...profileForm.register('name')}
+                    />
 
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        {...profileForm.register('email')}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-                        placeholder="Email cannot be changed"
-                      />
-                      <p className="mt-1 text-xs text-gray-500">
-                        Email changes require additional verification and are not currently supported.
-                      </p>
-                    </div>
+                    <Input
+                      id="email"
+                      type="email"
+                      label="Email"
+                      placeholder="Email cannot be changed"
+                      disabled
+                      className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                      {...profileForm.register('email')}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Email changes require additional verification and are not currently supported.
+                    </p>
 
                     <div className="flex justify-end">
-                      <button
+                      <Button
                         type="submit"
-                        disabled={isLoading}
-                        className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        loading={isLoading}
+                        loadingText="Updating..."
                       >
-                        {isLoading && <LoadingSpinner size="sm" className="mr-2" />}
                         Update Profile
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 </div>
@@ -271,85 +258,57 @@ export function ProfilePage() {
                     Change Password
                   </h3>
                   <form onSubmit={passwordForm.handleSubmit(handlePasswordUpdate)} className="space-y-4">
-                    <div>
-                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                        Current Password
-                      </label>
-                      <input
-                        id="currentPassword"
-                        type="password"
-                        {...passwordForm.register('currentPassword', {
-                          required: 'Current password is required'
-                        })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter your current password"
-                      />
-                      {passwordForm.formState.errors.currentPassword && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {passwordForm.formState.errors.currentPassword.message}
-                        </p>
-                      )}
-                    </div>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      label="Current Password"
+                      placeholder="Enter your current password"
+                      error={passwordForm.formState.errors.currentPassword?.message}
+                      {...passwordForm.register('currentPassword', {
+                        required: 'Current password is required'
+                      })}
+                    />
 
-                    <div>
-                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                        New Password
-                      </label>
-                      <input
-                        id="newPassword"
-                        type="password"
-                        {...passwordForm.register('newPassword', {
-                          required: 'New password is required',
-                          minLength: {
-                            value: 8,
-                            message: 'Password must be at least 8 characters'
-                          },
-                          pattern: {
-                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                            message: 'Password must contain uppercase, lowercase, number, and special character'
-                          }
-                        })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter your new password"
-                      />
-                      {passwordForm.formState.errors.newPassword && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {passwordForm.formState.errors.newPassword.message}
-                        </p>
-                      )}
-                    </div>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      label="New Password"
+                      placeholder="Enter your new password"
+                      error={passwordForm.formState.errors.newPassword?.message}
+                      {...passwordForm.register('newPassword', {
+                        required: 'New password is required',
+                        minLength: {
+                          value: 8,
+                          message: 'Password must be at least 8 characters'
+                        },
+                        pattern: {
+                          value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                          message: 'Password must contain uppercase, lowercase, number, and special character'
+                        }
+                      })}
+                    />
 
-                    <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                        Confirm New Password
-                      </label>
-                      <input
-                        id="confirmPassword"
-                        type="password"
-                        {...passwordForm.register('confirmPassword', {
-                          required: 'Please confirm your new password',
-                          validate: value => 
-                            value === passwordForm.watch('newPassword') || 'Passwords do not match'
-                        })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Confirm your new password"
-                      />
-                      {passwordForm.formState.errors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {passwordForm.formState.errors.confirmPassword.message}
-                        </p>
-                      )}
-                    </div>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      label="Confirm New Password"
+                      placeholder="Confirm your new password"
+                      error={passwordForm.formState.errors.confirmPassword?.message}
+                      {...passwordForm.register('confirmPassword', {
+                        required: 'Please confirm your new password',
+                        validate: value => 
+                          value === passwordForm.watch('newPassword') || 'Passwords do not match'
+                      })}
+                    />
 
                     <div className="flex justify-end">
-                      <button
+                      <Button
                         type="submit"
-                        disabled={isLoading}
-                        className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        loading={isLoading}
+                        loadingText="Updating..."
                       >
-                        {isLoading && <LoadingSpinner size="sm" className="mr-2" />}
                         Update Password
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 </div>
@@ -372,46 +331,38 @@ export function ProfilePage() {
                     </button>
                   ) : (
                     <form onSubmit={resetPasswordForm.handleSubmit(handlePasswordReset)} className="space-y-4">
-                      <div>
-                        <label htmlFor="resetEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                          Email Address
-                        </label>
-                        <input
-                          id="resetEmail"
-                          type="email"
-                          {...resetPasswordForm.register('email', {
-                            required: 'Email is required',
-                            pattern: {
-                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: 'Invalid email address'
-                            }
-                          })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter your email address"
-                        />
-                        {resetPasswordForm.formState.errors.email && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {resetPasswordForm.formState.errors.email.message}
-                          </p>
-                        )}
-                      </div>
+                      <Input
+                        id="resetEmail"
+                        type="email"
+                        label="Email Address"
+                        placeholder="Enter your email address"
+                        error={resetPasswordForm.formState.errors.email?.message}
+                        {...resetPasswordForm.register('email', {
+                          required: 'Email is required',
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: 'Invalid email address'
+                          }
+                        })}
+                      />
 
                       <div className="flex space-x-3">
-                        <button
+                        <Button
                           type="submit"
-                          disabled={isLoading}
-                          className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm"
+                          loading={isLoading}
+                          loadingText="Sending..."
+                          size="sm"
                         >
-                          {isLoading && <LoadingSpinner size="sm" className="mr-2" />}
                           Send Reset Email
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => setShowPasswordReset(false)}
-                          className="text-gray-600 hover:text-gray-500 py-2 px-4 text-sm"
                         >
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </form>
                   )}
@@ -436,12 +387,13 @@ export function ProfilePage() {
                     </p>
                     
                     {!showDeleteConfirmation ? (
-                      <button
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => setShowDeleteConfirmation(true)}
-                        className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-sm font-medium"
                       >
                         Delete Account
-                      </button>
+                      </Button>
                     ) : (
                       <div className="space-y-4">
                         <div className="bg-white border border-red-300 rounded-md p-4">
@@ -453,21 +405,23 @@ export function ProfilePage() {
                             and remove all your time tracking data from our servers.
                           </p>
                           <div className="flex space-x-3">
-                            <button
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              loading={isLoading}
+                              loadingText="Deleting..."
                               onClick={handleProfileDeletion}
-                              disabled={isLoading}
-                              className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium"
                             >
-                              {isLoading && <LoadingSpinner size="sm" className="mr-2" />}
                               Yes, Delete My Account
-                            </button>
-                            <button
-                              onClick={() => setShowDeleteConfirmation(false)}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               disabled={isLoading}
-                              className="bg-gray-200 text-gray-900 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-sm font-medium"
+                              onClick={() => setShowDeleteConfirmation(false)}
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </div>

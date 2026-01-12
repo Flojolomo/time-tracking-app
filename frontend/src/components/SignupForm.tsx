@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { SignupCredentials } from '../types';
+import { Button, Input, Card, Error } from './ui';
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -9,9 +10,15 @@ interface SignupFormProps {
 }
 
 export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
-  const { signup, isLoading, error } = useAuth();
+  const { signup, isLoading, error, clearError } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSignupComplete, setIsSignupComplete] = useState(false);
+  
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearError();
+    setSubmitError(null);
+  }, [clearError]);
   
   const {
     register,
@@ -41,130 +48,103 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   if (isSignupComplete) {
     return (
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+      <Card 
+        title="Check Your Email"
+        icon={
+          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        }
+        variant="success"
+      >
         <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-            <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
           <p className="text-gray-600 mb-6">
             We've sent a verification link to your email address. Please check your email and click the link to verify your account.
           </p>
           {onSwitchToLogin && (
-            <button
-              onClick={onSwitchToLogin}
-              className="text-blue-600 hover:text-blue-500 font-medium"
-            >
+            <Button variant="secondary" onClick={onSwitchToLogin}>
               Back to Sign In
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-        Create Account
-      </h2>
-      
-      {displayError && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{displayError}</p>
-        </div>
-      )}
+    <Card 
+      title="Create Account"
+      icon={
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+      }
+    >
+      {displayError && <Error message={displayError} />}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Name (Optional)
-          </label>
-          <input
-            id="name"
-            type="text"
-            {...register('name')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your name"
-          />
-        </div>
+        <Input
+          id="name"
+          type="text"
+          label="Name (Optional)"
+          placeholder="Enter your name"
+          {...register('name')}
+        />
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register('email', {
-              required: 'Email is required',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address'
-              }
-            })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your email"
-          />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-          )}
-        </div>
+        <Input
+          id="email"
+          type="email"
+          label="Email"
+          placeholder="Enter your email"
+          error={errors.email?.message}
+          {...register('email', {
+            required: 'Email is required',
+            pattern: {
+              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+              message: 'Invalid email address'
+            }
+          })}
+        />
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register('password', {
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Password must be at least 8 characters'
-              },
-              pattern: {
-                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                message: 'Password must contain uppercase, lowercase, number, and special character'
-              }
-            })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your password"
-          />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-          )}
-        </div>
+        <Input
+          id="password"
+          type="password"
+          label="Password"
+          placeholder="Enter your password"
+          error={errors.password?.message}
+          {...register('password', {
+            required: 'Password is required',
+            minLength: {
+              value: 8,
+              message: 'Password must be at least 8 characters'
+            },
+            pattern: {
+              value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
+              message: 'Password must contain uppercase, lowercase, number, and special character'
+            }
+          })}
+        />
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm Password
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            {...register('confirmPassword', {
-              required: 'Please confirm your password',
-              validate: value => value === password || 'Passwords do not match'
-            })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Confirm your password"
-          />
-          {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-          )}
-        </div>
+        <Input
+          id="confirmPassword"
+          type="password"
+          label="Confirm Password"
+          placeholder="Confirm your password"
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword', {
+            required: 'Please confirm your password',
+            validate: value => value === password || 'Passwords do not match'
+          })}
+        />
 
-        <button
+        <Button
           type="submit"
-          disabled={isSubmitting || isLoading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          loading={isSubmitting || isLoading}
+          loadingText="Creating Account..."
+          className="w-full"
         >
-          {isSubmitting || isLoading ? 'Creating Account...' : 'Create Account'}
-        </button>
+          Create Account
+        </Button>
       </form>
 
       {onSwitchToLogin && (
@@ -181,6 +161,6 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
           </p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

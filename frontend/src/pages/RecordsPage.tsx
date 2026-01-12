@@ -11,6 +11,7 @@ import { LandingPage } from './LandingPage';
 import { DataCacheProvider } from '../contexts/DataCacheContext';
 import { ViewStateProvider } from '../contexts/ViewStateContext';
 import { ViewType } from '../components/TimeRecordList';
+import { Button, PageHeader } from '../components/ui';
 
 const RecordsContent: React.FC = () => {
   const { state, setDate, setFilters, setView } = useViewState();
@@ -68,24 +69,20 @@ const RecordsContent: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* View Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Time Records</h1>
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <button
-            onClick={() => {
-              setShowForm(!showForm);
-            }}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-          >
-            {showForm ? 'Cancel' : 'Add Time Record'}
-          </button>
-          <ViewSelector
-            currentView={state.currentView}
-            onViewChange={handleViewChange}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Time Records"
+        actions={
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <Button onClick={() => setShowForm(!showForm)}>
+              {showForm ? 'Cancel' : 'Add Time Record'}
+            </Button>
+            <ViewSelector
+              currentView={state.currentView}
+              onViewChange={handleViewChange}
+            />
+          </div>
+        }
+      />
 
       {/* Time Record Form */}
       {showForm && (
@@ -100,18 +97,17 @@ const RecordsContent: React.FC = () => {
             }
             actions={
               <div className="flex justify-end space-x-3 mt-4">
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   Create
-                </button>
+                </Button>
               </div>
             }
 

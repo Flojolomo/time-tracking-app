@@ -5,17 +5,24 @@ interface CardProps {
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  variant?: 'primary' | 'success';
 }
 
 export const Card: React.FC<CardProps> = ({
   title,
   icon,
   children,
-  className = ''
+  className = '',
+  variant = 'primary'
 }) => {
+  const variantClasses = {
+    primary: 'from-indigo-500 to-purple-600',
+    success: 'from-green-500 to-emerald-600'
+  };
+
   return (
     <div className={`max-w-lg w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden ${className}`}>
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+      <div className={`bg-gradient-to-r ${variantClasses[variant]} px-6 py-4`}>
         <div className="flex items-center space-x-3">
           {icon && (
             <div className="p-2 bg-white/20 rounded-lg">

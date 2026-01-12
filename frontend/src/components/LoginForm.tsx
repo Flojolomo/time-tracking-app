@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { LoginCredentials } from '../types';
 import { useLocation, Link } from 'react-router-dom';
+import { Button, Input, Card, Error, Alert } from './ui';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -10,7 +11,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error, clearError } = useAuth();
   const location = useLocation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -23,6 +24,12 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearError();
+    setSubmitError(null);
+  }, [clearError]);
   
   const {
     register,
@@ -43,112 +50,87 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const displayError = submitError || error;
 
   return (
-    <div className="max-w-lg w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-white/20 rounded-lg">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m0 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-white">Sign In</h2>
-        </div>
-      </div>
-      
-      <div className="p-8">
-      
+    <Card 
+      title="Sign In"
+      icon={
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m0 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+        </svg>
+      }
+    >
       {successMessage && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-600">{successMessage}</p>
-        </div>
+        <Alert type="success" message={successMessage} />
       )}
       
       {displayError && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{displayError}</p>
-        </div>
+        <Error message={displayError} />
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register('email', {
-              required: 'Email is required',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address'
-              }
-            })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter your email"
-          />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-          )}
-        </div>
+        <Input
+          id="email"
+          type="email"
+          label="Email"
+          placeholder="Enter your email"
+          error={errors.email?.message}
+          {...register('email', {
+            required: 'Email is required',
+            pattern: {
+              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+              message: 'Invalid email address'
+            }
+          })}
+        />
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register('password', {
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Password must be at least 8 characters'
-              }
-            })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter your password"
-          />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-          )}
-        </div>
+        <Input
+          id="password"
+          type="password"
+          label="Password"
+          placeholder="Enter your password"
+          error={errors.password?.message}
+          {...register('password', {
+            required: 'Password is required',
+            minLength: {
+              value: 8,
+              message: 'Password must be at least 8 characters'
+            }
+          })}
+        />
 
         <div className="flex justify-end space-x-3 mt-6">
-          <button
+          <Button
             type="submit"
-            disabled={isSubmitting || isLoading}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isSubmitting || isLoading}
+            loadingText="Signing In..."
           >
-            {isSubmitting || isLoading ? 'Signing In...' : 'Sign In'}
-          </button>
+            Sign In
+          </Button>
         </div>
       </form>
 
-        <div className="mt-6 text-center">
-          <Link
-            to="/forgot-password"
-            className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
-          >
-            Forgot your password?
-          </Link>
-        </div>
-
-        {onSwitchToSignup && (
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={onSwitchToSignup}
-                className="text-indigo-600 hover:text-indigo-500 font-medium"
-              >
-                Sign up
-              </button>
-            </p>
-          </div>
-        )}
+      <div className="mt-6 text-center">
+        <Link
+          to="/forgot-password"
+          className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+        >
+          Forgot your password?
+        </Link>
       </div>
-    </div>
+
+      {onSwitchToSignup && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={onSwitchToSignup}
+              className="text-indigo-600 hover:text-indigo-500 font-medium"
+            >
+              Sign up
+            </button>
+          </p>
+        </div>
+      )}
+    </Card>
   );
 }

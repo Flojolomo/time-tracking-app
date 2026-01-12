@@ -3,6 +3,7 @@ import { TimeRecord, TimeRecordFilters } from '../types';
 import { TimeRecordService } from '../utils/timeRecordService';
 import { useDataCache } from '../contexts/DataCacheContext';
 import { TimeRecordForm } from './TimeRecordForm';
+import { LoadingSpinner, Error, EmptyState, IconButton, Button } from './ui';
 
 // View types for different time periods
 export type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -285,28 +286,14 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <LoadingSpinner />
         <span className="ml-2 text-gray-600">Loading time records...</span>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error loading time records</h3>
-            <p className="mt-1 text-sm text-red-700">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Error message={error} />;
   }
 
   const totalDuration = calculateTotalDuration(records);
@@ -316,38 +303,39 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
       {/* Navigation Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div className="flex items-center justify-center sm:justify-start space-x-2 sm:space-x-4">
-          <button
+          <IconButton
+            icon={
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            }
             onClick={navigatePrevious}
-            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-            aria-label="Previous period"
-          >
-            <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+            title="Previous period"
+          />
           
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left min-w-0 flex-1 sm:flex-none">
             {getDisplayTitle()}
           </h2>
           
-          <button
+          <IconButton
+            icon={
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            }
             onClick={navigateNext}
-            className="p-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-            aria-label="Next period"
-          >
-            <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+            title="Next period"
+          />
         </div>
         
         <div className="flex items-center justify-center sm:justify-end space-x-3">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={navigateToday}
-            className="px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
           >
             Today
-          </button>
+          </Button>
           
           {totalDuration > 0 && (
             <div className="text-sm text-gray-600">
@@ -357,17 +345,16 @@ export const TimeRecordList: React.FC<TimeRecordListProps> = ({
         </div>
       </div>
 
-      {/* Records Display */}
       {Object.keys(groupedRecords).length === 0 ? (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No time records</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            No time records found for the selected {viewType} period.
-          </p>
-        </div>
+        <EmptyState
+          icon={
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          title="No time records"
+          description={`No time records found for the selected ${viewType} period.`}
+        />
       ) : (
         <div className="space-y-6">
           {Object.entries(groupedRecords)
@@ -505,25 +492,26 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onDelete }) => 
         </div>
         
         <div className="flex items-center justify-end space-x-2 ml-0 sm:ml-4">
-          <button
+          <IconButton
+            icon={
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            }
             onClick={() => handleEditRecord(isEditing)}
-            className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded transition-colors"
             title="Edit record"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
+          />
           
-          <button
+          <IconButton
+            icon={
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            }
             onClick={() => onDelete?.(record)}
-            className="p-2 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded transition-colors"
+            variant="danger"
             title="Delete record"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+          />
         </div>
       </div>
       
@@ -544,18 +532,17 @@ const TimeRecordItem: React.FC<TimeRecordItemProps> = ({ record, onDelete }) => 
               }
               actions={
                 <div className="flex justify-end space-x-3 mt-4">
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
                     Save
-                  </button>
+                  </Button>
                 </div>
               }
             />

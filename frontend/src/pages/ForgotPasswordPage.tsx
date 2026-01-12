@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
 import { AuthLandingPage } from './AuthLandingPage';
+import { Button, Input, Card, Error } from '../components/ui';
 
 interface ForgotPasswordFormData {
   email: string;
@@ -83,217 +84,164 @@ const ForgotPasswordContent: React.FC = () => {
 
   if (step === 'success') {
     return (
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-white">Password Reset Successful</h2>
-          </div>
-        </div>
-        
-        <div className="p-6 text-center">
+      <Card 
+        title="Password Reset Successful"
+        icon={
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        }
+        variant="success"
+      >
+        <div className="text-center">
           <p className="text-gray-600 mb-6">
             Your password has been successfully reset. You can now sign in with your new password.
           </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-          >
+          <Button onClick={() => navigate('/login')}>
             Go to Login
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (step === 'reset') {
     return (
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-white">Enter Verification Code</h2>
+      <Card 
+        title="Enter Verification Code"
+        icon={
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+        }
+      >
+        <p className="text-gray-600 mb-4">
+          We've sent a verification code to <strong>{email}</strong>. 
+          Please check your email and enter the code below.
+        </p>
+
+        {error && <Error message={error} />}
+
+        <form onSubmit={handleSubmitReset(onSubmitReset)} className="space-y-4">
+          <Input
+            id="verificationCode"
+            type="text"
+            label="Verification Code"
+            placeholder="000000"
+            className="text-center text-lg tracking-widest"
+            maxLength={6}
+            error={resetErrors.verificationCode?.message}
+            {...registerReset('verificationCode', {
+              required: 'Verification code is required',
+              pattern: {
+                value: /^\d{6}$/,
+                message: 'Verification code must be 6 digits'
+              }
+            })}
+          />
+
+          <Input
+            id="newPassword"
+            type="password"
+            label="New Password"
+            placeholder="Enter your new password"
+            error={resetErrors.newPassword?.message}
+            {...registerReset('newPassword', {
+              required: 'New password is required',
+              minLength: {
+                value: 8,
+                message: 'Password must be at least 8 characters'
+              },
+              pattern: {
+                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+              }
+            })}
+          />
+
+          <Input
+            id="confirmPassword"
+            type="password"
+            label="Confirm New Password"
+            placeholder="Confirm your new password"
+            error={resetErrors.confirmPassword?.message}
+            {...registerReset('confirmPassword', {
+              required: 'Please confirm your password',
+              validate: (value) => 
+                value === newPassword || 'Passwords do not match'
+            })}
+          />
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setStep('request')}
+            >
+              Back
+            </Button>
+            <Button
+              type="submit"
+              loading={isLoading}
+              loadingText="Resetting Password..."
+            >
+              Reset Password
+            </Button>
           </div>
-        </div>
-        
-        <div className="p-6">
-          <p className="text-gray-600 mb-4">
-            We've sent a verification code to <strong>{email}</strong>. 
-            Please check your email and enter the code below.
-          </p>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmitReset(onSubmitReset)} className="space-y-4">
-            <div>
-              <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Verification Code
-              </label>
-              <input
-                id="verificationCode"
-                type="text"
-                {...registerReset('verificationCode', {
-                  required: 'Verification code is required',
-                  pattern: {
-                    value: /^\d{6}$/,
-                    message: 'Verification code must be 6 digits'
-                  }
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-lg tracking-widest"
-                placeholder="000000"
-                maxLength={6}
-              />
-              {resetErrors.verificationCode && (
-                <p className="mt-1 text-sm text-red-600">{resetErrors.verificationCode.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                type="password"
-                {...registerReset('newPassword', {
-                  required: 'New password is required',
-                  minLength: {
-                    value: 8,
-                    message: 'Password must be at least 8 characters'
-                  },
-                  pattern: {
-                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-                  }
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter your new password"
-              />
-              {resetErrors.newPassword && (
-                <p className="mt-1 text-sm text-red-600">{resetErrors.newPassword.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                {...registerReset('confirmPassword', {
-                  required: 'Please confirm your password',
-                  validate: (value) => 
-                    value === newPassword || 'Passwords do not match'
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Confirm your new password"
-              />
-              {resetErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{resetErrors.confirmPassword.message}</p>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setStep('request')}
-                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Resetting Password...' : 'Reset Password'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+        </form>
+      </Card>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-white/20 rounded-lg">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-white">Reset Password</h2>
+    <Card 
+      title="Reset Password"
+      icon={
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
+        </svg>
+      }
+    >
+      <p className="text-gray-600 mb-4">
+        Enter your email address and we'll send you a verification code to reset your password.
+      </p>
+
+      {error && <Error message={error} />}
+
+      <form onSubmit={handleSubmitRequest(onSubmitRequest)} className="space-y-4">
+        <Input
+          id="email"
+          type="email"
+          label="Email Address"
+          placeholder="Enter your email"
+          error={requestErrors.email?.message}
+          {...registerRequest('email', {
+            required: 'Email is required',
+            pattern: {
+              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+              message: 'Invalid email address'
+            }
+          })}
+        />
+
+        <div className="flex justify-end space-x-3 mt-6">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate('/login')}
+          >
+            Back to Login
+          </Button>
+          <Button
+            type="submit"
+            loading={isLoading}
+            loadingText="Sending Code..."
+          >
+            Send Reset Code
+          </Button>
         </div>
-      </div>
-      
-      <div className="p-6">
-        <p className="text-gray-600 mb-4">
-          Enter your email address and we'll send you a verification code to reset your password.
-        </p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmitRequest(onSubmitRequest)} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...registerRequest('email', {
-                required: 'Email is required',
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Invalid email address'
-                }
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter your email"
-            />
-            {requestErrors.email && (
-              <p className="mt-1 text-sm text-red-600">{requestErrors.email.message}</p>
-            )}
-          </div>
-
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-            >
-              Back to Login
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Sending Code...' : 'Send Reset Code'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Card>
   );
 };
 
