@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthDemo, ConfigurationStatus, SignupForm } from './components';
-import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, TimeRecordViews, LoginPage } from './pages';
+import { PublicPage, ActiveTimerPage, ForgotPasswordPage, PasswordResetPage, ProfilePage, StatsDashboard, RecordsPage, LoginPage } from './pages';
 import { AppProviders, DataProviders } from './providers';
 import { AuthLayout, DashboardLayout } from './layouts';
 import { StatusBars } from './status';
@@ -68,46 +68,8 @@ function App() {
                   <ActiveTimerPage />
             } />
             
-            {/* Time record views with different URL paths */}
-            <Route path="/records" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <TimeRecordViews />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/records/daily" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <TimeRecordViews />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/records/weekly" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <TimeRecordViews />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/records/monthly" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <TimeRecordViews />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
-            } />
+            {/* Records route */}
+            <Route path="/records" element={<RecordsPage />} />
             
             {/* Statistics/Analytics route */}
             <Route path="/analytics" element={

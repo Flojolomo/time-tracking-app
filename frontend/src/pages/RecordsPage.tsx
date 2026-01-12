@@ -5,37 +5,40 @@ import { ViewSelector } from '../components/ViewSelector';
 import { RecordFilters } from '../components/RecordFilters';
 import { TimeRecordFilters } from '../types';
 import { useViewState } from '../contexts/ViewStateContext';
-import { useViewRouting } from '../hooks/useViewRouting';
 import { useDataCache } from '../contexts/DataCacheContext';
 import { TimeRecordService } from '../utils/timeRecordService';
+import { LandingPage } from './LandingPage';
+import { DataCacheProvider } from '../contexts/DataCacheContext';
+import { ViewStateProvider } from '../contexts/ViewStateContext';
+import { ViewType } from '../components/TimeRecordList';
 
-interface TimeRecordViewsProps {
-  filters?: TimeRecordFilters;
-  className?: string;
-}
-
-export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
-  filters,
-  className = ''
-}) => {
-  const { state, setDate, setFilters } = useViewState();
-  const { navigateToView } = useViewRouting();
+const RecordsContent: React.FC = () => {
+  const { state, setDate, setFilters, setView } = useViewState();
   const { refreshData } = useDataCache();
   const [showForm, setShowForm] = useState(false);
 
+  // Set date to today on mount
+  React.useEffect(() => {
+    setDate(new Date());
+  }, [setDate]);
+
+  // Simple view change handler (no routing needed)
+  const handleViewChange = (view: ViewType) => {
+    setView(view);
+    // When switching to daily view, always show today
+    if (view === 'daily') {
+      setDate(new Date());
+    }
+  };
+
   // Merge context filters with prop filters (memoized to prevent unnecessary re-renders)
   const mergedFilters: TimeRecordFilters = React.useMemo(() => ({
-    ...state.filters,
-    ...filters
+    ...state.filters
   }), [
     state.filters.projectName,
     state.filters.startDate, 
     state.filters.endDate,
-    state.filters.tags?.join(','),
-    filters?.projectName,
-    filters?.startDate,
-    filters?.endDate,
-    filters?.tags?.join(',')
+    state.filters.tags?.join(',')
   ]);
 
   // Handle filter changes
@@ -64,7 +67,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
   };
 
   return (
-    <div className={`space-y-4 sm:space-y-6 ${className}`}>
+    <div className="space-y-4 sm:space-y-6">
       {/* View Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Time Records</h1>
@@ -79,7 +82,7 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
           </button>
           <ViewSelector
             currentView={state.currentView}
-            onViewChange={navigateToView}
+            onViewChange={handleViewChange}
           />
         </div>
       </div>
@@ -130,5 +133,17 @@ export const TimeRecordViews: React.FC<TimeRecordViewsProps> = ({
         filters={mergedFilters}
       />
     </div>
+  );
+};
+
+export const RecordsPage: React.FC = () => {
+  return (
+    <LandingPage>
+      <DataCacheProvider>
+        <ViewStateProvider>
+          <RecordsContent />
+        </ViewStateProvider>
+      </DataCacheProvider>
+    </LandingPage>
   );
 };

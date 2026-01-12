@@ -1,18 +1,17 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { TimeRecordViews } from '../../pages/TimeRecordViews';
 import { ViewStateProvider } from '../../contexts/ViewStateContext';
+import { DataCacheProvider } from '../../contexts/DataCacheContext';
 import { TimeRecordService } from '../../utils/timeRecordService';
+import { RecordsPage } from '../../pages/RecordsPage';
 
 // Mock the TimeRecordService
 jest.mock('../../utils/timeRecordService');
 const mockTimeRecordService = TimeRecordService as jest.Mocked<typeof TimeRecordService>;
 
-// Mock the useViewRouting hook
-jest.mock('../../hooks/useViewRouting', () => ({
-  useViewRouting: () => ({
-    navigateToView: jest.fn()
-  })
+// Mock react-router-dom
+jest.mock('react-router-dom', () => ({
+  useNavigate: () => jest.fn(),
 }));
 
 describe('Filtering Integration', () => {
@@ -58,13 +57,15 @@ describe('Filtering Integration', () => {
   const renderWithProvider = (component: React.ReactElement) => {
     return render(
       <ViewStateProvider>
-        {component}
+        <DataCacheProvider>
+          {component}
+        </DataCacheProvider>
       </ViewStateProvider>
     );
   };
 
   it('integrates filtering with time record views', async () => {
-    renderWithProvider(<TimeRecordViews />);
+    renderWithProvider(<RecordsPage />);
 
     // Check that the filters component is rendered
     expect(screen.getByText('Filters')).toBeInTheDocument();
@@ -78,7 +79,7 @@ describe('Filtering Integration', () => {
   });
 
   it('applies project filter correctly', async () => {
-    renderWithProvider(<TimeRecordViews />);
+    renderWithProvider(<RecordsPage />);
 
     const projectInput = screen.getByLabelText('Project');
     
@@ -97,7 +98,7 @@ describe('Filtering Integration', () => {
   });
 
   it('applies tag filter correctly', async () => {
-    renderWithProvider(<TimeRecordViews />);
+    renderWithProvider(<RecordsPage />);
 
     const tagInput = screen.getByLabelText('Tags');
     
@@ -117,7 +118,7 @@ describe('Filtering Integration', () => {
   });
 
   it('combines multiple filters correctly', async () => {
-    renderWithProvider(<TimeRecordViews />);
+    renderWithProvider(<RecordsPage />);
 
     const projectInput = screen.getByLabelText('Project');
     const tagInput = screen.getByLabelText('Tags');

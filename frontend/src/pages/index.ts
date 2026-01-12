@@ -5,6 +5,6 @@ export { ForgotPasswordPage } from './ForgotPasswordPage';
 export { PasswordResetPage } from './PasswordResetPage';
 export { ProfilePage } from './ProfilePage';
 export { StatsDashboard } from './StatsDashboard';
-export { TimeRecordViews } from './TimeRecordViews';
+export { RecordsPage } from './RecordsPage';
 export { LandingPage } from './LandingPage';
 export { LoginPage } from './LoginPage'; 
