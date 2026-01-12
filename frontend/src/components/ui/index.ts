@@ -9,3 +9,4 @@ export { EmptyState } from './EmptyState';
 export { ButtonGroup } from './ButtonGroup';
 export { Section } from './Section';
 export { IconButton } from './IconButton';
+export { TabNavigation } from './TabNavigation';

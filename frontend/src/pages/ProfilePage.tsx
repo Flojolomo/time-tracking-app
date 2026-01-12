@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../hooks/useAuth';
-import { Button, Input, Card, Error, Alert } from '../components/ui';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Button, Input, Error, Alert, PageHeader, Section, TabNavigation } from '../components/ui';
+import { LandingPage } from './LandingPage';
+import { ProtectedRoute } from '../routes/ProtectedRoute';
 
 interface ProfileFormData {
   name: string;
@@ -19,7 +20,7 @@ interface ResetPasswordFormData {
   email: string;
 }
 
-export function ProfilePage() {
+const ProfileContent = () => {
   const { user, logout, updateProfile, changePassword, requestPasswordReset, deleteProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +70,6 @@ export function ProfilePage() {
       setIsLoading(true);
       clearMessages();
 
-      // Update user attributes using the auth hook
       await updateProfile({
         name: data.name,
       });
@@ -119,16 +119,10 @@ export function ProfilePage() {
       setIsLoading(true);
       clearMessages();
 
-      // Delete user account using the auth hook
       await deleteProfile();
-
-      // Note: In a real implementation, you would also need to call your API
-      // to delete all associated time records from DynamoDB
-      // This would be handled by the backend API endpoint created in task 4.3
 
       setSuccess('Profile deleted successfully. You will be logged out.');
       
-      // Logout and redirect after a short delay
       setTimeout(() => {
         logout();
         window.location.href = '/';
@@ -141,119 +135,73 @@ export function ProfilePage() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Please log in to access your profile.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <LandingPage>
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Profile Settings"
+          description="Manage your account settings and preferences"
+        />
+
         <div className="bg-white shadow rounded-lg">
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Manage your account settings and preferences
-            </p>
-          </div>
+          <TabNavigation
+            tabs={[
+              { id: 'profile', label: 'Profile Information' },
+              { id: 'password', label: 'Password & Security' },
+              { id: 'danger', label: 'Danger Zone', variant: 'danger' }
+            ]}
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab as 'profile' | 'password' | 'danger')}
+          />
 
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Profile Information
-              </button>
-              <button
-                onClick={() => setActiveTab('password')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'password'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Password & Security
-              </button>
-              <button
-                onClick={() => setActiveTab('danger')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'danger'
-                    ? 'border-red-500 text-red-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Danger Zone
-              </button>
-            </nav>
-          </div>
-
-          {/* Content */}
           <div className="p-6">
-            {/* Messages */}
             {error && <Error message={error} className="mb-6" />}
             {success && <Alert type="success" message={success} className="mb-6" />}
 
-            {/* Profile Information Tab */}
             {activeTab === 'profile' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Personal Information
-                  </h3>
-                  <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
-                    <Input
-                      id="name"
-                      type="text"
-                      label="Name"
-                      placeholder="Enter your name"
-                      error={profileForm.formState.errors.name?.message}
-                      {...profileForm.register('name')}
-                    />
+              <Section>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Personal Information
+                </h3>
+                <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-4">
+                  <Input
+                    id="name"
+                    type="text"
+                    label="Name"
+                    placeholder="Enter your name"
+                    error={profileForm.formState.errors.name?.message}
+                    {...profileForm.register('name')}
+                  />
 
-                    <Input
-                      id="email"
-                      type="email"
-                      label="Email"
-                      placeholder="Email cannot be changed"
-                      disabled
-                      className="bg-gray-50 text-gray-500 cursor-not-allowed"
-                      {...profileForm.register('email')}
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Email changes require additional verification and are not currently supported.
-                    </p>
+                  <Input
+                    id="email"
+                    type="email"
+                    label="Email"
+                    placeholder="Email cannot be changed"
+                    disabled
+                    className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                    {...profileForm.register('email')}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Email changes require additional verification and are not currently supported.
+                  </p>
 
-                    <div className="flex justify-end">
-                      <Button
-                        type="submit"
-                        loading={isLoading}
-                        loadingText="Updating..."
-                      >
-                        Update Profile
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      loading={isLoading}
+                      loadingText="Updating..."
+                    >
+                      Update Profile
+                    </Button>
+                  </div>
+                </form>
+              </Section>
             )}
 
-            {/* Password & Security Tab */}
             {activeTab === 'password' && (
               <div className="space-y-8">
-                {/* Change Password Section */}
-                <div>
+                <Section>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
                     Change Password
                   </h3>
@@ -282,7 +230,7 @@ export function ProfilePage() {
                           message: 'Password must be at least 8 characters'
                         },
                         pattern: {
-                          value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                          value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
                           message: 'Password must contain uppercase, lowercase, number, and special character'
                         }
                       })}
@@ -311,10 +259,9 @@ export function ProfilePage() {
                       </Button>
                     </div>
                   </form>
-                </div>
+                </Section>
 
-                {/* Password Reset Section */}
-                <div className="border-t border-gray-200 pt-8">
+                <Section>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
                     Forgot Password?
                   </h3>
@@ -366,73 +313,76 @@ export function ProfilePage() {
                       </div>
                     </form>
                   )}
-                </div>
+                </Section>
               </div>
             )}
 
-            {/* Danger Zone Tab */}
             {activeTab === 'danger' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-red-900 mb-4">
-                    Danger Zone
-                  </h3>
-                  <div className="border border-red-200 rounded-md p-6 bg-red-50">
-                    <h4 className="text-base font-medium text-red-900 mb-2">
+              <Section className="border-red-200 bg-red-50">
+                <h3 className="text-lg font-medium text-red-900 mb-4">
+                  Danger Zone
+                </h3>
+                <div className="space-y-4">
+                  <h4 className="text-base font-medium text-red-900">
+                    Delete Account
+                  </h4>
+                  <p className="text-sm text-red-700 mb-4">
+                    Once you delete your account, there is no going back. This will permanently delete 
+                    your profile and all associated time tracking records.
+                  </p>
+                  
+                  {!showDeleteConfirmation ? (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirmation(true)}
+                    >
                       Delete Account
-                    </h4>
-                    <p className="text-sm text-red-700 mb-4">
-                      Once you delete your account, there is no going back. This will permanently delete 
-                      your profile and all associated time tracking records.
-                    </p>
-                    
-                    {!showDeleteConfirmation ? (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => setShowDeleteConfirmation(true)}
-                      >
-                        Delete Account
-                      </Button>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="bg-white border border-red-300 rounded-md p-4">
-                          <h5 className="text-sm font-medium text-red-900 mb-2">
-                            Are you absolutely sure?
-                          </h5>
-                          <p className="text-sm text-red-700 mb-4">
-                            This action cannot be undone. This will permanently delete your account 
-                            and remove all your time tracking data from our servers.
-                          </p>
-                          <div className="flex space-x-3">
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              loading={isLoading}
-                              loadingText="Deleting..."
-                              onClick={handleProfileDeletion}
-                            >
-                              Yes, Delete My Account
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              disabled={isLoading}
-                              onClick={() => setShowDeleteConfirmation(false)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
+                    </Button>
+                  ) : (
+                    <div className="bg-white border border-red-300 rounded-md p-4">
+                      <h5 className="text-sm font-medium text-red-900 mb-2">
+                        Are you absolutely sure?
+                      </h5>
+                      <p className="text-sm text-red-700 mb-4">
+                        This action cannot be undone. This will permanently delete your account 
+                        and remove all your time tracking data from our servers.
+                      </p>
+                      <div className="flex space-x-3">
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          loading={isLoading}
+                          loadingText="Deleting..."
+                          onClick={handleProfileDeletion}
+                        >
+                          Yes, Delete My Account
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={isLoading}
+                          onClick={() => setShowDeleteConfirmation(false)}
+                        >
+                          Cancel
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </Section>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </LandingPage>
+  );
+};
+
+export function ProfilePage() {
+  return (
+    <ProtectedRoute>
+      <ProfileContent />
+    </ProtectedRoute>
   );
 }

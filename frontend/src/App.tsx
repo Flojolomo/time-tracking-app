@@ -32,15 +32,7 @@ function App() {
             <Route path="/analytics" element={<AnalyticsPage />} />
             
             {/* Profile route */}
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <DataProviders>
-                  <DashboardLayout>
-                    <ProfilePage />
-                  </DashboardLayout>
-                </DataProviders>
-              </ProtectedRoute>
-            } />
+            <Route path="/profile" element={<ProfilePage /> } />
           </Routes>
     </AppProviders>
   )
