@@ -159,20 +159,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('AWS Cognito not configured. Please update public/amplify_outputs.json with your AWS credentials.');
       }
       
+      // Split name into given_name and family_name
+      const nameParts = (data.name || '').trim().split(' ');
+      const givenName = nameParts[0] || '';
+      const familyName = nameParts.slice(1).join(' ') || '';
+      
       await updateUserAttributes({
         userAttributes: {
-          given_name: data.name || '',
+          given_name: givenName,
+          family_name: familyName,
         }
       });
       
-      // Fetch updated user attributes to get the latest data
-      const userAttributes = await fetchUserAttributes();
-      
-      // Update local user state
+      // Update local user state immediately
       if (user) {
         setUser({
           ...user,
-          name: userAttributes.given_name || userAttributes.name || user.email,
+          name: data.name || user.name,
         });
       }
     } catch (error: unknown) {

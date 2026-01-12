@@ -36,7 +36,7 @@ export const Menu: React.FC<{ setIsMobileMenuOpen: (isOpen: boolean) => void }> 
     </>
 
   const authenticatedMenu = <>
-        <div className="px-3 py-1 text-sm text-gray-500">{user?.email}</div>
+        <div className="px-3 py-1 text-sm text-gray-500">Hello {user?.name || user?.email || 'User'}</div>
 
         <div className="border-t border-gray-200 pt-2 mt-2">
             <Link
