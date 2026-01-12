@@ -10,7 +10,7 @@ import { StatisticsService } from '../utils';
 interface MetricsCardsProps {
   timeStats: TimeStatistics;
   projectCount: number;
-  dateRange: 'week' | 'month' | 'quarter';
+  dateRange: 'day' | 'week' | 'month' | 'quarter';
   className?: string;
 }
 
@@ -21,8 +21,10 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
   className = ''
 }) => {
   // Format date range for display
-  const formatDateRangeLabel = (range: 'week' | 'month' | 'quarter') => {
+  const formatDateRangeLabel = (range: 'day' | 'week' | 'month' | 'quarter') => {
     switch (range) {
+      case 'day':
+        return 'Today';
       case 'week':
         return 'This Week';
       case 'month':
@@ -48,7 +50,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
     },
-    {
+    ...(dateRange !== 'day' ? [{
       title: 'Daily Average',
       value: StatisticsService.formatDuration(timeStats.averageDailyTime),
       subtitle: 'Per working day',
@@ -60,7 +62,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
       color: 'bg-green-500',
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
-    },
+    }] : []),
     {
       title: 'Total Sessions',
       value: timeStats.totalRecords.toString(),

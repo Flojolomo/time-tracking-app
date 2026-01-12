@@ -19,15 +19,19 @@ const AnalyticsContent: React.FC = () => {
   const [dailyStats, setDailyStats] = useState<DailyStatistics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter'>('month');
+  const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'quarter'>('month');
 
   // Calculate date range for filtering
-  const getDateRange = (range: 'week' | 'month' | 'quarter') => {
+  const getDateRange = (range: 'day' | 'week' | 'month' | 'quarter') => {
     const now = new Date();
     const endDate = now.toISOString().split('T')[0];
     let startDate: string;
 
     switch (range) {
+      case 'day': {
+        startDate = endDate;
+        break;
+      }
       case 'week': {
         const weekAgo = new Date(now);
         weekAgo.setDate(weekAgo.getDate() - 7);
@@ -94,7 +98,7 @@ const AnalyticsContent: React.FC = () => {
   }, [dateRange, loadStatistics]);
 
   // Handle date range change
-  const handleDateRangeChange = (newRange: 'week' | 'month' | 'quarter') => {
+  const handleDateRangeChange = (newRange: 'day' | 'week' | 'month' | 'quarter') => {
     setDateRange(newRange);
   };
 
@@ -144,7 +148,7 @@ const AnalyticsContent: React.FC = () => {
         
         <div className="flex justify-center sm:justify-end">
           <div className="flex rounded-md shadow-sm">
-            {(['week', 'month', 'quarter'] as const).map((range) => (
+            {(['day', 'week', 'month', 'quarter'] as const).map((range) => (
               <button
                 key={range}
                 onClick={() => handleDateRangeChange(range)}
@@ -153,8 +157,8 @@ const AnalyticsContent: React.FC = () => {
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 } ${
-                  range === 'week' ? 'rounded-l-md' : range === 'quarter' ? 'rounded-r-md' : ''
-                } ${range !== 'week' ? '-ml-px' : ''} transition-colors`}
+                  range === 'day' ? 'rounded-l-md' : range === 'quarter' ? 'rounded-r-md' : ''
+                } ${range !== 'day' ? '-ml-px' : ''} transition-colors`}
               >
                 {range.charAt(0).toUpperCase() + range.slice(1)}
               </button>
@@ -216,8 +220,8 @@ const AnalyticsContent: React.FC = () => {
             )}
           </div>
 
-          {/* Timeline Chart */}
-          {dailyStats.length > 0 && (
+          {/* Timeline Chart - hide for day view since it's just one data point */}
+          {dailyStats.length > 0 && dateRange !== 'day' && (
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
               <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Daily Time Tracking</h3>
               <TimelineChart 
