@@ -32,37 +32,6 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<PasswordResetPage />} />
             
-            {/* Development/Demo route */}
-            <Route path="/demo" element={
-              <div className="min-h-screen bg-gray-50">
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-                    Time Tracking App - Development Demo
-                  </h1>
-                  
-                  {/* Configuration status for development */}
-                  <ConfigurationStatus />
-                  
-                  {/* Demo of authentication components */}
-                  <div className="mb-8">
-                    <AuthDemo />
-                  </div>
-
-                  {/* Example of protected content */}
-                  <ProtectedRoute>
-                    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-                      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                        Protected Content
-                      </h2>
-                      <p className="text-gray-600">
-                        This content is only visible to authenticated users.
-                      </p>
-                    </div>
-                  </ProtectedRoute>
-                </div>
-              </div>
-            } />
-            
             {/* Protected routes with DataCacheProvider */}
             <Route path="/active-timer" element={
                   <ActiveTimerPage />
