@@ -74,7 +74,7 @@ jobs:
       run: |
         cd infrastructure
         npm ci
-        npm run deploy:${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+        npm run deploy:${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }} --require-approval never
       env:
         CDK_DEFAULT_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
         CDK_DEFAULT_REGION: ${{ vars.AWS_REGION || env.AWS_REGION }}
