@@ -67,16 +67,16 @@ jobs:
         
     - uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-to-assume: ${{ vars.AWS_ROLE_ARN }}
         aws-region: ${{ env.AWS_REGION }}
         
     - name: Deploy infrastructure
       run: |
         cd infrastructure
         npm ci
-        npm run deploy:${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+        npx cdk deploy --require-approval never
       env:
-        CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+        CDK_DEFAULT_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
         CDK_DEFAULT_REGION: ${{ vars.AWS_REGION || env.AWS_REGION }}
         
     - name: Deploy frontend
